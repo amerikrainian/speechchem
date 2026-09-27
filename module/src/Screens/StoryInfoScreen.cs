@@ -198,8 +198,8 @@ namespace SpeechChem.Screens
         {
             var e = Ed;
             if (e == null) return null;
-            int shown = Shown(e, story);
-            return Loc.T("story.entry.value", new { title = Title(story, shown), n = shown + 1, m = Unlocked(e, story) });
+            // Just the title, like every other combo box (user rule) — the count lives in the list.
+            return Title(story, Shown(e, story));
         }
 
         private static IReadOnlyList<string> EntryTitles(bool story)

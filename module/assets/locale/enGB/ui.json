@@ -102,7 +102,6 @@
   "story.screen": "Story and info, {tab}",
   "story.new": "new",
   "story.entry": "Entry",
-  "story.entry.value": "{title}, {n} of {m}",
   "story.this": "this run {n}",
   "story.best": "best {n}",
   "story.bin": "{lo} to {hi}: {pct}{tags}",

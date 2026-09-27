@@ -428,7 +428,8 @@ diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid mole
 run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed (run state
 changes always, except the "Stopped" of leaving the level: Class53.smethod_8 / smethod_9 stop the
 run first — Continue after a completion, the exit prompt's Yes — user rule). The log is
-cleared when a run starts from stopped.
+cleared when a run starts from stopped, and when a different level instance (Class83) opens —
+FrameLoop "runlevel" (RunCapture.SyncLevel); switching reactors inside a level keeps it.
 CRASH SNAPSHOT (user request): a reaction error (GoalTracker.smethod_12 — collision, wall, pulled
 apart) pauses under the box and closing it STOPS (wipes molecules, waldos home), so the
 smethod_12 postfix snapshots the frozen reactor (`Screens/Reactor/ReactorSnapshotScreen`: every

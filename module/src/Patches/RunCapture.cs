@@ -76,6 +76,27 @@ namespace SpeechChem.Patches
 
         private static int Cycle => Class258.int_1;
 
+        // The log belongs to one level (the Class83 level screen instance): opening another level,
+        // or the same one again, starts it empty instead of showing the last level's run until the
+        // first Play (user report). Switching reactors inside a level keeps it — it covers the
+        // whole pipeline.
+        private static object _level;
+
+        /// <summary>FrameLoop step: clear the log when a different level instance is open.</summary>
+        public static void SyncLevel()
+        {
+            try
+            {
+                var level = Class53.smethod_5<Class83>();
+                if (level == null || ReferenceEquals(level, _level)) return;
+                _level = level;
+                Log.Clear();
+                Generation++;
+                Blocked.Clear();
+            }
+            catch { }
+        }
+
         // Spoken at the slowest speed, and during a single-cycle step at any speed (they queue after
         // the step's "Cycle N").
         private static bool SpeakEvents => StepControl.Active

@@ -46,6 +46,7 @@ namespace SpeechChem
             FrameLoop.Register("screens", Screens.ScreenManager.Tick);
             FrameLoop.Register("click", Game.SyntheticClick.Tick);
             FrameLoop.Register("step", Patches.StepControl.Tick); // the single-cycle step's safety net
+            FrameLoop.Register("runlevel", Patches.RunCapture.SyncLevel); // a new level starts an empty run log
 
             // One greeting per game launch (the module loads while the boot splash plays). A hot reload
             // mid-session doesn't re-greet.

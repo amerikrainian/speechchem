@@ -208,6 +208,10 @@ namespace SpeechChem.Screens.Reactor
             {
                 var i = InstructionAt(r, x, y, layer);
                 if (i != null) labels.Add(ReactorText.Label(i));
+                // A flip-flop's state during a run (the game marks the cell while it is off): on =
+                // the next pass branches.
+                if (i is ToggleInstruction flip && Live)
+                    labels.Add(Loc.T(flip.bool_3 ? "reactor.flipflop.on" : "reactor.flipflop.off"));
             }
             if (allLayers || Visible(r, arrowLayer))
             {

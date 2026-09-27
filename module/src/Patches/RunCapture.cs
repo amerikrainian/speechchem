@@ -272,6 +272,13 @@ namespace SpeechChem.Patches
                     return Loc.T("run.sensed", new { atom = sensor.method_8().method_0(), dir = Heading(w.vector2i_1) });
                 return Loc.T("run.sensed.miss", new { atom = SensedAtom(r) ?? Loc.T("run.sensed.nothing") });
             }
+            if (i is ToggleInstruction flip)
+            {
+                // ToggleInstruction.vmethod_7 alternates: with bool_3 set it branches and clears it,
+                // otherwise it only sets it — so after the step a clear bool_3 means it branched.
+                redirected = true;
+                return flip.bool_3 ? Loc.T("run.flipflop.pass") : Loc.T("run.flipflop.branch", new { dir = Heading(w.vector2i_1) });
+            }
             if (turned && i.vmethod_5() != Enum153.None)
             {
                 redirected = true;

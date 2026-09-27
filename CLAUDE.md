@@ -474,7 +474,10 @@ any heading change "blue: heading up" — an arrow the waldo already follows log
 (SensorInstruction.vmethod_7 branches when any Class673 has the trigger element above it,
 method_10): "sensed Nickel, heading down" on a match — also when already heading that way, which
 the waldo alone can't show — else "sensed Carbon" / "sensed nothing", the atom the sensor saw;
-verified live 2026-09-27 on a `custom` test puzzle, all three cases), wall stops
+verified live 2026-09-27 on a `custom` test puzzle, all three cases; FLIP-FLOP (ToggleInstruction,
+on custom research palettes: vmethod_7 branches when bool_3 is set and clears it, else sets it —
+the run resets it): "flip flop, heading down" / "flip flop, no branch", and during a run the cell
+reads "on" (next pass branches) / "off" (the game marks the cell while off); verified live), wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,

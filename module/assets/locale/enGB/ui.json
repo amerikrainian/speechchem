@@ -17,6 +17,8 @@
   "mainmenu.researchnet": "ResearchNet, Sign On",
   "mainmenu.corvi": "63 Corvi",
   "mainmenu.tf2": "Australium Research Sites",
+  "australium.headline": "Unlock the mysteries of the moustache sciences!",
+  "australium.footer": "Solve these assignments to receive Moustachium alloy in TF2 and craft fantastic SpaceChem items!",
   "levelselect.locked": "Locked",
   "levelselect.completed": "completed",
   "levelselect.score": "{metric}: {bestLabel} {best}, {lastLabel} {last}",

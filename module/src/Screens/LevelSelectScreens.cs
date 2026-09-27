@@ -252,7 +252,7 @@ namespace SpeechChem.Screens
         }
 
         /// <summary>The subtitle Class306.smethod_0 draws above a level's name.</summary>
-        private static string Kind(Type t)
+        internal static string Kind(Type t)
         {
             string text = null;
             if (t == typeof(Class148)) text = GameText.T("Execution");
@@ -279,13 +279,16 @@ namespace SpeechChem.Screens
         }
 
         /// <summary>One metric of the panel for the level it shows (type_0, set by the hover path).</summary>
-        private static string ScoreRow(int metric)
+        private static string ScoreRow(int metric) => ScoreRow(Select?.type_0?.smethod_0(), metric);
+
+        /// <summary>One metric of a score panel (LevelSelectEditor.smethod_11's) showing the level
+        /// with this id, or showing none (null): "metric: BEST n, LAST m" once solved, else the bare
+        /// metric name.</summary>
+        internal static string ScoreRow(string levelId, int metric)
         {
             string name = metric == 0 ? SpaceChem.Graph.string_0 : metric == 1 ? SpaceChem.Graph.string_1 : SpaceChem.Graph.string_2;
-            var s = Select;
-            var level = s?.type_0;
-            if (level == null) return name;
-            var state = LevelsDb.smethod_9(level.smethod_0());
+            if (levelId == null) return name;
+            var state = LevelsDb.smethod_9(levelId);
             if (!state.bool_0 || state.score_0 == null || state.score_1 == null) return name;
             int best = Metric(state.score_1, metric), last = Metric(state.score_0, metric);
             return Loc.T("levelselect.score", new

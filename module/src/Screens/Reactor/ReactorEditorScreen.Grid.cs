@@ -44,7 +44,7 @@ namespace SpeechChem.Screens.Reactor
                         ControlType = ControlTypes.Text,
                         Announcements = new[] { new NodeAnnouncement(() => CellReadout(cx, cy), kind: AnnouncementKinds.Label) },
                         SpeaksOwnPosition = true,
-                        OnSelect = () => LandOnCell(cx, cy),
+                        OnSelect = () => { ClearSelection(); LandOnCell(cx, cy); },
                         OnActivate = () => ActivateCell(cx, cy),
                         OnTooltip = () => Speech.Tts.Speak(CellDetails(cx, cy), interrupt: true),
                         OnJumpEdge = first => JumpRowEdge(cy, first),
@@ -150,6 +150,7 @@ namespace SpeechChem.Screens.Reactor
                 parts.Add(ZoneAt(r, x, y));
             parts.AddRange(CellContents(r, x, y));
             if (IsTutorialTarget(x, y)) parts.Add(Loc.T("reactor.highlighted"));
+            if (InSelection(x, y)) parts.Add(Loc.T("text.selectedword"));
             return string.Join(", ", parts.ToArray());
         }
 

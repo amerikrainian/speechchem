@@ -51,6 +51,7 @@ namespace SpeechChem.Patches
             77, // End           (ui.end)
             75, // PageUp
             78, // PageDown
+            76, // Delete        (reactor delete; the game's own Delete acts on its mouse selection)
         };
 
         private const int EscapeScancode = 41;

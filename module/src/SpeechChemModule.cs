@@ -95,6 +95,22 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.status", "Read status", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
             Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.F1);
             Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);
+            // Palette letters place that instruction at the grid cursor (the scancode is the id).
+            foreach (var letter in new[] { Input.Scancode.Q, Input.Scancode.W, Input.Scancode.E, Input.Scancode.R, Input.Scancode.T,
+                Input.Scancode.Y, Input.Scancode.U, Input.Scancode.I, Input.Scancode.A, Input.Scancode.S, Input.Scancode.D,
+                Input.Scancode.F, Input.Scancode.G, Input.Scancode.H, Input.Scancode.J, Input.Scancode.K })
+                Input.InputManager.Register("screen.reactor.place." + (int)letter, "Place instruction " + letter, Input.InputCategory.UI).AddBinding(letter);
+            Input.InputManager.Register("screen.reactor.delete", "Delete", Input.InputCategory.UI).AddBinding(Input.Scancode.Delete);
+            Input.InputManager.Register("screen.reactor.cut", "Cut", Input.InputCategory.UI).AddBinding(Input.Scancode.X, ctrl: true);
+            Input.InputManager.Register("screen.reactor.copy", "Copy", Input.InputCategory.UI).AddBinding(Input.Scancode.C, ctrl: true);
+            Input.InputManager.Register("screen.reactor.paste", "Paste", Input.InputCategory.UI).AddBinding(Input.Scancode.V, ctrl: true);
+            Input.InputManager.Register("screen.reactor.select.up", "Extend selection up", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, shift: true).Repeating();
+            Input.InputManager.Register("screen.reactor.select.down", "Extend selection down", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, shift: true).Repeating();
+            Input.InputManager.Register("screen.reactor.select.left", "Extend selection left", Input.InputCategory.UI).AddBinding(Input.Scancode.Left, shift: true).Repeating();
+            Input.InputManager.Register("screen.reactor.select.right", "Extend selection right", Input.InputCategory.UI).AddBinding(Input.Scancode.Right, shift: true).Repeating();
+            // The context-menu key everywhere (user rule, 2026-09-27): screens advertise "screen.context".
+            Input.InputManager.Register("screen.context", "Context menu", Input.InputCategory.UI)
+                .AddBinding(Input.Scancode.Return, shift: true).AddBinding(Input.Scancode.KpEnter, shift: true);
 
             Input.InputManager.ActiveCategoriesProvider = () =>
                 new System.Collections.Generic.List<Input.InputCategory>(Screens.ScreenManager.ActiveInputCategories());

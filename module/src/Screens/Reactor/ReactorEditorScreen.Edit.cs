@@ -1,16 +1,453 @@
+using System;
 using System.Collections.Generic;
+using Impeller;
+using SpaceChem;
+using SpaceChem.Reactor;
+using SpaceChem.UI;
+using SpeechChem.Game;
+using SpeechChem.Localization;
 using SpeechChem.UI;
+using ReactorModel = SpaceChem.Reactor.Reactor;
 
 namespace SpeechChem.Screens.Reactor
 {
     public sealed partial class ReactorEditorScreen
     {
-        // Editing lands in the next commit (placement, menus, delete, clipboard, selection).
+        // ---- editing (user-approved design, 2026-09-27). Every change goes through the game's own
+        // model calls inside ONE undo step (SpaceChemUserWorker.method_49), so Ctrl+Z / Ctrl+Y and
+        // the save file see exactly what a mouse edit leaves:
+        //   Reactor.method_18(bin, member)  place (saves the member, method_71)
+        //   Reactor.method_21(member) + worker.method_72(member)  remove
+        //   member.vmethod_2(reactor)        clone (a palette template or a copied instruction)
+        //   member.vmethod_1(bin)            a moved member's new position (the drag path)
+        // Rules: edits only while the reactor is stopped (the game's own rule), never on a locked or
+        // hidden layer, and START markers can be moved (cut + paste) but never deleted or copied.
+        //
+        // Keys: a palette letter places that instruction at the cursor in the active colour
+        // (replacing what occupies that slot — user rule); Enter places the ARMED palette slot (one
+        // shot); Delete removes the active colour's instructions in the cell or selection; Ctrl+X /
+        // Ctrl+C / Ctrl+V cut, copy and paste them; Shift+arrows extend a rectangular selection;
+        // Shift+Enter opens the context menu: the cell's instruction menu (the game's right-click
+        // menu, item by item) or, on an empty cell, the Reactor Grid menu. ----
 
-        private IEnumerable<ElementAction> EditActions() { yield break; }
+        private static readonly int[] PaletteLetters =
+        {
+            20, 26, 8, 21, 23, 28, 24, 12, // Q W E R T Y U I
+            4, 22, 7, 9, 10, 11, 13, 14,   // A S D F G H J K
+        };
 
-        private void ResetEditState() { }
+        private IEnumerable<ElementAction> EditActions()
+        {
+            foreach (int key in PaletteLetters)
+            {
+                int k = key;
+                yield return new ElementAction("screen.reactor.place." + k, () => PlaceSlot(k, _cursorX, _cursorY, fromLetter: true));
+            }
+            yield return new ElementAction("screen.reactor.delete", DeleteAtCursor);
+            yield return new ElementAction("screen.reactor.cut", () => CopyAtCursor(cut: true));
+            yield return new ElementAction("screen.reactor.copy", () => CopyAtCursor(cut: false));
+            yield return new ElementAction("screen.reactor.paste", Paste);
+            yield return new ElementAction("screen.reactor.select.up", () => ExtendSelection(0, -1));
+            yield return new ElementAction("screen.reactor.select.down", () => ExtendSelection(0, 1));
+            yield return new ElementAction("screen.reactor.select.left", () => ExtendSelection(-1, 0));
+            yield return new ElementAction("screen.reactor.select.right", () => ExtendSelection(1, 0));
+            yield return new ElementAction("screen.context", OpenContextMenu);
+        }
 
-        private void ActivateCell(int x, int y) { }
+        private void ResetEditState()
+        {
+            _selAnchor = null;
+            _clip.Clear();
+        }
+
+        private static bool OnGrid => GridStop.Equals(Navigation.FocusedStopKey);
+
+        private static IDisposable UndoStep() => Locals.smethod_0().smethod_0().method_49();
+
+        private static void Forget(ReactorMember m) => Locals.smethod_0().smethod_0().method_72(m);
+
+        /// <summary>Refuse edits the game itself would refuse, saying why. True = editing is allowed.</summary>
+        private static bool CanEdit()
+        {
+            if (Live)
+            {
+                Speech.Tts.Speak(Loc.T("reactor.edit.running"), interrupt: true);
+                return false;
+            }
+            return true;
+        }
+
+        private static bool LayerEditable(ReactorModel r, int layer)
+        {
+            int bits = (layer & (ReactorText.Red | ReactorText.RedArrow)) != 0 ? ReactorText.AllRed : ReactorText.AllBlue;
+            bool locked = ((int)r.method_7() & bits) != 0;
+            bool visible = ((int)r.method_5() & layer) != 0;
+            return !locked && visible;
+        }
+
+        private static string ColourWord(int layer)
+            => Loc.T((layer & (ReactorText.Red | ReactorText.RedArrow)) != 0 ? "reactor.red" : "reactor.blue");
+
+        // ---- placement ----
+
+        /// <summary>Enter on a cell: place the armed palette slot there (one shot).</summary>
+        private void ActivateCell(int x, int y)
+        {
+            if (_armedKey < 0) return;
+            int key = _armedKey;
+            if (PlaceSlot(key, x, y, fromLetter: false)) _armedKey = -1;
+        }
+
+        /// <summary>Place a copy of a palette slot's instruction at a cell, in the slot's (active)
+        /// colour, replacing whatever holds that slot of the cell.</summary>
+        private bool PlaceSlot(int key, int x, int y, bool fromLetter)
+        {
+            if (fromLetter && !OnGrid) return false;
+            var editor = Editor;
+            var r = editor?.reactor_0;
+            var slot = Slot(editor, key);
+            if (r == null || slot == null) return false;
+            if (!CanEdit()) return true;
+            int layer = (int)slot.enum114_0;
+            if (!LayerEditable(r, layer))
+            {
+                Speech.Tts.Speak(Loc.T("reactor.edit.locked", new { colour = ColourWord(layer) }), interrupt: true);
+                return true;
+            }
+            var cell = new Vector2i(x, y);
+            var existing = r.method_15(cell, (Enum114)layer) as Instruction;
+            if (existing is StartInstruction)
+            {
+                Speech.Tts.Speak(Loc.T("reactor.edit.start"), interrupt: true);
+                return true;
+            }
+            var clone = slot.struct116_0.method_0().vmethod_2(r) as Instruction;
+            if (clone == null) return true;
+            string replaced = existing != null ? ReactorText.Label(existing) : null;
+            using (UndoStep())
+            {
+                if (existing != null)
+                {
+                    r.method_21(existing);
+                    Forget(existing);
+                }
+                r.method_18(new ReactorBin(cell, (Enum114)layer), clone);
+            }
+            Class428.class14_11.vmethod_0(); // the drop sound (Reactor.method_11 leaving the drag state)
+            string placed = ColourWord(layer) + " " + ReactorText.Label(clone);
+            Speech.Tts.Speak(replaced != null
+                ? Loc.T("reactor.edit.replaced", new { placed, replaced })
+                : Loc.T("reactor.edit.placed", new { placed }), interrupt: true);
+            return true;
+        }
+
+        // ---- selection (Shift+arrows) ----
+
+        private Vector2i? _selAnchor;
+
+        private void ExtendSelection(int dx, int dy)
+        {
+            if (!OnGrid) return;
+            var r = Model;
+            if (r == null) return;
+            var size = r.method_1();
+            if (!_selAnchor.HasValue) _selAnchor = new Vector2i(_cursorX, _cursorY);
+            int x = Math.Max(0, Math.Min(size.int_0 - 1, _cursorX + dx));
+            int y = Math.Max(0, Math.Min(size.int_1 - 1, _cursorY + dy));
+            _cursorX = x;
+            _cursorY = y;
+            Navigation.FocusNode(CellId(x, y), announce: false);
+            int w = Math.Abs(x - _selAnchor.Value.int_0) + 1, h = Math.Abs(y - _selAnchor.Value.int_1) + 1;
+            Speech.Tts.Speak(CellReadout(x, y) + ", " + Loc.T("reactor.selection", new { w, h }), interrupt: true);
+        }
+
+        /// <summary>Plain navigation drops the selection.</summary>
+        private void ClearSelection() => _selAnchor = null;
+
+        private bool InSelection(int x, int y)
+        {
+            if (!_selAnchor.HasValue) return false;
+            int x0 = Math.Min(_selAnchor.Value.int_0, _cursorX), x1 = Math.Max(_selAnchor.Value.int_0, _cursorX);
+            int y0 = Math.Min(_selAnchor.Value.int_1, _cursorY), y1 = Math.Max(_selAnchor.Value.int_1, _cursorY);
+            return x >= x0 && x <= x1 && y >= y0 && y <= y1;
+        }
+
+        /// <summary>The cells an edit applies to: the selection, else the cursor's cell.</summary>
+        private List<Vector2i> TargetCells()
+        {
+            var cells = new List<Vector2i>();
+            if (_selAnchor.HasValue)
+            {
+                int x0 = Math.Min(_selAnchor.Value.int_0, _cursorX), x1 = Math.Max(_selAnchor.Value.int_0, _cursorX);
+                int y0 = Math.Min(_selAnchor.Value.int_1, _cursorY), y1 = Math.Max(_selAnchor.Value.int_1, _cursorY);
+                for (int y = y0; y <= y1; y++)
+                    for (int x = x0; x <= x1; x++) cells.Add(new Vector2i(x, y));
+            }
+            else cells.Add(new Vector2i(_cursorX, _cursorY));
+            return cells;
+        }
+
+        /// <summary>The active colour's layers (non-arrow, arrow).</summary>
+        private static int[] ActiveLayers()
+            => RedActive ? new[] { ReactorText.Red, ReactorText.RedArrow } : new[] { ReactorText.Blue, ReactorText.BlueArrow };
+
+        // ---- delete ----
+
+        private void DeleteAtCursor()
+        {
+            if (!OnGrid) return;
+            var r = Model;
+            if (r == null || !CanEdit()) return;
+            var victims = new List<Instruction>();
+            bool sawStart = false;
+            foreach (var cell in TargetCells())
+                foreach (int layer in ActiveLayers())
+                {
+                    if (!LayerEditable(r, layer)) continue;
+                    var i = r.method_15(cell, (Enum114)layer) as Instruction;
+                    if (i == null) continue;
+                    if (!i.bool_0) { sawStart = true; continue; } // START: not deletable
+                    victims.Add(i);
+                }
+            if (victims.Count == 0)
+            {
+                Speech.Tts.Speak(Loc.T(sawStart ? "reactor.edit.start" : "reactor.edit.nothing"), interrupt: true);
+                return;
+            }
+            var labels = new List<string>();
+            using (UndoStep())
+            {
+                foreach (var i in victims)
+                {
+                    labels.Add(ReactorText.Label(i));
+                    r.method_21(i);
+                    Forget(i);
+                }
+            }
+            ClearSelection();
+            Speech.Tts.Speak(Loc.T("reactor.edit.deleted", new { what = string.Join(", ", labels.ToArray()) }), interrupt: true);
+        }
+
+        // ---- clipboard ----
+
+        private sealed class ClipEntry
+        {
+            public Vector2i Offset;  // from the copied region's top-left cell
+            public int Layer;
+            public Instruction Source; // for a copy: cloned on paste; for a cut START: moved on paste
+            public bool MoveStart;
+        }
+
+        private readonly List<ClipEntry> _clip = new List<ClipEntry>();
+
+        private void CopyAtCursor(bool cut)
+        {
+            if (!OnGrid) return;
+            var r = Model;
+            if (r == null) return;
+            if (cut && !CanEdit()) return;
+            var cells = TargetCells();
+            int ox = int.MaxValue, oy = int.MaxValue;
+            foreach (var c in cells) { ox = Math.Min(ox, c.int_0); oy = Math.Min(oy, c.int_1); }
+            var entries = new List<ClipEntry>();
+            var toRemove = new List<Instruction>();
+            foreach (var cell in cells)
+                foreach (int layer in ActiveLayers())
+                {
+                    if (!Visible(r, layer)) continue;
+                    var i = r.method_15(cell, (Enum114)layer) as Instruction;
+                    if (i == null) continue;
+                    var offset = new Vector2i(cell.int_0 - ox, cell.int_1 - oy);
+                    if (i is StartInstruction)
+                    {
+                        // START can only move: a cut remembers it and the paste relocates it.
+                        if (cut && LayerEditable(r, layer)) entries.Add(new ClipEntry { Offset = offset, Layer = layer, Source = i, MoveStart = true });
+                        continue;
+                    }
+                    if (cut && !LayerEditable(r, layer)) continue;
+                    // Keep a detached copy, so later edits to the original don't change the clipboard.
+                    var copy = i.vmethod_2(r) as Instruction;
+                    entries.Add(new ClipEntry { Offset = offset, Layer = layer, Source = copy });
+                    if (cut) toRemove.Add(i);
+                }
+            if (entries.Count == 0)
+            {
+                Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true);
+                return;
+            }
+            _clip.Clear();
+            _clip.AddRange(entries);
+            if (toRemove.Count > 0)
+            {
+                using (UndoStep())
+                {
+                    foreach (var i in toRemove)
+                    {
+                        r.method_21(i);
+                        Forget(i);
+                    }
+                }
+            }
+            ClearSelection();
+            Speech.Tts.Speak(Loc.T(cut ? "reactor.edit.cut" : "reactor.edit.copied", new { n = entries.Count }), interrupt: true);
+        }
+
+        private void Paste()
+        {
+            if (!OnGrid) return;
+            var r = Model;
+            if (r == null || _clip.Count == 0) { Speech.Tts.Speak(Loc.T("reactor.edit.clipempty"), interrupt: true); return; }
+            if (!CanEdit()) return;
+            var size = r.method_1();
+            int placed = 0, skipped = 0;
+            using (UndoStep())
+            {
+                foreach (var e in _clip)
+                {
+                    var cell = new Vector2i(_cursorX + e.Offset.int_0, _cursorY + e.Offset.int_1);
+                    if (cell.int_0 >= size.int_0 || cell.int_1 >= size.int_1 || !LayerEditable(r, e.Layer)) { skipped++; continue; }
+                    var bin = new ReactorBin(cell, (Enum114)e.Layer);
+                    var existing = r.method_17(bin);
+                    if (e.MoveStart)
+                    {
+                        if (existing != null && existing != e.Source)
+                        {
+                            if (existing is StartInstruction || !(existing is Instruction)) { skipped++; continue; }
+                            r.method_21(existing);
+                            Forget(existing);
+                        }
+                        r.method_18(bin, e.Source);
+                        e.Source.vmethod_1(bin);
+                        placed++;
+                        continue;
+                    }
+                    if (existing is StartInstruction) { skipped++; continue; }
+                    if (existing != null)
+                    {
+                        r.method_21(existing);
+                        Forget(existing);
+                    }
+                    var clone = e.Source.vmethod_2(r) as Instruction;
+                    if (clone == null) { skipped++; continue; }
+                    r.method_18(bin, clone);
+                    placed++;
+                }
+            }
+            // A START moves once; later pastes of the same clipboard should not move it again.
+            _clip.RemoveAll(e => e.MoveStart);
+            Class428.class14_11.vmethod_0();
+            Speech.Tts.Speak(skipped > 0
+                ? Loc.T("reactor.edit.pasted.skipped", new { n = placed, skipped })
+                : Loc.T("reactor.edit.pasted", new { n = placed }), interrupt: true);
+        }
+
+        // ---- context menu (Shift+Enter) ----
+
+        private void OpenContextMenu()
+        {
+            if (!OnGrid) return;
+            var r = Model;
+            if (r == null || !CanEdit()) return;
+            var cell = new Vector2i(_cursorX, _cursorY);
+            var members = new List<Instruction>();
+            foreach (int layer in new[] { ReactorText.Red, ReactorText.RedArrow, ReactorText.Blue, ReactorText.BlueArrow })
+            {
+                if (!LayerEditable(r, layer)) continue;
+                var i = r.method_15(cell, (Enum114)layer) as Instruction;
+                if (i != null && Instruction.dictionary_1.ContainsKey(i.GetType())) members.Add(i);
+            }
+            if (members.Count == 0) { PushChild(GridMenu(r)); return; }
+            if (members.Count == 1) { PushChild(InstructionMenuFor(r, members[0])); return; }
+            var chooser = new List<ActionListScreen.Item>();
+            foreach (var m in members)
+            {
+                var member = m;
+                chooser.Add(new ActionListScreen.Item
+                {
+                    Label = () => ColourWord((int)(r.method_19(member)?.enum114_0 ?? 0)) + " " + ReactorText.Label(member),
+                    Run = () => PushChild(InstructionMenuFor(r, member)),
+                });
+            }
+            PushChild(new ActionListScreen("reactor.menu.members", null, chooser));
+        }
+
+        /// <summary>The game's right-click menu for one instruction, item by item: "Red Layer" /
+        /// "Blue Layer" (Class720), the icon variants (InstructionMenuItem — labelled from their
+        /// template instruction), and text items ("Delete", "Change Trigger Element" — Class719).
+        /// Running an item replays the game's click: select just this instruction (what the
+        /// right-click does), then the item's own action.</summary>
+        private ActionListScreen InstructionMenuFor(ReactorModel r, Instruction member)
+        {
+            InstructionMenu menu;
+            if (!Instruction.dictionary_1.TryGetValue(member.GetType(), out menu))
+                menu = Instruction.dictionary_1[typeof(Instruction)];
+            var items = new List<ActionListScreen.Item>();
+            foreach (var component in menu.linkedList_0)
+            {
+                var item = component as MenuItem<Instruction>;
+                if (item == null) continue;
+                Func<string> label = MenuItemLabel(item);
+                if (label == null) continue;
+                var it = item;
+                items.Add(new ActionListScreen.Item
+                {
+                    Label = label,
+                    Selected = () => { try { return it.isSelectedFunc_0(member); } catch { return false; } },
+                    Run = () => RunMenuItem(r, member, it),
+                });
+            }
+            string title = ColourWord((int)(r.method_19(member)?.enum114_0 ?? 0)) + " " + ReactorText.Label(member);
+            return new ActionListScreen("reactor.menu.instr", title, items);
+        }
+
+        private static Func<string> MenuItemLabel(MenuItem<Instruction> item)
+        {
+            if (item is Class720 layer) return () => GameText.T(layer.bool_3 ? "Red Layer" : "Blue Layer");
+            if (item is Class719<Instruction> text) return () => text.string_0;
+            if (item is InstructionMenuItem icon && icon.struct116_0.bool_0) return () => ReactorText.Label(icon.struct116_0.method_0());
+            return null;
+        }
+
+        private void RunMenuItem(ReactorModel r, Instruction member, MenuItem<Instruction> item)
+        {
+            if (Live) return;
+            try
+            {
+                r.method_27();
+                r.method_24(member);
+                Class428.class14_4.vmethod_0();
+                item.clickAction_0(member);
+            }
+            catch (Exception ex) { Log.Error("[reactor] menu item failed", ex); }
+            finally { try { r.method_27(); } catch { } }
+            // No readout here: focus returning from the menu re-reads the cell, changed.
+        }
+
+        /// <summary>Right-click on empty grid: the "Reactor Grid" menu (ReactorMenu — Swap Waldo
+        /// Colors, Mirror Vertically, Reset), each item's own action on this reactor.</summary>
+        private ActionListScreen GridMenu(ReactorModel r)
+        {
+            var items = new List<ActionListScreen.Item>();
+            foreach (var component in r.reactorMenu_0.linkedList_0)
+            {
+                if (!(component is Class719<ReactorModel> item)) continue;
+                var it = item;
+                items.Add(new ActionListScreen.Item
+                {
+                    Label = () => it.string_0,
+                    Run = () =>
+                    {
+                        if (Live) return;
+                        try
+                        {
+                            Class428.class14_4.vmethod_0();
+                            it.clickAction_0(r);
+                        }
+                        catch (Exception ex) { Log.Error("[reactor] grid menu item failed", ex); }
+                    },
+                });
+            }
+            return new ActionListScreen("reactor.menu.grid", GameText.T("Reactor Grid"), items);
+        }
     }
 }

@@ -165,7 +165,9 @@ strings `name;formula;` + one `x y Z right down` token per atom, under the fixed
 `custom-speechchem-test`, the way a journal card opens; `custom clean` (level closed first — leave with
 `tolevelselect`) wipes that id's saved solution with the game's `method_74` and its `Level` status row;
 the module references the game's System.Data.SQLite compile-only for that one statement). Put the
-body in a file and `curl --data-binary @file` (JSON quoting). Only research puzzles: production and
+body in a file and `curl --data-binary @file` (JSON quoting). Molecules must be CONNECTED (the probe
+refuses unbonded atoms in one molecule — the game's fusion code crashed on one); inputs of a
+random zone come in a FIXED seeded order, so test each case with a single-molecule zone. Only research puzzles: production and
 sandbox need the pipeline / defense screens.
 Profile tests WRITE THE SAVE DATABASE (`%LOCALAPPDATA%\Zachtronics Industries\SpaceChem\.locals`):
 create throwaway profiles and delete them again. Grow it with each screen
@@ -482,7 +484,11 @@ FUSION (Class662 fires every Class672: projectile atom on the laser's left cell,
 right; both present and atomic numbers summing to 109 or less → projectile removed, target becomes
 the sum, else nothing): the target cell's element is diffed — "fusion 2, 1, Helium" / "fusion, no
 effect"; the grid names the laser's cells "projectile" / "target" (the game's tooltip words);
-verified live, including a cut/paste of the laser), wall stops
+verified live, including a cut/paste of the laser; FISSION (Class664 fires every Class667: target
+atom on the LEFT cell; unless hydrogen it becomes ceil(Z/2) and a lone floor(Z/2) atom appears on
+the right cell): "fission 1, 1, Beryllium and Lithium" / "fission, no effect"; cells read "target" /
+"product" (the right cell's word is the mod's — the game names only the target); verified live),
+wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,

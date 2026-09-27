@@ -149,6 +149,7 @@ namespace SpeechChem.Patches
                 __state.Instruction = r.method_15(cell, __instance.enum114_0) as Instruction;
                 if (__state.Instruction is BondInstruction) __state.Bonds = BondBoard.Of(r);
                 if (__state.Instruction is Class662) __state.Lasers = Shots<Class672>(r, right: true);
+                if (__state.Instruction is Class664) __state.Lasers = Shots<Class667>(r, right: false);
             }
             catch { }
         }
@@ -273,6 +274,7 @@ namespace SpeechChem.Patches
                 return label;
             }
             if (i is Class662 && before.Lasers != null) return FusionEffect(r, before.Lasers);
+            if (i is Class664 && before.Lasers != null) return FissionEffect(r, before.Lasers);
             if (i is SensorInstruction sensor)
             {
                 // SensorInstruction.vmethod_7 branches when any sensor has the trigger element above
@@ -329,6 +331,27 @@ namespace SpeechChem.Patches
                 parts.Add(Loc.T("run.fusion", new { cell = CellText(target), atom = now.Value.method_0() }));
             }
             return parts.Count > 0 ? string.Join("; ", parts.ToArray()) : Loc.T("run.fusion.none");
+        }
+
+        // Fission (Class667.method_7): the target atom is on the laser's LEFT cell; unless it is
+        // hydrogen it becomes the upper half of its atomic number and a new lone atom of the lower
+        // half appears on the right cell. So the left cell's element is diffed.
+        private static string FissionEffect(SpaceChem.Reactor.Reactor r, List<LaserShot> shots)
+        {
+            var parts = new List<string>();
+            foreach (var shot in shots)
+            {
+                var now = AtomAt(r, shot.Left);
+                if (now == null || !shot.Before.HasValue || now.Value.element_0 == shot.Before.Value) continue;
+                var split = AtomAt(r, new Vector2i(shot.Left.int_0 + 1, shot.Left.int_1));
+                parts.Add(Loc.T("run.fission", new
+                {
+                    cell = CellText(shot.Left),
+                    a = now.Value.method_0(),
+                    b = split?.method_0() ?? "?",
+                }));
+            }
+            return parts.Count > 0 ? string.Join("; ", parts.ToArray()) : Loc.T("run.fission.none");
         }
 
         private static string CellText(Vector2i c) => Loc.T("reactor.cell", new { x = c.int_0 + 1, y = c.int_1 + 1 });

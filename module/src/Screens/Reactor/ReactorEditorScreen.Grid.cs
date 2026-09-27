@@ -206,14 +206,17 @@ namespace SpeechChem.Screens.Reactor
         }
 
         /// <summary>Which of a two-cell laser's cells this is. Fusion (Class672): the game's tooltip
-        /// puts the projectile atom on the left and the target on the right.</summary>
+        /// puts the projectile atom on the left and the target on the right. Fission (Class667): the
+        /// target is the left cell; the split-off atom appears on the right one (the product).</summary>
         private static string LaserRole(ReactorModel r, ReactorFeature f, int x)
         {
-            if (!(f is Class672)) return null;
+            bool fusion = f is Class672;
+            if (!fusion && !(f is Class667)) return null;
             var at = r.method_19(f);
             if (!at.HasValue) return null;
             bool left = at.Value.vector2i_0.int_0 == x;
-            return Loc.T(left ? "reactor.laser.projectile" : "reactor.laser.target");
+            if (fusion) return Loc.T(left ? "reactor.laser.projectile" : "reactor.laser.target");
+            return Loc.T(left ? "reactor.laser.target" : "reactor.laser.product");
         }
 
         private static void AddColour(List<string> parts, ReactorModel r, int x, int y, int layer, int arrowLayer, string colourKey, bool allLayers)

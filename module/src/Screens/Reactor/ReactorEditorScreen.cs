@@ -116,14 +116,20 @@ namespace SpeechChem.Screens.Reactor
             ApplyPendingJump();
         }
 
-        /// <summary>A game dialog over the reactor (a Reaction Error, the exit prompt) pops this
-        /// screen too, but the editor stays in the chain beneath it: keep the cursor and trackers so
-        /// closing the dialog lands back where the player was. Leaving the reactor starts over.</summary>
+        /// <summary>A game screen over the reactor (a Reaction Error, the exit prompt, the periodic
+        /// table, Story &amp; Info) pops this screen too, but the editor stays in the chain beneath it:
+        /// keep the cursor, trackers and focus so closing it lands back where the player was (the
+        /// grid cell, or the toolbar button that opened it). Leaving the reactor starts over.</summary>
         public override void OnPop()
         {
+            _covered = false;
             foreach (var s in GameState.ScreenStack())
-                if (s is Class77 e && ReferenceEquals(e.reactor_0, _reactor)) return;
+                if (s is Class77 e && ReferenceEquals(e.reactor_0, _reactor)) { _covered = true; return; }
             _reactor = null;
         }
+
+        private bool _covered;
+
+        public override bool KeepStateOnPop => _covered;
     }
 }

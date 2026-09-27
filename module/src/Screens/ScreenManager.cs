@@ -201,6 +201,7 @@ namespace SpeechChem.Screens
             Register(new DeleteProfileScreen());
             Register(new TitleMessageScreen());
             Register(new Reactor.ReactorEditorScreen());
+            Register(new PeriodicTableScreen());
             Register(new ShipLostScreen());
             Register(new CreditsScreen());
             Register(new EpilogueScreen());

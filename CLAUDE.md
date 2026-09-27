@@ -470,7 +470,11 @@ bonds — BondInstruction → Class668.smethod_1 bonds immediately over the conn
 (Class668.smethod_0), so a BondBoard snapshot is diffed per pair: "bonded Fluorine at 2, 6 and
 Fluorine at 3, 6, single bond", "… now double bond", "unbonded …", "could not bond …" (the game's
 failure flash: atoms full or already triple), "nothing to bond / unbond";
-any heading change "blue: heading up" — an arrow the waldo already follows logs nothing), wall stops
+any heading change "blue: heading up" — an arrow the waldo already follows logs nothing; SENSOR
+(SensorInstruction.vmethod_7 branches when any Class673 has the trigger element above it,
+method_10): "sensed Nickel, heading down" on a match — also when already heading that way, which
+the waldo alone can't show — else "sensed Carbon" / "sensed nothing", the atom the sensor saw;
+verified live 2026-09-27 on a `custom` test puzzle, all three cases), wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,
@@ -501,7 +505,8 @@ annotations, ResearchNet). A grid by group: 18 columns, periods 1-7, lanthanides
 groups 4-17, the unidentified-element strip (200-203) when bool_1. Blank cells keep columns aligned
 (vertical nav is index-based); raw edges make every arrow jump to the nearest element that way. Cell:
 name, symbol, number, max bonds, "in this reactor's inputs" (hashSet_0); Shift+Backspace period/group.
-Picker Enter = action_0(new Atom(e)) + method_1(null) + click sound. UNTESTED live: picker mode.
+Picker Enter = action_0(new Atom(e)) + method_1(null) + click sound. Picker verified live 2026-09-27
+(sensor "Change Trigger Element": opens on Carbon, Enter picks, closes, focus back on the cell).
 
 ## 19. Story / Training / Performance (`Screens/StoryInfoScreen.cs`, `Patches/StoryCapture.cs`)
 Everything is glyph Scenes and the shipping exe's literals are ENCRYPTED (no IL scanning). Story entry

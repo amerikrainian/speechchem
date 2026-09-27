@@ -262,12 +262,30 @@ namespace SpeechChem.Patches
                 if (w.bool_4) return before.Sync ? null : Loc.T("run.waiting", new { what = label });
                 return label;
             }
+            if (i is SensorInstruction sensor)
+            {
+                // SensorInstruction.vmethod_7 branches when any sensor has the trigger element above
+                // it (method_10) and otherwise does nothing — so a match while already heading that
+                // way and a miss look alike on the waldo; say which it was.
+                redirected = true;
+                if (sensor.method_10())
+                    return Loc.T("run.sensed", new { atom = sensor.method_8().method_0(), dir = Heading(w.vector2i_1) });
+                return Loc.T("run.sensed.miss", new { atom = SensedAtom(r) ?? Loc.T("run.sensed.nothing") });
+            }
             if (turned && i.vmethod_5() != Enum153.None)
             {
                 redirected = true;
                 return Loc.T("run.turned", new { what = label, dir = Heading(w.vector2i_1) });
             }
             return label;
+        }
+
+        /// <summary>The atom above the reactor's sensor (Class673.method_7), by name; null when none.</summary>
+        private static string SensedAtom(SpaceChem.Reactor.Reactor r)
+        {
+            foreach (var member in r.method_0())
+                if (member is Class673 s && s.method_7() is Atom atom) return atom.method_0();
+            return null;
         }
 
         // ---- bonds: BondInstruction.vmethod_7 → Class668.smethod_1 changes bonds immediately, pair

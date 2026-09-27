@@ -158,7 +158,15 @@ SDL_TEXTINPUT event — the game's real typing path; the navigator's echo sees i
 don't update; use it to test what the game receives, e.g. that suppression blocks Enter),
 `profiles` (the profile set, `*` = current), `switchprofile` (main menu's Switch Profile),
 `instrmenu` (a control instruction's context-menu labels: placed on the first empty red cell of the
-open, stopped reactor for the read, then removed and forgotten).
+open, stopped reactor for the read, then removed and forgotten),
+`custom <json>` / `custom clean` (Dev/CustomPuzzle — THE MECHANICS TEST BENCH: opens a research
+puzzle from a journal.json-style level object, e.g. `has-fuser`, `bonder-count`, input/output molecule
+strings `name;formula;` + one `x y Z right down` token per atom, under the fixed id
+`custom-speechchem-test`, the way a journal card opens; `custom clean` (level closed first — leave with
+`tolevelselect`) wipes that id's saved solution with the game's `method_74` and its `Level` status row;
+the module references the game's System.Data.SQLite compile-only for that one statement). Put the
+body in a file and `curl --data-binary @file` (JSON quoting). Only research puzzles: production and
+sandbox need the pipeline / defense screens.
 Profile tests WRITE THE SAVE DATABASE (`%LOCALAPPDATA%\Zachtronics Industries\SpaceChem\.locals`):
 create throwaway profiles and delete them again. Grow it with each screen
 (Echopunks' AuditProbe is the model). `/eval`, `/screen`, `/gui`, `/probe`, `/reload` run on the main

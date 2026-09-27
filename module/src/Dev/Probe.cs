@@ -31,6 +31,7 @@ namespace SpeechChem.Dev
     ///   tolevelselect      leave the open level through the game's own return-to-level-select
     ///   instrmenu          the context-menu labels of a control instruction (C, down), placed on the
     ///                      first empty red cell of the open reactor for the read, then removed
+    ///   custom &lt;json&gt;|clean  open a test research puzzle / wipe its saved solution (CustomPuzzle)
     /// </summary>
     internal static class Probe
     {
@@ -53,6 +54,7 @@ namespace SpeechChem.Dev
                     Class53.smethod_8(true, false, false);
                     return "returned to level select\n";
                 case "instrmenu": return InstrMenu();
+                case "custom": return CustomPuzzle.Run(argument);
                 case "switchprofile":
                 {
                     // The main menu's "Switch Profile" button handler (the picker only shows at boot

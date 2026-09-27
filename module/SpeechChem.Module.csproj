@@ -44,6 +44,12 @@
       <HintPath>..\game\SpaceChem-deob.ref.exe</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- The game's own SQLite (compile-only, nothing shipped): the DEBUG test-puzzle cleanup
+         (Dev/CustomPuzzle) runs one statement on the game's save connection. -->
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\game\System.Data.SQLite.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <!-- In-box framework assembly (nothing shipped): locale JSON parsing. -->
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>

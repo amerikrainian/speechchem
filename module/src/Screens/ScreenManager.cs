@@ -145,6 +145,10 @@ namespace SpeechChem.Screens
         public static void Initialize()
         {
             if (_registered.Count > 0) return;
+            Register(new ProfilePickerScreen());
+            Register(new NewProfileScreen());
+            Register(new DeleteProfileScreen());
+            Register(new TitleMessageScreen());
             Register(new ShipLostScreen());
             Register(new CreditsScreen());
             Register(new EpilogueScreen());

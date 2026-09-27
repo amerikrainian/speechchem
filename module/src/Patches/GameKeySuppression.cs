@@ -20,8 +20,15 @@ namespace SpeechChem.Patches
     /// applies while the focused screen CapturesRawInput, on unmodeled screens (the game must stay
     /// fully playable), or with focus mode off.
     ///
-    /// Not covered yet: text fields receive keys through Class185.vmethod_9/10/11 (routed to the
-    /// focused Class54 widget) rather than this facade — the first text-entry screen adds that seam.
+    /// SECOND SEAM — widget screens. Class54 screens (menus, dialogs, text fields) also get keys
+    /// through the engine's key-event path: Class185.vmethod_9 → the top Class54's method_9, which
+    /// queues the press for its widget tree (GClass8: the screen's imethod_0 first — Escape cancels,
+    /// Enter confirms some dialogs — then the focused widget, e.g. a text field's Enter/Backspace).
+    /// A prefix on method_9 drops the same keys before they are queued. Characters travel separately
+    /// (SDL text input → method_11) and are never touched, so typing always reaches the game.
+    ///
+    /// While a text-entry node is focused, Backspace belongs to the game's field (the navigator
+    /// stands its own Backspace binding down), so it passes both seams.
     /// </summary>
     internal static class GameKeySuppression
     {
@@ -48,6 +55,7 @@ namespace SpeechChem.Patches
         };
 
         private const int EscapeScancode = 41;
+        private const int BackspaceScancode = 42;
 
         public static void Apply(Harmony harmony)
         {
@@ -57,6 +65,8 @@ namespace SpeechChem.Patches
                     prefix: new HarmonyMethod(typeof(GameKeySuppression), nameof(PressedPrefix)));
                 harmony.Patch(Expr.MethodOf(() => Class259.smethod_5(default(Keys))),
                     prefix: new HarmonyMethod(typeof(GameKeySuppression), nameof(HeldPrefix)));
+                harmony.Patch(Expr.MethodOf(() => default(Class54).method_9(default(Keys), false)),
+                    prefix: new HarmonyMethod(typeof(GameKeySuppression), nameof(QueuePrefix)));
                 Log.Info("[patch] game key suppression armed");
             }
             catch (Exception ex) { Log.Error("[patch] key suppression failed to apply", ex); }
@@ -71,6 +81,7 @@ namespace SpeechChem.Patches
                 var cur = Screens.ScreenManager.Current;
                 if (cur == null || cur.CapturesRawInput) return false;
                 if (scancode == EscapeScancode) return cur.ModalCapturesEscape;
+                if (scancode == BackspaceScancode && UI.Navigation.TextEntryFocused) return false;
                 return Keys.Contains(scancode) && !cur.PassKeyToGame(scancode);
             }
             catch { return false; }
@@ -90,5 +101,8 @@ namespace SpeechChem.Patches
             __result = false;
             return false;
         }
+
+        // Class54.method_9(key, isRepeat): void — skipping it simply never queues the press.
+        private static bool QueuePrefix(Keys __0) => !Suppressed((int)__0);
     }
 }

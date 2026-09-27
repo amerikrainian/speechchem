@@ -22,6 +22,10 @@ namespace SpeechChem.Dev
     ///   key &lt;action id&gt;   dispatch a registered input action (ui.down, ui.activate, …) through the
     ///                      navigator exactly as its key binding would
     ///   click              push a synthetic left click (what the click gates use)
+    ///   type &lt;text&gt;        push the text as one SDL_TEXTINPUT event (the game's real typing path)
+    ///   profiles           the profile set as the picker enumerates it (* = current)
+    ///   rawkey &lt;scancode&gt;  push a raw SDL key press to the GAME (bypasses the mod's own input)
+    ///   switchprofile      press the main menu's Switch Profile (opens the profile picker)
     /// </summary>
     internal static class Probe
     {
@@ -34,7 +38,19 @@ namespace SpeechChem.Dev
                 case "pop": return GameApi.PopScreen() ? "popped\n" : "[pop failed]\n";
                 case "key": return Key(argument);
                 case "click": return SyntheticClick.Click() ? "click queued\n" : "[click refused]\n";
-                default: return "commands: screens | push shiplost|credits|epilogue | pop | key <action id> | click\n";
+                case "type": return SdlNative.PushText(argument) ? "typed: " + argument + "\n" : "[type refused]\n";
+                case "profiles": return Profiles();
+                case "rawkey": return RawKey(argument);
+                case "switchprofile":
+                {
+                    // The main menu's "Switch Profile" button handler (the picker only shows at boot
+                    // when no profile exists).
+                    var menu = GameApi.TopScreen() as SpaceChem.MainMenuEditor;
+                    if (menu == null) return "[main menu is not the top screen]\n";
+                    menu.method_25();
+                    return "switch profile pressed\n";
+                }
+                default: return "commands: screens | push shiplost|credits|epilogue | pop | key <action id> | click | type <text> | profiles\n";
             }
         }
 
@@ -59,6 +75,27 @@ namespace SpeechChem.Dev
                 default: return "push what? shiplost | credits | epilogue\n";
             }
             return GameApi.PushScreen(screen) ? "pushed " + what + "\n" : "[push failed]\n";
+        }
+
+        // A raw SDL key press+release straight into the game's event queue. It reaches the GAME's key
+        // paths (and our suppression seams) but not the mod's own input, which reads SDL's keyboard
+        // state array — SDL_PushEvent does not update that. Tests what the game sees for a key.
+        private static string RawKey(string arg)
+        {
+            int scancode;
+            if (!int.TryParse((arg ?? "").Trim(), out scancode)) return "rawkey <scancode>\n";
+            bool ok = SdlNative.PushKey(scancode, 0, down: true) && SdlNative.PushKey(scancode, 0, down: false);
+            return ok ? "pushed scancode " + scancode + "\n" : "[rawkey refused]\n";
+        }
+
+        private static string Profiles()
+        {
+            var sb = new StringBuilder();
+            var current = Impeller.Locals.smethod_0();
+            foreach (var p in Impeller.Locals.smethod_5())
+                sb.Append(p == current ? "* " : "  ").Append(p.string_0).Append(" | rank ").Append(p.method_0())
+                  .Append(" | ").Append(p.method_2().ToString()).Append('\n');
+            return sb.Length == 0 ? "(no profiles)\n" : sb.ToString();
         }
 
         private static string Key(string id)

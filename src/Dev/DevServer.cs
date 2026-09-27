@@ -7,7 +7,7 @@ using System.Threading;
 namespace SpeechChem.Dev
 {
     /// <summary>
-    /// Dev-only in-process driver, gated behind the SPEECHCHEM_DEV env var (or a marker file). Exposes a
+    /// Dev-only in-process driver, ON by default in Debug builds (SPEECHCHEM_DEV=0 turns it off). Exposes a
     /// loopback HTTP server so an external driver (Claude, curl) can introspect and drive the live mod/game
     /// while it runs — the test harness copied over from the WrathAccess architecture, trimmed to what the
     /// SpaceChem mod needs:
@@ -29,8 +29,8 @@ namespace SpeechChem.Dev
     /// <see cref="Pump"/> (called once per frame from the Class185.vmethod_3 prefix) executes it. /say and
     /// /speech are thread-safe and answer directly off the HTTP thread.
     ///
-    /// This whole subsystem is compiled only in DEBUG (#if DEBUG) — a Release build has none of it. Even in
-    /// Debug it stays inert unless SPEECHCHEM_DEV=1 (or the marker file exists).
+    /// This whole subsystem is compiled only in DEBUG (#if DEBUG) — a Release build has none of it. In
+    /// Debug it starts with every launch unless SPEECHCHEM_DEV=0.
     /// </summary>
     internal sealed class DevServer
     {
@@ -41,17 +41,22 @@ namespace SpeechChem.Dev
         public const string MarkerFile = "devserver.enable"; // in the working dir (the game folder)
         private const int DefaultPort = 8773; // WotR uses 8771, Echopunks 8772; keep ours distinct.
 
+        // ON by default in Debug builds (user decision, 2026-09-27: a plain Steam launch of a dev
+        // build should come up drivable). SPEECHCHEM_DEV=0 opts out. Release builds compile none of
+        // this, so shipped zips never listen. The marker file is kept as an explicit record only.
         private static bool DevEnabled(out string how)
         {
-            how = null;
-            if (Environment.GetEnvironmentVariable(EnableEnv) == "1") { how = "env"; return true; }
+            string env = Environment.GetEnvironmentVariable(EnableEnv);
+            if (env == "0") { how = "disabled by " + EnableEnv + "=0"; return false; }
+            if (env == "1") { how = "env"; return true; }
             try
             {
                 if (System.IO.File.Exists(System.IO.Path.Combine(Environment.CurrentDirectory, MarkerFile)))
                 { how = "marker"; return true; }
             }
             catch { }
-            return false;
+            how = "debug default";
+            return true;
         }
 
         private sealed class Job
@@ -70,7 +75,7 @@ namespace SpeechChem.Dev
         public void Start()
         {
             string how;
-            if (!DevEnabled(out how)) return;
+            if (!DevEnabled(out how)) { Log.Info("Dev server off (" + how + ")."); return; }
 
             int port = DefaultPort;
             string p = Environment.GetEnvironmentVariable(PortEnv);

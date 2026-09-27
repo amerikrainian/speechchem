@@ -83,17 +83,29 @@ references to shipping names at load (Mono.Cecil, `src/Modularity/GameRefRemappe
   dismiss themselves), `smethod_7()` enumerates top-down. `vmethod_2(Enum109)` = per-frame update,
   `vmethod_3(SpriteBatch)` = draw. `Class54 : Class53` = widget-tree editors (`GClass8` tree,
   `CompositeWidget`, buttons from `Class203.smethod_4/5/7`) — promising for a generic reader.
+- **Widget screens rebuild on regaining the top**: `Class54.method_6` runs `vmethod_5` (for
+  TitleScreenEditors: rebuild the whole widget tree from `vmethod_8`) the first update after the
+  screen becomes the top again; `Class54.bool_1` = "built since regaining the top". A rebuild makes
+  NEW widgets (the profile-name field comes back empty after the game's error box). Modeled screens
+  over Class54s read only once `bool_1` is set (`ProfileUi.Settled<T>`).
 - **Input facade** `Class259` (static, per-frame snapshot): `bool_0` = left mouse pressed this frame,
   `bool_4` = left held, `bool_8` = right held; `smethod_3/4(Keys)` = just pressed, `smethod_5(Keys)`
-  = held. `Impeller.Keys` values are **SDL SCANCODES** (Enter 40, Escape 41, arrows 79–82). Text
-  fields get keys through `Class185.vmethod_9/10/11` → the focused `Class54` widget instead.
+  = held. `Impeller.Keys` values are **SDL SCANCODES** (Enter 40, Escape 41, arrows 79–82).
+- **Widget key path** (the second channel): the event pump calls `Class185.vmethod_9/10/11`, which
+  forward to the top Class54's `method_9` (press, with repeat flag) / `method_10` (release) /
+  `method_11` (character from SDL_TEXTINPUT). They queue into its `GClass8` widget tree: a press goes
+  first to the SCREEN's `imethod_0` (TitleScreenEditor dialogs: Escape = cancel; the message box
+  `Class71`: Escape/Enter = close), then to the focused widget (`GClass16` text field: Enter =
+  submit, Backspace = delete, 12-character cap, font-filtered characters). `GClass15` buttons are
+  mouse-only: press = `Class428.class14_4` click sound + the action.
 - **Localization**: `Class323.smethod_0(key)` / `smethod_1(key, comment)` → `Class239` tables
   (`lang\<code>`); keys are the English text; display-font strings pass the comment
   "ENGLISH ALPHABET ONLY". Story/journal prose: `Class177.smethod_1()[sectionKey]` →
   `Class248(string_0 title, string_1 body)` from `text\<lang>.text`.
-- **First screen after boot**: `Class75 : TitleScreenEditor` over `MainMenuEditor` — the PROFILE
-  PICKER (up to 3 profiles: name + "Last Played", an X delete button each, "New Profile" slots).
-  Not modeled yet — it is the next screen a blind player meets.
+- **Profiles**: `MainMenuEditor.vmethod_4` auto-selects the first profile of `Locals.smethod_5()`
+  (a HashSet of `Class436`: `string_0` name, `method_0()` rank int → `((Enum105)r).smethod_1()` rank
+  title, `method_2()` last played); only with NO profile does it push the picker `Class75`. Otherwise
+  the picker opens from the main menu's "Switch Profile" (`MainMenuEditor.method_25`). See §10.
 
 ## 5. Build & deploy
 ```
@@ -121,8 +133,9 @@ Verified live: Prism picks NVDA in-process. `PrismNative` MUST declare
 by each SANDBOX generation. Game screens are logged by DEOB name.
 
 ## 7. Dev loop (DEBUG builds)
-Set `SPEECHCHEM_DEV=1` (or drop `devserver.enable` in the game folder) and launch. Loopback server
-on `127.0.0.1:8773` (`SPEECHCHEM_DEV_PORT` overrides; WotR 8771, Echopunks 8772):
+The dev server starts with EVERY launch of a Debug build (a plain Steam launch included —
+user decision 2026-09-27); `SPEECHCHEM_DEV=0` turns it off. Release builds contain none of it.
+Loopback server on `127.0.0.1:8773` (`SPEECHCHEM_DEV_PORT` overrides; WotR 8771, Echopunks 8772):
 
 | Route | Purpose |
 |---|---|
@@ -138,7 +151,13 @@ on `127.0.0.1:8773` (`SPEECHCHEM_DEV_PORT` overrides; WotR 8771, Echopunks 8772)
 
 Probe commands: `screens` (chain + modeled screen + focused node), `push shiplost|credits|epilogue`,
 `pop`, `key <action id>` (dispatches e.g. `ui.down`/`ui.activate` through the navigator exactly as the
-key binding would — no window focus needed), `click` (synthetic left click). Grow it with each screen
+key binding would — no window focus needed), `click` (synthetic left click), `type <text>` (one
+SDL_TEXTINPUT event — the game's real typing path; the navigator's echo sees it), `rawkey <scancode>`
+(a raw SDL key press to the GAME only — the mod's input reads SDL's state array, which pushed events
+don't update; use it to test what the game receives, e.g. that suppression blocks Enter),
+`profiles` (the profile set, `*` = current), `switchprofile` (main menu's Switch Profile).
+Profile tests WRITE THE SAVE DATABASE (`%LOCALAPPDATA%\Zachtronics Industries\SpaceChem\.locals`):
+create throwaway profiles and delete them again. Grow it with each screen
 (Echopunks' AuditProbe is the model). `/eval`, `/screen`, `/gui`, `/probe`, `/reload` run on the main
 thread (pumped from the tick), so they time out during the splash and transitions.
 
@@ -182,7 +201,32 @@ frames later (position is irrelevant: the engine tracks the cursor from motion e
   are the story bodies from `Class177`. Continue sets `float_0` past the end so the card's own next
   update pops it. All 9 sections read; finish verified.
 
-## 10. Hard rules (inherited from Echopunks — same reasons)
+## 10. Profile flow (`module/src/Screens/ProfileScreens.cs`) — verified live 2026-09-27
+Four TitleScreenEditor overlays, all gated on `ProfileUi.Settled<T>` (see §4) and all with Escape
+native. Buttons replicate the GClass15 press (click sound + handler).
+- `ProfilePickerScreen` over `Class75` "Select a User Profile": three slot rows, each speaking its
+  own "n of 3" (SpeaksOwnPosition — the builder would count a row's cells, or the New Profile rows
+  among themselves). Profile slot: "name, button, rank, Last Played: date"; Right = the drawn X as a
+  "Delete" button (mod label — the X is a pictograph), also Backspace on the slot; Enter = the game's
+  select (`method_20`: make current, load, close → "Main menu"). Empty slot: "New Profile"
+  (`method_18`). First three profiles in the live set's enumeration order, like the draw.
+  KeepStateOnPop, so focus survives the dialogs.
+- `NewProfileScreen` over `Class72`: the field is a TextEntry node over the game's GClass16
+  (TextIdentity = the widget instance, so a rebuild re-baselines instead of echoing a deletion);
+  typing and Backspace reach the game natively; one vertical column with no counts (name → Create
+  Profile → Cancel → notice; user layout). Enter on the field or "Create Profile" = `method_19`
+  (validates; empty/duplicate names open `Class71`, then the game REBUILDS the dialog, clearing the
+  field — faithful). Cancel = `method_18`. The public-name notice is a text row.
+- `DeleteProfileScreen` over `Class73`: focus starts on Cancel; "Delete Profile" = `method_19`
+  (the game renames the save to `NNN.user-deleted`).
+- `TitleMessageScreen` over `Class71` (any title-screen message box): arrival speaks title + text,
+  focus on Okay.
+- SUPPRESSION SEAM 2 (`GameKeySuppression`): a prefix on `Class54.method_9` drops our nav keys before
+  the widget queue, so Enter never acts twice (the field's own Enter would create the profile, then
+  ours would hit "already exists"); Backspace passes both seams while a TextEntry node is focused.
+  Verified with `rawkey`: raw Enter blocked, raw Backspace deletes a character.
+
+## 11. Hard rules (inherited from Echopunks — same reasons)
 - Never commit or ship game code or anything derived from the game's binaries (`game/` stays
   gitignored); the shipped namemap carries name pairs only.
 - Never crash the game: every hook body catches everything; Bootstrap swallows everything.
@@ -198,14 +242,15 @@ frames later (position is irrelevant: the engine tracks the cursor from motion e
 - Keep `module/src/UI/Graph` BCL-pure.
 - Never apply a game Harmony patch before init (first-tick arming).
 
-## 11. Roadmap
+## 12. Roadmap
 1. (done) Injection under CLR 4 in the SANDBOX domain, typed access with publicize +
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. Profile picker (`Class75`), then the main menu (`MainMenuEditor` / `TitleScreenEditor` widget
-   tree) — likely a generic reader for `Class54` widget trees.
+4. (done) Profile flow (§10). Next: the main menu (`MainMenuEditor`: news pane with < > paging,
+   More Information, Start Game, Challenges, Switch Profile, Options, Credits, Quit).
+   A generic reader for `Class54` widget trees may pay off here.
 5. Level select, research/production level editors (reactor grid + instructions, pipeline).
 6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
    REPLACEMENT must be backed up and restored on uninstall).
-7. Text-entry seam (`Class185.vmethod_9/10/11`) for profile names and ResearchNet.
+7. (done for profiles) Text entry over GClass16; reuse for ResearchNet fields.

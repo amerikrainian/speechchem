@@ -79,6 +79,34 @@ namespace SpeechChem.Game
             return PushMouseEventRaw(ref ev) >= 1;
         }
 
+        public const uint TextInputEvent = 0x303;       // SDL_TEXTINPUT (771)
+
+        // SDL_TextInputEvent view of the same union: type, timestamp, windowID, char text[32] (UTF-8).
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        private struct TextEvent
+        {
+            public uint Type;
+            public uint Timestamp;
+            public uint WindowId;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public byte[] Text;
+        }
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "SDL_PushEvent")]
+        private static extern int PushTextEventRaw(ref TextEvent ev);
+
+        /// <summary>Deposit a synthetic SDL_TEXTINPUT carrying <paramref name="text"/> (at most 31 UTF-8
+        /// bytes) — the channel the game's pump turns into per-character vmethod_11 calls, exactly as
+        /// typing does. Dev/test use (the probe's "type" command).</summary>
+        public static bool PushText(string text)
+        {
+            var bytes = new byte[32];
+            var utf8 = System.Text.Encoding.UTF8.GetBytes(text ?? "");
+            Array.Copy(utf8, bytes, Math.Min(utf8.Length, 31));
+            var ev = new TextEvent { Type = TextInputEvent, WindowId = 1, Text = bytes };
+            return PushTextEventRaw(ref ev) >= 1;
+        }
+
         // SDL_KeyboardEvent view of the same union.
         [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct KeyEvent

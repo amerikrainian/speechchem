@@ -27,7 +27,9 @@ namespace SpeechChem.Screens.Pipeline
             {
                 int index = i++;
                 var output = kv.Value;
-                b.AddItem(PortId(d, true, index), Cell(() => OutputLine(Model, d, output, index)));
+                var cell = Cell(() => OutputLine(Model, d, output, index));
+                cell.OnActivate = () => StartDraw(output.pipeDraggable_0); // Enter draws this output's pipe
+                b.AddItem(PortId(d, true, index), cell);
             }
         }
 

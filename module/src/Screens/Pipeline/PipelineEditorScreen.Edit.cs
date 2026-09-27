@@ -55,11 +55,20 @@ namespace SpeechChem.Screens.Pipeline
         }
 
         /// <summary>Enter on a map cell: place the armed shelf type there.</summary>
+        /// <summary>Enter on a map cell: end drawing; else place the armed shelf type there; else,
+        /// on a pipe's end, start drawing that pipe.</summary>
         private void ActivateMapCell(int x, int y)
         {
-            if (_armed == null) return;
-            var template = _armed;
-            if (Place(template, new Vector2i(x, y))) _armed = null;
+            if (_drawPipe != null) { EndDraw(); return; }
+            if (_armed != null)
+            {
+                var template = _armed;
+                if (Place(template, new Vector2i(x, y))) _armed = null;
+                return;
+            }
+            var p = Model;
+            var pipe = p == null ? null : PipeEndingAt(p, new Vector2i(x, y));
+            if (pipe != null) StartDraw(pipe);
         }
 
         private static bool Running => (int)Class258.smethod_16() != 0;

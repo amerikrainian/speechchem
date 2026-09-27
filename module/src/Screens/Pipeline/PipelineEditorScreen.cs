@@ -59,6 +59,8 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.cut", Cut);
             yield return new ElementAction("screen.reactor.paste", Paste);
             yield return new ElementAction("screen.reactor.delete", () => Delete(FocusedComponent()));
+            yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
+            if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());
         }
 
         public override void Build(GraphBuilder b)
@@ -83,6 +85,7 @@ namespace SpeechChem.Screens.Pipeline
             if (pipeline == null) return;
             EnsurePipeline(pipeline);
             TrackMapCursor();
+            UpdateDraw();
             UpdateRunWatch();
         }
 
@@ -100,10 +103,12 @@ namespace SpeechChem.Screens.Pipeline
             _category = _item = -1;
             _armed = null;
             _cut = null;
+            _drawPipe = null;
         }
 
         public override void OnPop()
         {
+            EndDraw(quiet: true);
             _covered = false;
             foreach (var s in GameState.ScreenStack())
                 if (s is PipelineEditor e && ReferenceEquals(e.pipeline_0, _pipeline)) { _covered = true; return; }

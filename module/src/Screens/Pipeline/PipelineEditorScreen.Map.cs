@@ -39,7 +39,7 @@ namespace SpeechChem.Screens.Pipeline
                         ControlType = ControlTypes.Text,
                         Announcements = new[] { new NodeAnnouncement(() => MapReadout(cx, cy), kind: AnnouncementKinds.Label) },
                         SpeaksOwnPosition = true,
-                        OnSelect = () => { _cursorX = cx; _cursorY = cy; },
+                        OnSelect = () => { if (_drawPipe != null) DrawStep(cx, cy); _cursorX = cx; _cursorY = cy; },
                         OnActivate = () => ActivateMapCell(cx, cy),
                         OnSecondary = OpenMenu,
                         OnJumpEdge = first => JumpMapEdge(cy, first),
@@ -54,6 +54,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null) return false;
+            if (_drawPipe != null) return true; // no jumps while drawing: the cursor is the pipe's end
             FocusMapCell(first ? 0 : p.method_4().int_0 - 1, y);
             return true;
         }
@@ -85,6 +86,8 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null) return null;
+            if (_drawPipe != null && _drawStepCell.HasValue && _drawStepCell.Value.int_0 == x && _drawStepCell.Value.int_1 == y)
+                return _drawStep;
             var parts = new List<string> { PipelineText.Cell(new Vector2i(x, y)) };
             parts.AddRange(CellContents(p, new Vector2i(x, y)));
             return string.Join(", ", parts.ToArray());
@@ -184,7 +187,7 @@ namespace SpeechChem.Screens.Pipeline
         private void StepCategory(int delta)
         {
             var p = Model;
-            if (p == null) return;
+            if (p == null || _drawPipe != null) return;
             int n = CategoryNames.Length;
             _category = _category < 0 ? (delta > 0 ? 0 : n - 1) : ((_category + delta) % n + n) % n;
             _item = -1;
@@ -194,7 +197,7 @@ namespace SpeechChem.Screens.Pipeline
         private void StepItem(int delta)
         {
             var p = Model;
-            if (p == null) return;
+            if (p == null || _drawPipe != null) return;
             if (_category < 0) _category = 0;
             var cells = CategoryCells(p, _category);
             if (cells.Count == 0)

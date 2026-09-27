@@ -305,7 +305,23 @@ native (Continue).
 FrameLoop logs a repeating step failure once (per distinct exception) until the step recovers —
 the duplicate-id bug wrote ~2500 identical errors in a minute before this.
 
-## 14. Hard rules (inherited from Echopunks — same reasons)
+## 14. Options (`module/src/Screens/OptionsScreens.cs`) — verified live 2026-09-27
+`OptionsScreen` over `Class74` ("Settings", a TitleScreenEditor over the main menu): one vertical
+list, no counts (user layout), drawn order — Fullscreen / Keep Aspect Ratio (toggles: `Class475`
+`method_7`/`method_8`, Enum106 0 = on, `bool_1` = enabled; press = flip + click sound), Language
+(combo box over the cycling button: Enter = the click `method_21`; Left/Right cycle either way —
+backward mirrors method_21 onto `int_0`/`list_0` and relabels via `Class203.smethod_6`; names from
+`Class74.smethod_11`), Music / Sound volume (sliders: `Class478` `method_8`/`method_9` 0–1, 5% /
+25% snapped; a Sound change runs the slider's release action = the sample sound), Show Bonder
+Priority (toggle), Save Changes (`method_19`), Cancel (`method_20`). Nothing applies before Save; the
+dialog previews volumes live itself (`vmethod_6`). Escape native (Cancel); the dialog's Enter (Save)
+is suppressed while modeled. Verified: every value reads as drawn (screenshot), Cancel discards,
+Save with no change rewrites config.ini identically.
+UNTESTED: saving a CHANGED LANGUAGE — `Class184.method_13()` ends the main loop with "restart", so
+Program.Main unloads SANDBOX and runs a new one: the mod's per-domain reboot path (§1), never yet
+exercised live. Fullscreen/aspect changes re-create the window (`method_3`).
+
+## 15. Hard rules (inherited from Echopunks — same reasons)
 - Never commit or ship game code or anything derived from the game's binaries (`game/` stays
   gitignored); the shipped namemap carries name pairs only.
 - Never crash the game: every hook body catches everything; Bootstrap swallows everything.
@@ -321,15 +337,14 @@ the duplicate-id bug wrote ~2500 identical errors in a minute before this.
 - Keep `module/src/UI/Graph` BCL-pure.
 - Never apply a game Harmony patch before init (first-tick arming).
 
-## 15. Roadmap
+## 16. Roadmap
 1. (done) Injection under CLR 4 in the SANDBOX domain, typed access with publicize +
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. (done) Profile flow (§10), main menu (§11), level select (§12), challenges (§13). Next: Options
-   (`Class74` "Settings": Fullscreen / Keep Aspect Ratio / Show Bonder Priority toggles, Language,
-   music/sound sliders, Save Changes / Cancel), then StoryTrainingPerformanceEditor (the Story /
-   Training / Performance tabs every level opens with) before the editors themselves.
+4. (done) Profile flow (§10), main menu (§11), level select (§12), challenges (§13), options (§14).
+   Next: StoryTrainingPerformanceEditor (the Story / Training / Performance tabs every level opens
+   with), then the editors themselves.
 5. Level select, research/production level editors (reactor grid + instructions, pipeline).
 6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
    REPLACEMENT must be backed up and restored on uninstall).

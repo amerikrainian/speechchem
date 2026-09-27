@@ -41,6 +41,8 @@
 
   "value.selected": "selected",
   "value.unavailable": "unavailable",
+  "value.on": "on",
+  "value.off": "off",
   "value.percent": "{value} percent",
 
   "text.blank": "blank",

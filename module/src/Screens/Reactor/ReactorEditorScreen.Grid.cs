@@ -231,7 +231,7 @@ namespace SpeechChem.Screens.Reactor
             return Loc.T(left ? "reactor.laser.target" : "reactor.laser.product");
         }
 
-        /// <summary>A quantum tunnel's other end — a swap only works with exactly two tunnels
+        /// <summary>The tunnel this one is linked to (a swap moves atoms both ways) — a swap only works with exactly two tunnels
         /// (Class671.smethod_1), so only then is there one to name.</summary>
         private static string TunnelPartner(ReactorModel r, ReactorFeature f)
         {

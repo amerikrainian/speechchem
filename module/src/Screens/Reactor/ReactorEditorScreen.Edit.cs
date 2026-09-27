@@ -27,8 +27,9 @@ namespace SpeechChem.Screens.Reactor
         // (replacing what occupies that slot — user rule); Enter places the ARMED palette slot (one
         // shot); Delete removes the active colour's instructions in the cell or selection; Ctrl+X /
         // Ctrl+C / Ctrl+V cut, copy and paste them; Shift+arrows extend a rectangular selection;
-        // Shift+Enter opens the context menu: the cell's instruction menu (the game's right-click
-        // menu, item by item) or, on an empty cell, the Reactor Grid menu. ----
+        // Backspace on a grid cell (the secondary action, the right-click key) opens the context
+        // menu: the cell's instruction menu (the game's right-click menu, item by item) or, on an
+        // empty cell, the Reactor Grid menu. ----
 
         private static readonly int[] PaletteLetters =
         {
@@ -51,7 +52,6 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.select.down", () => ExtendSelection(0, 1));
             yield return new ElementAction("screen.reactor.select.left", () => ExtendSelection(-1, 0));
             yield return new ElementAction("screen.reactor.select.right", () => ExtendSelection(1, 0));
-            yield return new ElementAction("screen.context", OpenContextMenu);
         }
 
         private void ResetEditState()
@@ -341,7 +341,7 @@ namespace SpeechChem.Screens.Reactor
                 : Loc.T("reactor.edit.pasted", new { n = placed }), interrupt: true);
         }
 
-        // ---- context menu (Shift+Enter) ----
+        // ---- context menu (Backspace on the grid) ----
 
         private void OpenContextMenu()
         {

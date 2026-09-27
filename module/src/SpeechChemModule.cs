@@ -114,9 +114,7 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.select.down", "Extend selection down", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, shift: true).Repeating();
             Input.InputManager.Register("screen.reactor.select.left", "Extend selection left", Input.InputCategory.UI).AddBinding(Input.Scancode.Left, shift: true).Repeating();
             Input.InputManager.Register("screen.reactor.select.right", "Extend selection right", Input.InputCategory.UI).AddBinding(Input.Scancode.Right, shift: true).Repeating();
-            // The context-menu key everywhere (user rule, 2026-09-27): screens advertise "screen.context".
-            Input.InputManager.Register("screen.context", "Context menu", Input.InputCategory.UI)
-                .AddBinding(Input.Scancode.Return, shift: true).AddBinding(Input.Scancode.KpEnter, shift: true);
+            // Context menus live on ui.secondary (Backspace, the right-click key) — user rule, 2026-09-27.
 
             Input.InputManager.ActiveCategoriesProvider = () =>
                 new System.Collections.Generic.List<Input.InputCategory>(Screens.ScreenManager.ActiveInputCategories());

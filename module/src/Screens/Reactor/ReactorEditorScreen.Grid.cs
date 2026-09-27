@@ -46,6 +46,7 @@ namespace SpeechChem.Screens.Reactor
                         SpeaksOwnPosition = true,
                         OnSelect = () => { ClearSelection(); LandOnCell(cx, cy); },
                         OnActivate = () => ActivateCell(cx, cy),
+                        OnSecondary = OpenContextMenu,
                         OnTooltip = () => Speech.Tts.Speak(CellDetails(cx, cy), interrupt: true),
                         OnJumpEdge = first => JumpRowEdge(cy, first),
                     });

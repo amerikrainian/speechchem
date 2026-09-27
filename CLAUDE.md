@@ -345,7 +345,7 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
 - EDITING (user rules): palette letters place at the cursor in the ACTIVE colour, replacing the slot's
   occupant; Enter on a palette slot arms it, the next Enter on the grid places it (one-shot; Enter with
   nothing armed does nothing); Delete / Ctrl+X / Ctrl+C / Ctrl+V act on the active colour only; START
-  moves only via cut/paste; Shift+arrows = rectangular selection; Shift+Enter = the context menu (the
+  moves only via cut/paste; Shift+arrows = rectangular selection; Backspace (ui.secondary) = the context menu (the
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
   `Screens/ActionListScreen`. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
   1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape. NO single-step (the game has none — user rule).

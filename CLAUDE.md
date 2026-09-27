@@ -150,7 +150,7 @@ Loopback server on `127.0.0.1:8773` (`SPEECHCHEM_DEV_PORT` overrides; WotR 8771,
 | `POST /reload` | hot-swap the module from disk (build the module with the game running first) |
 | `POST /probe` | `command [arg]` → the live module's typed `SpeechChem.Dev.Probe` (DEBUG only) |
 
-Probe commands: `screens` (chain + modeled screen + focused node), `push shiplost|credits|epilogue`,
+Probe commands: `screens` (chain + modeled screen + focused node), `push shiplost|credits|epilogue|exitprompt|reactionerror|message|performance`,
 `pop`, `key <action id>` (dispatches e.g. `ui.down`/`ui.activate` through the navigator exactly as the
 key binding would — no window focus needed), `click` (synthetic left click), `type <text>` (one
 SDL_TEXTINPUT event — the game's real typing path; the navigator's echo sees it), `rawkey <scancode>`
@@ -327,7 +327,86 @@ UNTESTED: saving a CHANGED LANGUAGE — `Class184.method_13()` ends the main loo
 Program.Main unloads SANDBOX and runs a new one: the mod's per-domain reboot path (§1), never yet
 exercised live. Fullscreen/aspect changes re-create the window (`method_3`).
 
-## 15. Hard rules (inherited from Echopunks — same reasons)
+## 15. In-level dialogs (`Screens/DialogScreens.cs`, `Patches/DialogCapture.cs`) — verified live 2026-09-27
+MessageBoxEditor (Reaction Error, the exit prompt) and Class69 (the wrong-molecule dialog) as one
+vertical list, no counts (user layout): the text lines, reactor markers as "At x, y" (1-based), then the
+buttons. DialogCapture records what the game keeps only as widgets/Scenes (button labels, marker cells,
+the wrong molecule's produced/accepted molecules). Probe: `push exitprompt|reactionerror|message`.
+
+## 16. Reactor editor (`Screens/Reactor/ReactorEditorScreen.*.cs`) — verified live 2026-09-27
+Generic over every Class77 variant (research, production, disassembly, laser). Tab stops: Grid, Palette,
+Layers, Tools (shared `Common/ToolbarSection`), Molecules, Status (shared `Common/ProgressSection`),
+Tutorial, Run log. Game Tab rebound to L (switch active layer).
+- GRID: a cell reads bare "x, y" (1-based) FIRST, the zone on the first readout or when crossed, then
+  contents (red/blue instruction + arrow labels from `Game/ReactorText`, hardware feature, waldos and
+  atoms with bonds while running), "highlighted" (tutorial target), "selected". Empty cell =
+  coordinates only. C reads coordinates. Shift+Backspace = the game's tooltip text
+  (`Patches/TooltipCapture`, Class713.smethod_0 postfix). Home/End = row edges.
+- EDITING (user rules): palette letters place at the cursor in the ACTIVE colour, replacing the slot's
+  occupant; Enter on a palette slot arms it, the next Enter on the grid places it (one-shot; Enter with
+  nothing armed does nothing); Delete / Ctrl+X / Ctrl+C / Ctrl+V act on the active colour only; START
+  moves only via cut/paste; Shift+arrows = rectangular selection; Shift+Enter = the context menu (the
+  game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
+  `Screens/ActionListScreen`. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
+  1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape. NO single-step (the game has none — user rule).
+- QUERIES: N / M red / blue waldo (stopped: its START; running: cell, heading, holding, waiting text,
+  rotating, sync); Shift+N / Shift+M also jump the cursor (focus moves silently); Ctrl+N / Ctrl+M =
+  path trace (`Game/PathTrace`, mirrors Reactor.method_46/47: arrows turn, directed instructions branch,
+  START only on its own cell, a branch ends at the wall or a repeated cell+heading) as a list; Enter
+  jumps to the line's cell (deferred a frame: closing the list restores focus after the item runs).
+  P status, F1 repeat tutorial step.
+- CATEGORIES (user request): [ / ] cycle Instructions, Inputs, Outputs, Hardware, Waldos, Red program,
+  Blue program ("name, count"); , / . cycle items in READING ORDER (fixed by the board, never by the
+  cursor — the user asked for a stable order). Grid items move the cursor; an instruction item arms it
+  and just names it (no "armed" — user); waldo items read like N / M.
+- MOLECULES stop: input/output lines from the port annotations; Enter opens `Screens/MoleculeViewerScreen`
+  (a molecule as a navigable mini-grid, reusable anywhere a molecule is drawn).
+- COVERED BY ANOTHER GAME SCREEN (dialog, periodic table, Story & Info): the editor stays in the chain,
+  so OnPop keeps cursor, trackers and focus (KeepStateOnPop while covered) — closing returns to the
+  exact node (e.g. the toolbar button). Leaving the reactor starts over.
+- TEST HYGIENE: tests place instructions in the user's live save; always delete them and sweep all 80
+  cells afterwards (Pancakes baseline: red START at 5, 2 and blue START at 5, 7, both facing left). Never
+  let a test program complete a level: park the waldo against a wall instead of looping.
+
+## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
+Only events the game has (user rule): waldo steps (Class188.method_3: input, grab/drop, turns, waits
+reported once, sync, rotation; arrows logged but not spoken), outputs (Class578.vmethod_11 counter
+diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,
+run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed. The log is
+cleared when a run starts from stopped. GroupedLog (ported from Echopunks) keeps the whole run under
+a 10M-entry insurance cap; WindowedLogView is the reusable Tab stop: one region per cycle, a window of
+51 groups / 1200 rows re-centred on focus every rebuild, tail-follow when focus is elsewhere, Home/End
+= the whole log's ends.
+OVERRIDE TRAP (cost a game crash): `Expr.MethodOf(() => default(Sub).vmethod())` names the BASE
+declaration, so Harmony patches it for every subclass and a Sub-typed handler reads foreign fields
+(AccessViolation, uncatchable). Patch overrides through `Expr.OverrideOf(typeof(Sub), ...)`.
+Class578's counter dictionary may hold null values (outputs with no quota).
+
+## 18. Periodic table (`Screens/PeriodicTableScreen.cs`) — viewer verified live 2026-09-27
+Class76 (a Class53, not a widget screen): view mode (toolbar, enum123_0 0) and PICKER (1: sensors,
+annotations, ResearchNet). A grid by group: 18 columns, periods 1-7, lanthanides / actinides under
+groups 4-17, the unidentified-element strip (200-203) when bool_1. Blank cells keep columns aligned
+(vertical nav is index-based); raw edges make every arrow jump to the nearest element that way. Cell:
+name, symbol, number, max bonds, "in this reactor's inputs" (hashSet_0); Shift+Backspace period/group.
+Picker Enter = action_0(new Atom(e)) + method_1(null) + click sound. UNTESTED live: picker mode.
+
+## 19. Story / Training / Performance (`Screens/StoryInfoScreen.cs`, `Patches/StoryCapture.cs`)
+Everything is glyph Scenes and the shipping exe's literals are ENCRYPTED (no IL scanning). Story entry
+n = text-table key Keys[n] (StoryEntries lambdas in order), raw from `Class177.smethod_1()` (never
+invoke the lambdas: each builds the whole Scene and forces GC.Collect), cleaned of font markup
+([illustration] lines, the marks ↨ ← { } ●, the ↑ break). Training captions are recorded from
+ExtendedFont.method_5 while the entry's own factory (Class170.smethod_5..17) builds. The shown tab is
+tracked by postfixes on method_21/22/24 (inferred from the constructor rule after a hot reload).
+Stops: tabs (follow focus), entry (combo box over unlocked entries), text, [Performance] the three
+stats in ONE stop as columns (user rule: Left/Right switch stats landing on the caption, Up/Down walk
+rows), buttons. Histograms read like Echopunks' panels and show nothing the game doesn't (user rule):
+caption with the THIS / BEST numbers, then one row per non-empty bucket "lo to hi: N%" (bar height vs
+the tallest; "under 1%" for a drawn bar that rounds to 0), marker buckets tagged (marker x =
+clamp(v + 0.5)). Leaderboard view = the game's 11-row window around you. The view button flips the
+game's own Tab toggle (a setting) — flip it back after tests. Probe `push performance` (fake score;
+dismiss with `pop` — Continue would leave the level).
+
+## 20. Hard rules (inherited from Echopunks — same reasons)
 - Never commit or ship game code or anything derived from the game's binaries (`game/` stays
   gitignored); the shipped namemap carries name pairs only.
 - Never crash the game: every hook body catches everything; Bootstrap swallows everything.
@@ -342,16 +421,17 @@ exercised live. Fullscreen/aspect changes re-create the window (`method_3`).
 - `AssemblyVersion` stays 1.0.0.0 unless `deploy/SpaceChem.exe.config` changes in the same commit.
 - Keep `module/src/UI/Graph` BCL-pure.
 - Never apply a game Harmony patch before init (first-tick arming).
+- Patch a virtual OVERRIDE through `Expr.OverrideOf` (§17), never `Expr.MethodOf` alone.
 
-## 16. Roadmap
+## 21. Roadmap
 1. (done) Injection under CLR 4 in the SANDBOX domain, typed access with publicize +
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. (done) Profile flow (§10), main menu (§11), level select (§12), challenges (§13), options (§14).
-   Next: StoryTrainingPerformanceEditor (the Story / Training / Performance tabs every level opens
-   with), then the editors themselves.
-5. Level select, research/production level editors (reactor grid + instructions, pipeline).
+4. (done) Profile flow (§10), main menu (§11), level select (§12), challenges (§13), options (§14),
+   in-level dialogs (§15), reactor editor (§16) + run log (§17), periodic table (§18), Story / Training
+   / Performance (§19).
+5. Next (agreed order): the pipeline editor, defense levels, the ResearchNet builders.
 6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
    REPLACEMENT must be backed up and restored on uninstall).
 7. (done for profiles) Text entry over GClass16; reuse for ResearchNet fields.

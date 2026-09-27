@@ -477,7 +477,12 @@ the waldo alone can't show — else "sensed Carbon" / "sensed nothing", the atom
 verified live 2026-09-27 on a `custom` test puzzle, all three cases; FLIP-FLOP (ToggleInstruction,
 on custom research palettes: vmethod_7 branches when bool_3 is set and clears it, else sets it —
 the run resets it): "flip flop, heading down" / "flip flop, no branch", and during a run the cell
-reads "on" (next pass branches) / "off" (the game marks the cell while off); verified live), wall stops
+reads "on" (next pass branches) / "off" (the game marks the cell while off); verified live;
+FUSION (Class662 fires every Class672: projectile atom on the laser's left cell, target on the
+right; both present and atomic numbers summing to 109 or less → projectile removed, target becomes
+the sum, else nothing): the target cell's element is diffed — "fusion 2, 1, Helium" / "fusion, no
+effect"; the grid names the laser's cells "projectile" / "target" (the game's tooltip words);
+verified live, including a cut/paste of the laser), wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,

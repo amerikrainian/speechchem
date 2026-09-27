@@ -183,7 +183,11 @@ namespace SpeechChem.Screens.Reactor
             AddColour(parts, r, x, y, ReactorText.Red, ReactorText.RedArrow, "reactor.red", allLayers);
             AddColour(parts, r, x, y, ReactorText.Blue, ReactorText.BlueArrow, "reactor.blue", allLayers);
             if (r.method_15(new Vector2i(x, y), (Enum114)ReactorText.Background) is ReactorFeature f)
+            {
                 parts.Add(ReactorText.FeatureLabel(f));
+                string role = LaserRole(r, f, x);
+                if (role != null) parts.Add(role);
+            }
             if (Live)
             {
                 // Waldos read short here — name and facing (user rule); the rest of their state is
@@ -199,6 +203,17 @@ namespace SpeechChem.Screens.Reactor
                 parts.AddRange(AtomsAt(r, x, y));
             }
             return parts;
+        }
+
+        /// <summary>Which of a two-cell laser's cells this is. Fusion (Class672): the game's tooltip
+        /// puts the projectile atom on the left and the target on the right.</summary>
+        private static string LaserRole(ReactorModel r, ReactorFeature f, int x)
+        {
+            if (!(f is Class672)) return null;
+            var at = r.method_19(f);
+            if (!at.HasValue) return null;
+            bool left = at.Value.vector2i_0.int_0 == x;
+            return Loc.T(left ? "reactor.laser.projectile" : "reactor.laser.target");
         }
 
         private static void AddColour(List<string> parts, ReactorModel r, int x, int y, int layer, int arrowLayer, string colourKey, bool allLayers)

@@ -121,6 +121,15 @@ namespace SpeechChem.Patches
             public int Molecules;
             public Instruction Instruction;
             public BondBoard Bonds; // only under a bond instruction
+            public List<LaserShot> Lasers; // only under a laser instruction
+        }
+
+        /// <summary>One laser's cells before its instruction ran: the laser (top-left = its left
+        /// cell) and the element on the cell whose atom changes when it works.</summary>
+        private struct LaserShot
+        {
+            public Vector2i Left;
+            public Element? Before;
         }
 
         private static void BeforeWaldo(Class188 __instance, out WaldoState __state)
@@ -139,6 +148,7 @@ namespace SpeechChem.Patches
                 __state.Molecules = r.class201_0.Count;
                 __state.Instruction = r.method_15(cell, __instance.enum114_0) as Instruction;
                 if (__state.Instruction is BondInstruction) __state.Bonds = BondBoard.Of(r);
+                if (__state.Instruction is Class662) __state.Lasers = Shots<Class672>(r, right: true);
             }
             catch { }
         }
@@ -262,6 +272,7 @@ namespace SpeechChem.Patches
                 if (w.bool_4) return before.Sync ? null : Loc.T("run.waiting", new { what = label });
                 return label;
             }
+            if (i is Class662 && before.Lasers != null) return FusionEffect(r, before.Lasers);
             if (i is SensorInstruction sensor)
             {
                 // SensorInstruction.vmethod_7 branches when any sensor has the trigger element above
@@ -285,6 +296,50 @@ namespace SpeechChem.Patches
                 return Loc.T("run.turned", new { what = label, dir = Heading(w.vector2i_1) });
             }
             return label;
+        }
+
+        // ---- lasers: the instruction fires every laser of its kind in the reactor. Fusion
+        // (Class672.method_7): projectile atom on the left cell, target on the right; when both are
+        // there and their atomic numbers sum to 109 or less, the projectile is removed and the target
+        // becomes the sum — otherwise nothing happens. So the target cell's element is diffed. ----
+
+        private static List<LaserShot> Shots<T>(SpaceChem.Reactor.Reactor r, bool right) where T : ReactorFeature
+        {
+            var shots = new List<LaserShot>();
+            foreach (var member in r.method_0())
+            {
+                if (!(member is T laser)) continue;
+                var at = r.method_19(laser);
+                if (!at.HasValue) continue;
+                var left = at.Value.vector2i_0;
+                var cell = right ? new Vector2i(left.int_0 + 1, left.int_1) : left;
+                shots.Add(new LaserShot { Left = left, Before = AtomAt(r, cell)?.element_0 });
+            }
+            return shots;
+        }
+
+        private static string FusionEffect(SpaceChem.Reactor.Reactor r, List<LaserShot> shots)
+        {
+            var parts = new List<string>();
+            foreach (var shot in shots)
+            {
+                var target = new Vector2i(shot.Left.int_0 + 1, shot.Left.int_1);
+                var now = AtomAt(r, target);
+                if (now == null || !shot.Before.HasValue || now.Value.element_0 == shot.Before.Value) continue;
+                parts.Add(Loc.T("run.fusion", new { cell = CellText(target), atom = now.Value.method_0() }));
+            }
+            return parts.Count > 0 ? string.Join("; ", parts.ToArray()) : Loc.T("run.fusion.none");
+        }
+
+        private static string CellText(Vector2i c) => Loc.T("reactor.cell", new { x = c.int_0 + 1, y = c.int_1 + 1 });
+
+        /// <summary>The atom on a reactor cell (any molecule), or null.</summary>
+        private static Atom? AtomAt(SpaceChem.Reactor.Reactor r, Vector2i cell)
+        {
+            foreach (MoleculeSheet sheet in r.class201_0)
+                foreach (var kv in sheet.method_14())
+                    if (kv.Key.int_0 == cell.int_0 && kv.Key.int_1 == cell.int_1) return kv.Value;
+            return null;
         }
 
         /// <summary>The atom above the reactor's sensor (Class673.method_7), by name; null when none.</summary>

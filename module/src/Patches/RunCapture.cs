@@ -23,7 +23,7 @@ namespace SpeechChem.Patches
     ///   Class188.method_3  the per-cycle step of one waldo: runs the non-arrow instruction under it
     ///                      (vmethod_7), then the arrow. Prefix snapshots the waldo (held molecule,
     ///                      waiting / sync flags, heading) and the reactor's molecule count; postfix
-    ///                      diffs → "red: in alpha, took Oxygen", "red: grab, grabbed Oxygen",
+    ///                      diffs → "red: in alpha, took Oxygen", "red: grabbed Oxygen",
     ///                      "red: sync, waiting", "red: arrow down" (arrows are logged, not spoken).
     ///                      A wait is reported once when it starts, not every cycle it lasts; so is
     ///                      a rotation (two cycles: "red: rotate clockwise, rotated Oxygen").
@@ -155,12 +155,17 @@ namespace SpeechChem.Patches
             }
             if (i is GrabInstruction)
             {
+                // What happened, not the instruction's name (user rule): GrabInstruction.vmethod_7 —
+                // grab/drop toggles (method_8), grab (method_9) keeps a held molecule, drop
+                // (method_10) releases.
                 var after = w.moleculeSheet_0;
                 if (before.Held == null && after != null)
-                    return Loc.T("run.grabbed", new { what = label, molecule = MoleculeText.NameAndFormula(after.molecule_0) });
+                    return Loc.T("run.grabbed", new { molecule = MoleculeText.NameAndFormula(after.molecule_0) });
                 if (before.Held != null && after == null)
-                    return Loc.T("run.dropped", new { what = label, molecule = MoleculeText.NameAndFormula(before.Held.molecule_0) });
-                return Loc.T("run.nothing", new { what = label });
+                    return Loc.T("run.dropped", new { molecule = MoleculeText.NameAndFormula(before.Held.molecule_0) });
+                if (before.Held != null)
+                    return Loc.T("run.holding", new { molecule = MoleculeText.NameAndFormula(before.Held.molecule_0) });
+                return Loc.T(i.method_3() == 2 ? "run.drop.none" : "run.grab.none");
             }
             if (i is RotateInstruction)
             {
@@ -170,7 +175,7 @@ namespace SpeechChem.Patches
                 if (before.Rotating) return null;
                 if (w.bool_3 && w.moleculeSheet_0 != null)
                     return Loc.T("run.rotated", new { what = label, molecule = MoleculeText.NameAndFormula(w.moleculeSheet_0.molecule_0) });
-                return Loc.T("run.nothing", new { what = label });
+                return Loc.T("run.rotate.none");
             }
             if (i is Class663)
             {

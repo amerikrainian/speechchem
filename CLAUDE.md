@@ -156,7 +156,9 @@ key binding would — no window focus needed), `click` (synthetic left click), `
 SDL_TEXTINPUT event — the game's real typing path; the navigator's echo sees it), `rawkey <scancode>`
 (a raw SDL key press to the GAME only — the mod's input reads SDL's state array, which pushed events
 don't update; use it to test what the game receives, e.g. that suppression blocks Enter),
-`profiles` (the profile set, `*` = current), `switchprofile` (main menu's Switch Profile).
+`profiles` (the profile set, `*` = current), `switchprofile` (main menu's Switch Profile),
+`instrmenu` (a control instruction's context-menu labels: placed on the first empty red cell of the
+open, stopped reactor for the read, then removed and forgotten).
 Profile tests WRITE THE SAVE DATABASE (`%LOCALAPPDATA%\Zachtronics Industries\SpaceChem\.locals`):
 create throwaway profiles and delete them again. Grow it with each screen
 (Echopunks' AuditProbe is the model). `/eval`, `/screen`, `/gui`, `/probe`, `/reload` run on the main

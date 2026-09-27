@@ -2,6 +2,8 @@
 using System;
 using System.Linq;
 using System.Text;
+using SpaceChem;
+using SpaceChem.Reactor;
 using SpeechChem.Game;
 
 namespace SpeechChem.Dev
@@ -27,6 +29,8 @@ namespace SpeechChem.Dev
     ///   rawkey &lt;scancode&gt;  push a raw SDL key press to the GAME (bypasses the mod's own input)
     ///   switchprofile      press the main menu's Switch Profile (opens the profile picker)
     ///   tolevelselect      leave the open level through the game's own return-to-level-select
+    ///   instrmenu          the context-menu labels of a control instruction (C, down), placed on the
+    ///                      first empty red cell of the open reactor for the read, then removed
     /// </summary>
     internal static class Probe
     {
@@ -48,6 +52,7 @@ namespace SpeechChem.Dev
                     if (Class53.smethod_5<Class83>() == null) return "[no level on the stack]\n";
                     Class53.smethod_8(true, false, false);
                     return "returned to level select\n";
+                case "instrmenu": return InstrMenu();
                 case "switchprofile":
                 {
                     // The main menu's "Switch Profile" button handler (the picker only shows at boot
@@ -59,6 +64,45 @@ namespace SpeechChem.Dev
                 }
                 default: return "commands: screens | push shiplost|credits|epilogue | pop | key <action id> | click | type <text> | profiles\n";
             }
+        }
+
+        private static string InstrMenu()
+        {
+            var r = Class53.smethod_5<Class77>()?.reactor_0;
+            if (r == null) return "[no reactor open]\n";
+            if ((int)Class258.smethod_16() != 0) return "[reactor is running]\n";
+            var size = r.method_1();
+            ReactorBin? free = null;
+            for (int y = size.int_1 - 1; y >= 0 && free == null; y--)
+                for (int x = 0; x < size.int_0 && free == null; x++)
+                {
+                    var bin = new ReactorBin(new Impeller.Vector2i(x, y), (Enum114)ReactorText.Red);
+                    if (r.method_17(bin) == null) free = bin;
+                }
+            if (free == null) return "[no empty red cell]\n";
+            var member = new SpaceChem.Reactor.ControlInstruction(r, (Enum111)2, Enum153.Down);
+            var menu = SpaceChem.Reactor.Instruction.dictionary_1[member.GetType()];
+            var sb = new StringBuilder("placed control C down at ").Append(free.Value.vector2i_0.int_0 + 1).Append(", ").Append(free.Value.vector2i_0.int_1 + 1).Append('\n');
+            try
+            {
+                r.method_18(free.Value, member);
+                sb.Append("label: ").Append(ReactorText.Label(member)).Append('\n');
+                SpeechChem.Screens.Reactor.ReactorEditorScreen.SyncMenu(menu, member);
+                foreach (var component in menu.linkedList_0)
+                {
+                    if (!(component is SpaceChem.UI.MenuItem<SpaceChem.Reactor.Instruction> item)) continue;
+                    var label = SpeechChem.Screens.Reactor.ReactorEditorScreen.MenuItemLabel(item);
+                    if (label == null) continue;
+                    sb.Append("  ").Append(label()).Append(item.isSelectedFunc_0(member) ? "  [selected]" : "").Append('\n');
+                }
+            }
+            finally
+            {
+                r.method_21(member);
+                Impeller.Locals.smethod_0().smethod_0().method_72(member);
+                sb.Append("removed; cell now ").Append(r.method_17(free.Value) == null ? "empty" : "OCCUPIED").Append('\n');
+            }
+            return sb.ToString();
         }
 
         private static string Screens()

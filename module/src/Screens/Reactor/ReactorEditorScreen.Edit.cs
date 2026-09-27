@@ -381,6 +381,7 @@ namespace SpeechChem.Screens.Reactor
             InstructionMenu menu;
             if (!Instruction.dictionary_1.TryGetValue(member.GetType(), out menu))
                 menu = Instruction.dictionary_1[typeof(Instruction)];
+            SyncMenu(menu, member);
             var items = new List<ActionListScreen.Item>();
             foreach (var component in menu.linkedList_0)
             {
@@ -393,7 +394,7 @@ namespace SpeechChem.Screens.Reactor
                 {
                     Label = label,
                     Selected = () => { try { return it.isSelectedFunc_0(member); } catch { return false; } },
-                    Run = () => RunMenuItem(r, member, it),
+                    Run = () => { RunMenuItem(r, member, it); SyncMenu(menu, member); },
                     Group = MenuItemGroup(item),
                 });
             }
@@ -401,7 +402,23 @@ namespace SpeechChem.Screens.Reactor
             return new ActionListScreen("reactor.menu.instr", title, items);
         }
 
-        private static Func<string> MenuItemLabel(MenuItem<Instruction> item)
+        /// <summary>What the game's Menu.vmethod_4 does to each item as the menu opens
+        /// (MenuItem.vmethod_4 → its update delegate): fit the item's icon to the instruction —
+        /// its colour, and on a control instruction the letters take its direction and the
+        /// directions its letter. Labels read the icons, so without this a control menu said "up" /
+        /// "A" whatever the instruction was. Re-run after each radio choice (the menu stays open).
+        /// The menu's own opener can't be used: it pushes the game's menu screen and clicks.</summary>
+        internal static void SyncMenu(InstructionMenu menu, Instruction member)
+        {
+            foreach (var component in menu.linkedList_0)
+            {
+                if (!(component is MenuItem<Instruction> item)) continue;
+                try { item.vmethod_4(member); }
+                catch (Exception ex) { Log.Error("[reactor] menu item sync failed", ex); }
+            }
+        }
+
+        internal static Func<string> MenuItemLabel(MenuItem<Instruction> item)
         {
             if (item is Class720 layer) return () => GameText.T(layer.bool_3 ? "Red Layer" : "Blue Layer");
             if (item is Class719<Instruction> text) return () => text.string_0;

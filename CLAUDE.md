@@ -481,6 +481,55 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   cells afterwards (Pancakes baseline: red START at 5, 2 and blue START at 5, 7, both facing left). Never
   let a test program complete a level: park the waldo against a wall instead of looping.
 
+## 16a. Pipeline editor (`Screens/Pipeline/PipelineEditorScreen.*.cs`) — verified live 2026-09-27
+PipelineEditor (a Class53) of production levels, ResearchNet production puzzles and the sandbox
+(research levels skipped: their editor opens the reactor at once). Layout user-approved 2026-09-27;
+MANUAL pipe drawing only (automatic routing rejected). Model: Pipeline, 32 x 22 cells;
+dictionary_0 cell → component (pipe cells belong to their owner), dictionary_1 component → origin;
+Draggable string_1 name, bool_0 locked, class485_0 inputs (PipelineInput, left column),
+class485_1 outputs (PipelineOutput, each owns a PipeDraggable: linkedList_0 cells relative to the
+owner, dictionary_3 shapes, dictionary_4 crossings, linkedList_1 one molecule slot per cell).
+Tab stops:
+- Components (initial): named components in READING ORDER (Game/PipelineText: terrain Class612 and
+  unnamed port-less decoration skipped; shelf clones parked at x < 0 skipped); "Assembly Reactor 2,
+  12, 14" — reactors numbered in reading order when there are several, the run log uses the same
+  numbers; during a run a reactor adds its waldos' WAITING text (Class188.method_2). Enter on a
+  reactor = the double-click (vmethod_2). A component is a ROW: Right walks its ports — reactors use
+  the zone names (alpha / beta inputs, psi / omega outputs), others "input 2" / "output"; an input
+  "from X", an output "to Recycler input 2" or "open end 4, 7". Enter on an output starts drawing.
+- Map: every cell, coordinates first, then the occupant (component + port, "pipe, owner output",
+  "end", "crossing pipe, ...", the carried molecule during a run, "blocked" for terrain /
+  decoration). [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
+  components / Open pipe ends; C reads the cell. Enter: end drawing / place the armed shelf item /
+  on a pipe end start drawing.
+- Shelf: the Class717 tiles (Class472.draggable_0 templates). Enter arms; Enter on the map places
+  via the game's drop: template.method_8 parks a clone at (-100, 0) in drag state 2, Pipeline
+  vector2i_3 = target, method_13 validates + places + records undo; a refusal names the blocker
+  (hashSet_2) or "off the map". The drop reads held Ctrl as COPY: Patches/ModifierMask hides Ctrl.
+- Molecules: the port annotations (inputs' percentages, outputs' done of required, reactor notes
+  that exist; empty panels such as the recycler's skipped); Enter = the molecule viewer (shared
+  ReactorEditorScreen.OpenMolecules / AnnotationText).
+- Status (shared ProgressSection + "Reactor Quota, 2 of 3", "exceeded"), Tools (shared), Run log.
+Editing: Ctrl+X on a component (entry, port cell or map cell) / Ctrl+V on a map cell moves it
+(hashSet_0 = {it}, vector2i_4 = origin, vector2i_3 = target, method_13 with Ctrl masked; refused
+stays on the clipboard); Delete = the menu's delete (method_10 null, method_15, method_66);
+Backspace = the menu as a list (Reset Pipes = Draggable.method_6; Delete). NOT YET: the output
+notes (InlineAnnotationEditor) and Save to Toolbox (Class55) — game screens not modeled.
+DRAW MODE (PipelineEditorScreen.Draw.cs): StartDraw opens the undo scope a drag would
+(pipe.class381_0 = worker.method_49(), enum145_0 = 1, vector2i_3 = end); each arrow landing sets
+Pipeline.vector2i_3 to the neighbour and calls pipe.vmethod_4 (the game's own extend / retract /
+crossing rules); vmethod_5 ends it. A step speaks coordinates + only what changed ("back",
+"crossing ...", "connected, X input" once, "disconnected"); a refusal gives the reason (own pipe,
+no turns on a crossing, pipes cross only at right angles, X in the way) and the cursor returns
+to the end silently. P = pipe status. Enter / Escape (ModalCapturesEscape while drawing) / leaving
+the map ends it. Focus lands a frame after StartDraw: _drawFocusPending guards the "left the map"
+check (without it drawing ended at once).
+Undo on the pipeline (Patches/UndoCapture): components by type + cell and pipe ends relative to
+the owner; a component undo reloads the level synchronously and focus survives it. An undo of a
+reactor edit from the pipeline makes the game open that reactor (its own behaviour).
+Progress panel: ProgressSection follows Class709 ("Control Center" / "The Prometheus" in
+defense-style levels, GoalTracker.int_1 percent; Class148's own measure).
+
 ## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
 Only events the game has (user rule), worded as what HAPPENED ("grabbed Oxygen", "nothing to drop"):
 waldo steps (Class188.method_3: input, grab/drop, waits reported once, sync, rotation reported once;
@@ -589,7 +638,9 @@ dismiss with `pop` — Continue would leave the level).
 4. (done) Profile flow (§10), main menu (§11), level select + Australium sites + 63 Corvi (§12),
    ResearchNet journal (§12a), challenges (§13), options (§14), in-level dialogs (§15), reactor editor
    (§16) + run log (§17), periodic table (§18), Story / Training / Performance (§19).
-5. Next (agreed order): the pipeline editor, defense levels, the ResearchNet builders.
+5. (done) the pipeline editor (§16a). Next: defense levels (the sandbox reaches the DefenseLevelEditor
+   screen through the `custom` probe), the ResearchNet builders, the pipeline's note editor and
+   Save to Toolbox.
 6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
    REPLACEMENT must be backed up and restored on uninstall).
 7. (done for profiles) Text entry over GClass16; reuse for ResearchNet fields.

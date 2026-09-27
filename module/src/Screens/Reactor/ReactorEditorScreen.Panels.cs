@@ -312,17 +312,23 @@ namespace SpeechChem.Screens.Reactor
             if (step == null) return null;
             string text = GameText.Speech(step.string_0);
             if (step.bool_0 || step.reactorMember_0 == null) return text;
+            // The two things the box points at, read separately (user rule): the pictured piece
+            // (method_11 draws it under the text, in the layer's colour) and the highlighted cell.
             var cell = step.reactorBin_0.vector2i_0;
-            string what = step.reactorMember_0 is Instruction i ? ReactorText.Label(i) : ReactorText.GameName(step.reactorMember_0.GetType());
+            string square = Loc.T("tutorial.square", new { cell = Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }) });
+            if (!(step.reactorMember_0 is Instruction i))
+                return text + " " + Loc.T("tutorial.shown", new { what = ReactorText.GameName(step.reactorMember_0.GetType()) }) + " " + square;
+
             int layer = (int)step.reactorBin_0.enum114_0;
             string colour = (layer & (ReactorText.Red | ReactorText.RedArrow)) != 0 ? Loc.T("reactor.red")
                 : (layer & (ReactorText.Blue | ReactorText.BlueArrow)) != 0 ? Loc.T("reactor.blue") : null;
-            string place = Loc.T("tutorial.place", new
-            {
-                instruction = colour == null ? what : colour + " " + what,
-                cell = Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }),
-            });
-            return text + " " + place;
+            string label = ReactorText.Label(i);
+            string name = ReactorText.GameName(i.GetType()) ?? label; // the game's name ("Input Molecule")
+            var parts = new List<string> { colour == null ? name : colour + " " + name };
+            if (label != name) parts.Add(label);                      // the icon's own label ("in alpha")
+            int key = SlotKeyFor(i);
+            if (key >= 0) parts.Add(Loc.T("tutorial.key", new { key = KeyLetter(key) }));
+            return text + " " + Loc.T("tutorial.instruction", new { instruction = string.Join(", ", parts.ToArray()) }) + " " + square;
         }
 
         private bool IsTutorialTarget(int x, int y)

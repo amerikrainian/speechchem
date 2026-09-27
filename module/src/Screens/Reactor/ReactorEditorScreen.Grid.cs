@@ -250,20 +250,25 @@ namespace SpeechChem.Screens.Reactor
         /// type; arrows also match direction), else the game's name for its type.</summary>
         internal static string InstructionDetails(Instruction i)
         {
+            string tip = Patches.TooltipCapture.Speech(Slot(Editor, SlotKeyFor(i))?.class713_0);
+            return tip ?? ReactorText.GameName(i.GetType()) ?? ReactorText.Label(i);
+        }
+
+        /// <summary>The palette key (scancode) of the slot an instruction comes from: same type;
+        /// arrows also match direction (one slot each). -1 when no enabled slot offers it.</summary>
+        internal static int SlotKeyFor(Instruction i)
+        {
             var palette = Editor?.class715_0;
-            if (palette != null)
+            if (palette == null || i == null) return -1;
+            foreach (var kv in palette.dictionary_0)
             {
-                foreach (var slot in palette.dictionary_0.Values)
-                {
-                    if (!slot.struct116_0.bool_0) continue;
-                    var t = slot.struct116_0.method_0();
-                    if (t.GetType() != i.GetType()) continue;
-                    if (i is ArrowInstruction && t.vmethod_5() != i.vmethod_5()) continue;
-                    string tip = Patches.TooltipCapture.Speech(slot.class713_0);
-                    if (tip != null) return tip;
-                }
+                if (!kv.Value.struct116_0.bool_0) continue;
+                var t = kv.Value.struct116_0.method_0();
+                if (t.GetType() != i.GetType()) continue;
+                if (i is ArrowInstruction && t.vmethod_5() != i.vmethod_5()) continue;
+                return (int)kv.Key;
             }
-            return ReactorText.GameName(i.GetType()) ?? ReactorText.Label(i);
+            return -1;
         }
 
         private void SpeakCoordinates()

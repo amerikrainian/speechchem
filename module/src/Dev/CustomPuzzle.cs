@@ -52,6 +52,11 @@ namespace SpeechChem.Dev
             }
             catch (Exception ex) { return "[bad level json] " + ex.Message + "\n"; }
             if (!(level is CustomResearchLevel)) return "[only research puzzles open straight into a reactor]\n";
+            // The game's editor only builds connected molecules, and its code relies on it: fusing
+            // the atoms of one unbonded two-atom "molecule" crashed the game (Class672.method_7 looks
+            // for the target's fragment after dropping the projectile's whole molecule).
+            foreach (var m in level.vmethod_2())
+                if (!Connected(m)) return "[molecule \"" + m.string_0 + "\" has unbonded atoms: split it into separate molecules]\n";
 
             Class280.class185_0.method_8(new Class513());
             try
@@ -62,6 +67,31 @@ namespace SpeechChem.Dev
             }
             finally { Class280.class185_0.method_9(); }
             return "opened " + TestId + ": " + level.string_1 + "\n";
+        }
+
+        /// <summary>Every atom reachable from the first through bonds (dictionary_3: a cell and
+        /// Right / Down to its neighbour).</summary>
+        private static bool Connected(Molecule m)
+        {
+            var atoms = new System.Collections.Generic.HashSet<Vector2i>(m.dictionary_2.Keys);
+            if (atoms.Count <= 1) return true;
+            var seen = new System.Collections.Generic.HashSet<Vector2i>();
+            var todo = new System.Collections.Generic.Stack<Vector2i>();
+            foreach (var first in atoms) { todo.Push(first); break; }
+            while (todo.Count > 0)
+            {
+                var c = todo.Pop();
+                if (!seen.Add(c)) continue;
+                foreach (var bond in m.dictionary_3.Keys)
+                {
+                    if ((int)m.dictionary_3[bond] == 0) continue;
+                    var from = bond.vector2i_0;
+                    var to = bond.enum128_0 == Enum128.Right ? new Vector2i(from.int_0 + 1, from.int_1) : new Vector2i(from.int_0, from.int_1 + 1);
+                    if (from == c && atoms.Contains(to)) todo.Push(to);
+                    else if (to == c && atoms.Contains(from)) todo.Push(from);
+                }
+            }
+            return seen.Count == atoms.Count;
         }
 
         private static string Clean()

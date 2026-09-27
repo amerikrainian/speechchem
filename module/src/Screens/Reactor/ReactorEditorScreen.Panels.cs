@@ -179,7 +179,7 @@ namespace SpeechChem.Screens.Reactor
             {
                 int index = kv.Key;
                 var vt = ProfileUi.Text(true, () => InputLine(index));
-                vt.OnActivate = () => OpenMolecules(PanelAnnotation(true, index), "reactor.mol.in." + index);
+                vt.OnActivate = () => OpenMolecules(PanelAnnotation(true, index), "reactor.mol.in." + index, InputLanding(index));
                 b.AddItem(ControlId.Structural("reactor.mol.in." + index), vt);
             }
             foreach (var kv in rd.class485_1)
@@ -208,9 +208,15 @@ namespace SpeechChem.Screens.Reactor
             return outPort.vmethod_0()?.class485_0.method_4(outPort.pipeDraggable_0)?.method_0() ?? outPort.method_0();
         }
 
+        /// <summary>Where input <paramref name="index"/>'s zone starts in the reactor — the offset
+        /// InputInstruction.vmethod_7 adds to the molecule's own positions: α at the corner, β four
+        /// rows down, or six columns across on a Class80 reactor.</summary>
+        private static Vector2i InputLanding(int index)
+            => Editor is Class80 ? new Vector2i(index * 6, 0) : new Vector2i(0, index * 4);
+
         /// <summary>Enter on a panel row: its molecule in the mini-grid viewer (a chooser first when
-        /// the panel lists several).</summary>
-        private void OpenMolecules(Annotation a, string key)
+        /// the panel lists several). Inputs pass their zone's landing offset.</summary>
+        private void OpenMolecules(Annotation a, string key, Vector2i? landing = null)
         {
             var molecules = new List<Molecule>();
             if (a != null)
@@ -219,7 +225,7 @@ namespace SpeechChem.Screens.Reactor
             if (molecules.Count == 0) return;
             if (molecules.Count == 1)
             {
-                PushChild(new MoleculeViewerScreen(key + ".view", molecules[0]));
+                PushChild(new MoleculeViewerScreen(key + ".view", molecules[0], landing));
                 return;
             }
             var items = new List<ActionListScreen.Item>();
@@ -229,7 +235,7 @@ namespace SpeechChem.Screens.Reactor
                 items.Add(new ActionListScreen.Item
                 {
                     Label = () => MoleculeText.NameAndFormula(molecule),
-                    Run = () => PushChild(new MoleculeViewerScreen(key + ".view", molecule)),
+                    Run = () => PushChild(new MoleculeViewerScreen(key + ".view", molecule, landing)),
                 });
             }
             PushChild(new ActionListScreen(key + ".choose", null, items));

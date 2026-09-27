@@ -368,7 +368,11 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   cursor — the user asked for a stable order). Grid items move the cursor; an instruction item arms it
   and just names it (no "armed" — user); waldo items read like Shift+R / Shift+B.
 - MOLECULES stop: input/output lines from the port annotations; Enter opens `Screens/MoleculeViewerScreen`
-  (a molecule as a navigable mini-grid, reusable anywhere a molecule is drawn).
+  (a molecule as a navigable mini-grid, reusable anywhere a molecule is drawn). INPUTS open in
+  landing mode: the whole zone-shaped box the panel draws (4 x 4, 4 x 8 when tall) with every cell
+  read as the REACTOR cell it lands on — the molecule's own positions plus the zone offset
+  (β 4 rows down; Class80 6 columns across), as InputInstruction.vmethod_7 places it. Outputs stay
+  shape-only (an output zone accepts a molecule anywhere in it).
 - COVERED BY ANOTHER GAME SCREEN (dialog, periodic table, Story & Info): the editor stays in the chain,
   so OnPop keeps cursor, trackers and focus (KeepStateOnPop while covered) — closing returns to the
   exact node (e.g. the toolbar button). Leaving the reactor starts over.

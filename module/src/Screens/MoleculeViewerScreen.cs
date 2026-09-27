@@ -18,16 +18,27 @@ namespace SpeechChem.Screens
     /// cells — "x, y" first (1-based within the molecule), then the atom and its bonds by
     /// direction; an empty cell is just its coordinates. Shift+Backspace gives the game's atom
     /// details (name, atomic number, maximum bonds). Escape closes (mod-side modal).
+    ///
+    /// LANDING mode (an input molecule, user-approved 2026-09-27): the game draws an input's
+    /// molecule inside a zone-shaped box at its OWN grid positions (Molecule.method_36 draws
+    /// dictionary_2 keys unshifted; a molecule taller than 4 rows gets a second box, method_7), and
+    /// InputInstruction.vmethod_7 drops it into the reactor at exactly those positions plus the
+    /// zone's offset. So with a landing offset the viewer shows the whole box and every cell reads
+    /// the REACTOR cell it maps to — where the atoms will appear.
     /// </summary>
     public sealed class MoleculeViewerScreen : Screen
     {
         private readonly Molecule _molecule;
         private readonly string _key;
+        private readonly Vector2i? _landing;
 
-        public MoleculeViewerScreen(string key, Molecule molecule)
+        /// <param name="landing">For an input molecule: the reactor cell (0-based) of its zone's
+        /// top-left corner. Null = a shape only, counted from the molecule's own corner.</param>
+        public MoleculeViewerScreen(string key, Molecule molecule, Vector2i? landing = null)
         {
             _key = key;
             _molecule = molecule;
+            _landing = landing;
         }
 
         public override string Key => _key;
@@ -46,6 +57,13 @@ namespace SpeechChem.Screens
             if (_molecule == null || _molecule.dictionary_2.Count == 0) return;
             Vector2i origin = _molecule.method_4();
             Vector2i size = _molecule.method_5();
+            if (_landing.HasValue)
+            {
+                // The drawn box: 4 x 4 (4 x 8 for a tall molecule), from the zone's corner.
+                size = new Vector2i(Math.Max(4, origin.int_0 + size.int_0),
+                    Math.Max(_molecule.method_7() ? 8 : 4, origin.int_1 + size.int_1));
+                origin = new Vector2i(0, 0);
+            }
             ControlId start = null;
             for (int y = 0; y < size.int_1; y++)
             {
@@ -71,7 +89,8 @@ namespace SpeechChem.Screens
 
         private string Readout(Vector2i pos, int x, int y)
         {
-            var parts = new List<string> { Loc.T("reactor.cell", new { x = x + 1, y = y + 1 }) };
+            var at = _landing.HasValue ? new Vector2i(pos.int_0 + _landing.Value.int_0, pos.int_1 + _landing.Value.int_1) : new Vector2i(x, y);
+            var parts = new List<string> { Loc.T("reactor.cell", new { x = at.int_0 + 1, y = at.int_1 + 1 }) };
             Atom atom;
             if (_molecule.dictionary_2.TryGetValue(pos, out atom))
             {

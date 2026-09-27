@@ -140,6 +140,7 @@ namespace SpeechChem
                 Patches.TitleTextCapture.Apply(_harmony);   // main-menu news text + Class60 dialog buttons
                 Patches.DialogCapture.Apply(_harmony);      // in-level message boxes + the wrong-molecule dialog
                 Patches.TooltipCapture.Apply(_harmony);     // hover tooltip text (palette slots, reactor hardware, pipeline pieces)
+                Patches.RunCapture.Apply(_harmony);         // run events -> the run log (spoken at the slowest speed)
             }
             if (!_updateAnnounced && _updateCheck != null && _updateCheck.NewerVersion != null)
             {

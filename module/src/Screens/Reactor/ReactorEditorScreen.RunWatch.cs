@@ -1,9 +1,36 @@
+using SpeechChem.Localization;
+using SpeechChem.Patches;
+using SpeechChem.UI;
+using SpeechChem.UI.Graph;
+
 namespace SpeechChem.Screens.Reactor
 {
     public sealed partial class ReactorEditorScreen
     {
-        // Run events and the log land in a later commit.
+        // ---- the run log: every event of the current / last run (Patches/RunCapture), one region
+        // per cycle, through the shared WindowedLogView (virtually limitless store, windowed graph,
+        // tail-following while focus is elsewhere). The last Tab stop; absent while empty. ----
 
-        private void UpdateRunWatch(Class77 editor) { }
+        private const string LogStop = "reactor.log";
+
+        private readonly WindowedLogView<int> _logView = new WindowedLogView<int>(
+            "reactor.log.", k => k.ToString(), s => { int n; return int.TryParse(s, out n) ? n : (int?)null; });
+
+        private int _logGeneration = -1;
+
+        private void BuildLog(GraphBuilder b)
+        {
+            _logView.Build(b, LogStop, Loc.T("run.log"), RunCapture.Log,
+                cycle => Loc.T("run.cycle", new { n = cycle }),
+                (Navigation.Active as GraphNavigator)?.FocusCursorId);
+        }
+
+        /// <summary>A new run cleared the store: the window goes back to following the tail.</summary>
+        private void UpdateRunWatch(Class77 editor)
+        {
+            if (_logGeneration == RunCapture.Generation) return;
+            _logGeneration = RunCapture.Generation;
+            _logView.Reset();
+        }
     }
 }

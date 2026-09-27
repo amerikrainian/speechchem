@@ -19,7 +19,8 @@ namespace SpeechChem.Screens.Reactor
     ///
     /// Tab stops (user-approved layout, 2026-09-27): grid (a 2D cursor; initial) → palette → layer
     /// controls → run and tools (the shared ToolbarSection) → molecules (input/output panels) →
-    /// status (the shared ProgressSection) → tutorial (only while a tutorial step is active).
+    /// status (the shared ProgressSection) → tutorial (only while a tutorial step is active) → run
+    /// log (the shared WindowedLogView over Patches/RunCapture; only once a run has logged events).
     /// Screen keys: C coordinates, N / M red / blue waldo (Shift jumps the cursor there), P status,
     /// F1 repeats the tutorial step, L switches the active layer (the game's Tab, which is
     /// navigation here), Shift+Backspace details. The game keeps 1-4, ~ and Space (run controls),
@@ -73,6 +74,7 @@ namespace SpeechChem.Screens.Reactor
             BuildMolecules(b, editor);
             ProgressSection.Build(b, StatusStop, "reactor.status");
             BuildTutorial(b, editor);
+            BuildLog(b);
         }
 
         private ReactorModel _reactor;
@@ -110,8 +112,13 @@ namespace SpeechChem.Screens.Reactor
             UpdateRunWatch(editor);
         }
 
+        /// <summary>A game dialog over the reactor (a Reaction Error, the exit prompt) pops this
+        /// screen too, but the editor stays in the chain beneath it: keep the cursor and trackers so
+        /// closing the dialog lands back where the player was. Leaving the reactor starts over.</summary>
         public override void OnPop()
         {
+            foreach (var s in GameState.ScreenStack())
+                if (s is Class77 e && ReferenceEquals(e.reactor_0, _reactor)) return;
             _reactor = null;
         }
     }

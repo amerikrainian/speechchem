@@ -97,5 +97,18 @@ namespace SpeechChem.Game
         /// <summary>The value-returning variant (an Expression&lt;Action&gt; can't wrap those).</summary>
         public static MethodInfo MethodOf<T>(Expression<Func<T>> call)
             => ((MethodCallExpression)call.Body).Method;
+
+        /// <summary><paramref name="type"/>'s own override of a virtual. REQUIRED when patching an
+        /// override: the compiler emits the call against the BASE declaration, so MethodOf alone
+        /// patches the base method for every subclass — and a handler typed for the subclass then
+        /// reads foreign fields (an access violation, not an exception). Throws when the type
+        /// declares no override.</summary>
+        public static MethodInfo OverrideOf(Type type, MethodInfo virtualMethod)
+        {
+            var root = virtualMethod.GetBaseDefinition();
+            foreach (var m in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                if (m.GetBaseDefinition() == root) return m;
+            throw new MissingMethodException(type.FullName, virtualMethod.Name);
+        }
     }
 }

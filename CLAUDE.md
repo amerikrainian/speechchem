@@ -119,8 +119,29 @@ A Debug build deploys: `SpeechChem.dll`, `SpeechChem.Module.dll`, `0Harmony.dll`
 `prism.dll` (x86), `SpaceChem.exe.config`, `Mono.CSharp.dll` (dev REPL), `steam_appid.txt`,
 `SpeechChem\namemap.tsv`, `SpeechChem\locale\`. The host dll is file-locked while the game runs; the
 module is not (hot reload). Uninstall = restore `SpaceChem.exe.config.vanilla` over the config.
-Release zip = the same set minus Mono.CSharp. `create-release.ps1 vX.Y.Z` = gh release (the installer
-exe is optional — the Rust installer has NOT been ported yet; Echopunks' `installer/` is the source).
+Release zip = the same set minus Mono.CSharp. `create-release.ps1 vX.Y.Z` = gh release with the zip,
+the installer exe when built, and the tag's CHANGELOG.md section as notes.
+
+**Installer** (`installer/`, Rust + wxWidgets, ported 2026-09-27 from Echopunks, itself from the
+Harkest Dungeon / Non-Visual Calculus installer, MIT — attribution headers on every file):
+`.\build-installer.ps1` → `releases\SpeechChemInstaller.exe` (requireAdministrator);
+`.\test-installer.ps1` = cargo test; `tools\installer-toolchain.ps1` puts VS's libclang / ninja
+where cargo finds them. Finds the game (SPACECHEM_DIR, Steam registry + library folders; a dir is
+the game when `SpaceChem.exe` AND `template.locals` are present), reads the releases feed of
+amerikrainian/speechchem (`SPEECHCHEM_INSTALLER_RELEASES_URL` overrides it), downloads
+`SpeechChem-v<semver>.zip`, checks its sha256 digest, extracts it over the game folder recording
+every file in `SpeechChem\install.json` and backing up what it overwrote under
+`SpeechChem\backups\` — above all the STOCK `SpaceChem.exe.config` — prunes files a newer zip no
+longer ships, and uninstalls by the record (restoring the backups). SpaceChem-specific: the config
+is not an "installed" marker (the stock game has one), and a config that is ALREADY the mod's
+(contains `SpeechChem.Bootstrap`: a hand copy or a Debug deploy) is never backed up as the game's —
+the Debug deploy's `SpaceChem.exe.config.vanilla` is backed up in its place, else nothing (uninstall
+then deletes the config; the exe falls back to v2.0.50727, all the stock config says).
+`installer\examples\cli.rs` = the same CLI without the elevation manifest; `tools\installer-e2e.ps1`
+drives it against a throwaway game folder and a locally served feed (install → file set + backups
+of the stock config and steam_appid.txt → uninstall → folder pristine). Verified 2026-09-27: 23 unit
+tests, the e2e, and detection of the real Steam install (reported as unmanaged over a Debug deploy).
+The GUI was built but not driven.
 
 **Prism x86**: upstream publishes Windows x64/arm64 only. `third_party/prism/x86/prism.dll` is our
 own Win32 build of v0.16.6 (commit 655fb40, the exact version of the vendored x64 dll and header;
@@ -641,6 +662,5 @@ dismiss with `pop` — Continue would leave the level).
 5. (done) the pipeline editor (§16a). Next: defense levels (the sandbox reaches the DefenseLevelEditor
    screen through the `custom` probe), the ResearchNet builders, the pipeline's note editor and
    Save to Toolbox.
-6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
-   REPLACEMENT must be backed up and restored on uninstall).
+6. (done) The Rust installer (§5).
 7. (done for profiles) Text entry over GClass16; reuse for ResearchNet fields.

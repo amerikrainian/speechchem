@@ -1,7 +1,7 @@
-# Publish a GitHub release for an existing, pushed tag: uploads the mod zip (and the installer
-# exe, once one is ported - it is optional here) from releases\ with notes taken from the tag's
+# Publish a GitHub release for an existing, pushed tag: uploads the mod zip and the installer
+# exe (optional here - skipped when not built) from releases\ with notes taken from the tag's
 # CHANGELOG.md section.
-# Run build_release.ps1 first.
+# Run build_release.ps1 and build-installer.ps1 first.
 #
 # Adapted from the Non-Visual Calculus installer by Rashad Naqeeb (MIT),
 # https://github.com/rashadnaqeeb/NonVisualCalculus - by way of the Harkest Dungeon

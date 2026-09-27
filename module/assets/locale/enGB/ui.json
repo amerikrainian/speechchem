@@ -16,7 +16,7 @@
   "profiles.delete": "Delete",
   "mainmenu.researchnet": "ResearchNet, Sign On",
   "mainmenu.corvi": "63 Corvi",
-  "mainmenu.tf2": "Team Fortress 2",
+  "mainmenu.tf2": "Australium Research Sites",
   "levelselect.locked": "Locked",
   "levelselect.completed": "completed",
   "levelselect.score": "{metric}: {bestLabel} {best}, {lastLabel} {last}",

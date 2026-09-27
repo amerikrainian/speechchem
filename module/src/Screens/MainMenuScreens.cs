@@ -22,7 +22,9 @@ namespace SpeechChem.Screens
     ///  3. Extras — the clickable art the title-screen base draws on the main menu only (lettered art,
     ///     so the labels are mod transcriptions): the ResearchNet tablet ("Sign On" — the journal, or
     ///     the game's ACCESS DENIED dialog before it unlocks), the 63 Corvi planet (only when the DLC is
-    ///     owned — the draw's own gate), the Team Fortress 2 icon; then the profile plate (name, rank).
+    ///     owned — the draw's own gate), the Team Fortress 2 icon (an Australium bar on a map of
+    ///     Australia, no lettering: it reads as the drawn title of the screen it opens, "Australium
+    ///     Research Sites"); then the profile plate (name, rank).
     ///
     /// Escape stays native: on the main menu it QUITS THE GAME immediately (MainMenuEditor.imethod_0).
     /// </summary>

@@ -247,7 +247,9 @@ return lands on the button you left through). Three Tab stops:
 - **Extras** (TitleScreenEditor art hotspots, main menu only; lettered art → mod labels):
   "ResearchNet, Sign On" (`method_12`: journal, or `Class61` ACCESS DENIED before unlock),
   "63 Corvi" (`method_14` → `Class70`; shown when `Class280.bool_5 || Class47.smethod_10()` — DLC
-  92803 owned), "Team Fortress 2" (`method_13` → `Class67`; `Class448.bool_0` is constant true) —
+  92803 owned), "Australium Research Sites" (the Team Fortress 2 icon: an Australium bar on a map
+  of Australia, no lettering, so it reads as the drawn title of what it opens; `method_13` → `Class67`;
+  `Class448.bool_0` is constant true) —
   counted among themselves; then the uncounted profile plate "name, rank".
 Escape is native: on the main menu it QUITS THE GAME (`MainMenuEditor.imethod_0`).
 
@@ -259,9 +261,9 @@ exit. HOT-RELOAD CAVEAT: capture tables are per module generation, so a dialog b
 generation shows no buttons after `/reload` (probe `pop` it); never an issue in normal play.
 
 Unmodeled screens with RENAMED types announce only through a curated deob-name table
-(`ScreenNames.ForDeob`): `Class74` → the game's "Settings", `Class67` → "Team Fortress 2",
+(`ScreenNames.ForDeob`): `Class74` → the game's "Settings", `Class67` → "Australium Research Sites",
 `Class70` → "63 Corvi". Everything else obfuscated stays silent (never "Class74"). Destinations
-verified announcing and returning on Escape: Level select, Challenges, Settings, Team Fortress 2.
+verified announcing and returning on Escape: Level select, Challenges, Settings, Australium Research Sites.
 
 ## 12. Level select (`module/src/Screens/LevelSelectScreens.cs`) — verified live 2026-09-27
 `LevelSelectScreen` over `SpaceChem.LevelSelectEditor` (Settled-gated, KeepStateOnPop). TAB STYLE

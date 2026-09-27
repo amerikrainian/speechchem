@@ -25,7 +25,7 @@ namespace SpeechChem.UI
             new System.Collections.Generic.Dictionary<string, Func<string>>(StringComparer.Ordinal)
             {
                 { "Class74", () => Game.GameText.T("Settings") },            // Options (its drawn title)
-                { "Class67", () => Localization.Loc.T("mainmenu.tf2") },     // the TF2 icon's levels
+                { "Class67", () => Localization.Loc.T("mainmenu.tf2") },     // the TF2 icon's levels (drawn title)
                 { "Class70", () => Localization.Loc.T("mainmenu.corvi") },   // the 63 Corvi DLC levels
                 { "Class76", () => Localization.Loc.T("toolbar.periodic") }, // the periodic table / element picker
             };

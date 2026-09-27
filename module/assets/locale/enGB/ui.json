@@ -146,6 +146,7 @@
   "run.grabbed": "{what}, grabbed {molecule}",
   "run.dropped": "{what}, dropped {molecule}",
   "run.nothing": "{what}, nothing",
+  "run.rotated": "{what}, rotated {molecule}",
   "run.turned": "{what}, turned {dir}",
   "run.produced": "{output}: {molecule}, {done} of {required}",
   "run.output": "output",

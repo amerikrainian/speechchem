@@ -25,7 +25,8 @@ namespace SpeechChem.Patches
     ///                      waiting / sync flags, heading) and the reactor's molecule count; postfix
     ///                      diffs → "red: in alpha, took Oxygen", "red: grab, grabbed Oxygen",
     ///                      "red: sync, waiting", "red: arrow down" (arrows are logged, not spoken).
-    ///                      A wait is reported once when it starts, not every cycle it lasts.
+    ///                      A wait is reported once when it starts, not every cycle it lasts; so is
+    ///                      a rotation (two cycles: "red: rotate clockwise, rotated Oxygen").
     ///   Class578.vmethod_11  an output consuming molecules: counter (Class503.int_0) diff → "Research
     ///                      Output ψ: Oxygen, 3 of 10".
     ///   GoalTracker.smethod_12  "Reaction Error" (message); Draggable.method_7 an invalid molecule;
@@ -83,6 +84,7 @@ namespace SpeechChem.Patches
             public MoleculeSheet Held;
             public bool Waiting;
             public bool Sync;
+            public bool Rotating;
             public Vector2i Heading;
             public int Molecules;
             public Instruction Instruction;
@@ -100,6 +102,7 @@ namespace SpeechChem.Patches
                 __state.Held = __instance.moleculeSheet_0;
                 __state.Waiting = __instance.bool_0;
                 __state.Sync = __instance.bool_4;
+                __state.Rotating = __instance.bool_3;
                 __state.Heading = __instance.vector2i_1;
                 __state.Molecules = r.class201_0.Count;
                 __state.Instruction = r.method_15(cell, __instance.enum114_0) as Instruction;
@@ -157,6 +160,16 @@ namespace SpeechChem.Patches
                     return Loc.T("run.grabbed", new { what = label, molecule = MoleculeText.NameAndFormula(after.molecule_0) });
                 if (before.Held != null && after == null)
                     return Loc.T("run.dropped", new { what = label, molecule = MoleculeText.NameAndFormula(before.Held.molecule_0) });
+                return Loc.T("run.nothing", new { what = label });
+            }
+            if (i is RotateInstruction)
+            {
+                // Two cycles (RotateInstruction.vmethod_7 toggles bool_3): the first sets it and the
+                // held molecule turns while the waldo stays; the second only clears it and the waldo
+                // moves on — reported once, when it starts. Empty-handed it never sets.
+                if (before.Rotating) return null;
+                if (w.bool_3 && w.moleculeSheet_0 != null)
+                    return Loc.T("run.rotated", new { what = label, molecule = MoleculeText.NameAndFormula(w.moleculeSheet_0.molecule_0) });
                 return Loc.T("run.nothing", new { what = label });
             }
             if (i is Class663)

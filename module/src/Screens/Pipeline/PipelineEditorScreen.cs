@@ -17,7 +17,7 @@ namespace SpeechChem.Screens.Pipeline
     /// and printers — and each output's pipe. Research levels never show it: their pipeline editor
     /// opens its single reactor at once (PipelineEditor.vmethod_2), so they are skipped here.
     ///
-    /// Tab stops (user-approved layout, 2026-09-27): Components (initial) → status (the shared
+    /// Tab stops (user-approved layout, 2026-09-27): Components (initial) → map → status (the shared
     /// ProgressSection, then the reactor quota) → tools (the shared ToolbarSection) → run log.
     /// Reactors are named "Assembly Reactor 2", numbered in reading order (Game/PipelineText, shared
     /// with the run log). Escape stays native (the exit prompt; the game polls it itself).
@@ -48,6 +48,16 @@ namespace SpeechChem.Screens.Pipeline
 
         public override bool IsActive() => Model != null;
 
+        public override IEnumerable<ElementAction> GetActions()
+        {
+            // The reactor editor's bindings: C, [ ], , .
+            yield return new ElementAction("screen.reactor.coords", SpeakCoordinates);
+            yield return new ElementAction("screen.reactor.cat.prev", () => StepCategory(-1));
+            yield return new ElementAction("screen.reactor.cat.next", () => StepCategory(1));
+            yield return new ElementAction("screen.reactor.item.prev", () => StepItem(-1));
+            yield return new ElementAction("screen.reactor.item.next", () => StepItem(1));
+        }
+
         public override void Build(GraphBuilder b)
         {
             var editor = Editor;
@@ -56,6 +66,7 @@ namespace SpeechChem.Screens.Pipeline
             EnsurePipeline(pipeline);
 
             BuildComponents(b, pipeline);
+            BuildMap(b, pipeline);
             ProgressSection.Build(b, StatusStop, "pipeline.status");
             b.AddItem(ControlId.Structural("pipeline.status.quota"), ProfileUi.Text(true, () => QuotaText(Model)));
             ToolbarSection.Build(b, ToolsStop, "pipeline.tools");
@@ -67,6 +78,7 @@ namespace SpeechChem.Screens.Pipeline
             var pipeline = Model;
             if (pipeline == null) return;
             EnsurePipeline(pipeline);
+            TrackMapCursor();
             UpdateRunWatch();
         }
 
@@ -80,6 +92,8 @@ namespace SpeechChem.Screens.Pipeline
         {
             if (ReferenceEquals(pipeline, _pipeline)) return;
             _pipeline = pipeline;
+            _cursorX = _cursorY = 0;
+            _category = _item = -1;
         }
 
         public override void OnPop()

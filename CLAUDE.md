@@ -421,7 +421,9 @@ columns 7-10 on all 8 rows, no ω line, the tall output opens in the viewer). NO
   (none, or that colour locked — the game's own pick order walks red, red arrow, blue, blue arrow,
   hardware LAST and skips locked/hidden layers, so locking is how a player reaches hardware under
   instructions); it stays put until the paste, which checks every covered cell (in the grid, no
-  other hardware) and moves it with the game's drop (method_18 + vmethod_1); Shift+arrows = rectangular selection; Backspace (ui.secondary) = the context menu (the
+  other hardware) and moves it with the game's drop (method_18 + vmethod_1); a REFUSED piece stays
+  on the clipboard for another try and is named ("Sensor did not fit") — verified live for bonders,
+  sensor, both lasers (off the right edge refused) and tunnels, with 0 / 4 / 8 bonder puzzles; Shift+arrows = rectangular selection; Backspace (ui.secondary) = the context menu (the
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
   `Screens/ActionListScreen`; the layer and icon-variant items are RADIO GROUPS (families share one
   `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant

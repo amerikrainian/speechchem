@@ -341,9 +341,13 @@ namespace SpeechChem.Screens.Reactor
             var size = r.method_1();
             int placed = 0, skipped = 0;
             var landed = new List<string>(); // "red grab drop at 3, 2", one per placed item
+            var refused = new List<string>(); // what didn't fit, by name
+            var moved = new HashSet<ClipEntry>();
+            Action<ClipEntry> skip = e => { skipped++; refused.Add(ClipLabel(e)); };
             Action<ClipEntry, Vector2i> land = (e, at) =>
             {
                 placed++;
+                if (e.MoveStart || e.Feature != null) moved.Add(e);
                 landed.Add(Loc.T("reactor.edit.at", new { what = ClipLabel(e), cell = Loc.T("reactor.cell", new { x = at.int_0 + 1, y = at.int_1 + 1 }) }));
             };
             using (UndoStep())
@@ -354,17 +358,17 @@ namespace SpeechChem.Screens.Reactor
                     if (e.Feature != null)
                     {
                         if (MoveHardware(r, e.Feature, cell)) land(e, cell);
-                        else skipped++;
+                        else skip(e);
                         continue;
                     }
-                    if (cell.int_0 >= size.int_0 || cell.int_1 >= size.int_1 || !LayerEditable(r, e.Layer)) { skipped++; continue; }
+                    if (cell.int_0 >= size.int_0 || cell.int_1 >= size.int_1 || !LayerEditable(r, e.Layer)) { skip(e); continue; }
                     var bin = new ReactorBin(cell, (Enum114)e.Layer);
                     var existing = r.method_17(bin);
                     if (e.MoveStart)
                     {
                         if (existing != null && existing != e.Source)
                         {
-                            if (existing is StartInstruction || !(existing is Instruction)) { skipped++; continue; }
+                            if (existing is StartInstruction || !(existing is Instruction)) { skip(e); continue; }
                             r.method_21(existing);
                             Forget(existing);
                         }
@@ -373,29 +377,30 @@ namespace SpeechChem.Screens.Reactor
                         land(e, cell);
                         continue;
                     }
-                    if (existing is StartInstruction) { skipped++; continue; }
+                    if (existing is StartInstruction) { skip(e); continue; }
                     if (existing != null)
                     {
                         r.method_21(existing);
                         Forget(existing);
                     }
                     var clone = e.Source.vmethod_2(r) as Instruction;
-                    if (clone == null) { skipped++; continue; }
+                    if (clone == null) { skip(e); continue; }
                     r.method_18(bin, clone);
                     land(e, cell);
                 }
             }
             // A START or a piece of hardware moves once; later pastes of the same clipboard should
-            // not move it again.
-            _clip.RemoveAll(e => e.MoveStart || e.Feature != null);
+            // not move it again. One the paste refused stays on the clipboard for another try.
+            _clip.RemoveAll(moved.Contains);
             Class428.class14_11.vmethod_0();
             // What landed where ("Bonder at 9, 2"; past three, "5 items at 3, 2" from the cursor),
             // then what didn't fit.
             string what = placed == 0 ? null
                 : placed <= MaxNamed ? string.Join("; ", landed.ToArray())
                 : Loc.T("reactor.edit.at", new { what = Loc.T("reactor.edit.items", new { n = placed }), cell = Loc.T("reactor.cell", new { x = _cursorX + 1, y = _cursorY + 1 }) });
-            string text = what == null ? Loc.T("reactor.edit.nofit", new { n = skipped })
-                : skipped > 0 ? Loc.T("reactor.edit.pasted.skipped", new { what, skipped })
+            string notFit = skipped <= MaxNamed ? string.Join(", ", refused.ToArray()) : Loc.T("reactor.edit.items", new { n = skipped });
+            string text = what == null ? Loc.T("reactor.edit.nofit", new { n = notFit })
+                : skipped > 0 ? Loc.T("reactor.edit.pasted.skipped", new { what, skipped = notFit })
                 : what;
             Speech.Tts.Speak(text, interrupt: true);
         }

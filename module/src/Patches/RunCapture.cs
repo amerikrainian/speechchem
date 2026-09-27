@@ -122,6 +122,15 @@ namespace SpeechChem.Patches
             public Instruction Instruction;
             public BondBoard Bonds; // only under a bond instruction
             public List<LaserShot> Lasers; // only under a laser instruction
+            public List<TunnelEnd> Tunnels; // only under a swap instruction
+        }
+
+        /// <summary>A quantum tunnel's cell before a swap: its atom (name) and whether it was bonded.</summary>
+        private struct TunnelEnd
+        {
+            public Vector2i Cell;
+            public string Atom;
+            public bool Bonded;
         }
 
         /// <summary>One laser's cells before its instruction ran: the laser (top-left = its left
@@ -150,6 +159,7 @@ namespace SpeechChem.Patches
                 if (__state.Instruction is BondInstruction) __state.Bonds = BondBoard.Of(r);
                 if (__state.Instruction is Class662) __state.Lasers = Shots<Class672>(r, right: true);
                 if (__state.Instruction is Class664) __state.Lasers = Shots<Class667>(r, right: false);
+                if (__state.Instruction is Class666) __state.Tunnels = TunnelEnds(r);
             }
             catch { }
         }
@@ -275,6 +285,7 @@ namespace SpeechChem.Patches
             }
             if (i is Class662 && before.Lasers != null) return FusionEffect(r, before.Lasers);
             if (i is Class664 && before.Lasers != null) return FissionEffect(r, before.Lasers);
+            if (i is Class666) return SwapEffect(before.Tunnels);
             if (i is SensorInstruction sensor)
             {
                 // SensorInstruction.vmethod_7 branches when any sensor has the trigger element above
@@ -352,6 +363,41 @@ namespace SpeechChem.Patches
                 }));
             }
             return parts.Count > 0 ? string.Join("; ", parts.ToArray()) : Loc.T("run.fission.none");
+        }
+
+        // Swap (Class666 → Class671.smethod_1): only with exactly two tunnels; each tunnel's atom is
+        // cut from its molecule (all its bonds broken) and moved to the other tunnel. ----
+
+        private static List<TunnelEnd> TunnelEnds(SpaceChem.Reactor.Reactor r)
+        {
+            var ends = new List<TunnelEnd>();
+            foreach (var member in r.method_0())
+            {
+                if (!(member is Class671 tunnel)) continue;
+                var at = r.method_19(tunnel);
+                if (!at.HasValue) continue;
+                var cell = at.Value.vector2i_0;
+                var end = new TunnelEnd { Cell = cell, Atom = AtomAt(r, cell)?.method_0() };
+                foreach (MoleculeSheet sheet in r.class201_0)
+                    foreach (var bond in sheet.method_15())
+                        if (bond.Key.vector2i_0 == cell || bond.Key.method_0() == cell) end.Bonded = true;
+                ends.Add(end);
+            }
+            return ends;
+        }
+
+        private static string SwapEffect(List<TunnelEnd> ends)
+        {
+            var moves = new List<string>();
+            if (ends != null && ends.Count == 2)
+                for (int k = 0; k < 2; k++)
+                {
+                    var from = ends[k];
+                    if (from.Atom == null) continue;
+                    moves.Add(Loc.T(from.Bonded ? "run.swap.move.bonded" : "run.swap.move",
+                        new { atom = from.Atom, cell = CellText(ends[1 - k].Cell) }));
+                }
+            return moves.Count > 0 ? Loc.T("run.swap", new { moves = string.Join("; ", moves.ToArray()) }) : Loc.T("run.swap.none");
         }
 
         private static string CellText(Vector2i c) => Loc.T("reactor.cell", new { x = c.int_0 + 1, y = c.int_1 + 1 });

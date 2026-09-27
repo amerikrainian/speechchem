@@ -210,6 +210,7 @@ namespace SpeechChem.Screens.Reactor
         /// target is the left cell; the split-off atom appears on the right one (the product).</summary>
         private static string LaserRole(ReactorModel r, ReactorFeature f, int x)
         {
+            if (f is Class671) return TunnelPartner(r, f);
             bool fusion = f is Class672;
             if (!fusion && !(f is Class667)) return null;
             var at = r.method_19(f);
@@ -217,6 +218,23 @@ namespace SpeechChem.Screens.Reactor
             bool left = at.Value.vector2i_0.int_0 == x;
             if (fusion) return Loc.T(left ? "reactor.laser.projectile" : "reactor.laser.target");
             return Loc.T(left ? "reactor.laser.target" : "reactor.laser.product");
+        }
+
+        /// <summary>A quantum tunnel's other end — a swap only works with exactly two tunnels
+        /// (Class671.smethod_1), so only then is there one to name.</summary>
+        private static string TunnelPartner(ReactorModel r, ReactorFeature f)
+        {
+            Vector2i? other = null;
+            int count = 0;
+            foreach (var member in r.method_0())
+            {
+                if (!(member is Class671)) continue;
+                count++;
+                var at = r.method_19(member);
+                if (!ReferenceEquals(member, f) && at.HasValue) other = at.Value.vector2i_0;
+            }
+            if (count != 2 || !other.HasValue) return null;
+            return Loc.T("reactor.tunnel.other", new { cell = Loc.T("reactor.cell", new { x = other.Value.int_0 + 1, y = other.Value.int_1 + 1 }) });
         }
 
         private static void AddColour(List<string> parts, ReactorModel r, int x, int y, int layer, int arrowLayer, string colourKey, bool allLayers)

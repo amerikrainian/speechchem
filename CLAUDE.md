@@ -487,8 +487,11 @@ effect"; the grid names the laser's cells "projectile" / "target" (the game's to
 verified live, including a cut/paste of the laser; FISSION (Class664 fires every Class667: target
 atom on the LEFT cell; unless hydrogen it becomes ceil(Z/2) and a lone floor(Z/2) atom appears on
 the right cell): "fission 1, 1, Beryllium and Lithium" / "fission, no effect"; cells read "target" /
-"product" (the right cell's word is the mod's — the game names only the target); verified live),
-wall stops
+"product" (the right cell's word is the mod's — the game names only the target); verified live;
+SWAP (Class666 → Class671.smethod_1, only with exactly two tunnels: each tunnel's atom is cut from its
+molecule, all bonds broken, and moved to the other tunnel): "swap: Oxygen to 4, 5, bonds broken",
+"swap: A to x, y; B to x, y", "swap, no effect"; a tunnel cell reads "other end 4, 5" when there are
+exactly two; verified live, including a cut/paste of a tunnel), wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,

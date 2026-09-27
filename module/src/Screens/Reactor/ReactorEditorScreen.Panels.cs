@@ -252,6 +252,37 @@ namespace SpeechChem.Screens.Reactor
             return zone + ": " + AnnotationText(annotation);
         }
 
+        /// <summary>A research output the level switches off (the panel's "This output is disabled.").</summary>
+        private static bool OutputDisabled(int index)
+        {
+            var rd = Editor?.reactorDraggable_0;
+            if (rd == null || !rd.class485_1.ContainsKey(index)) return false;
+            return rd.class485_1[index].vmethod_0() is Class582 research && research.method_15();
+        }
+
+        /// <summary>M on the grid: the molecule of the zone under the cursor, opened exactly like
+        /// Enter on its Molecules line (inputs in landing mode). Nothing outside a zone, on a
+        /// disabled output or a zone without a molecule (user rule). Closing returns to the cell.</summary>
+        private void OpenZoneMolecules()
+        {
+            if (!OnGrid) return;
+            bool input;
+            int index;
+            if (!ZoneOf(Model, _cursorX, _cursorY, out input, out index)) return;
+            var rd = Editor?.reactorDraggable_0;
+            if (rd == null) return;
+            if (input)
+            {
+                if (!rd.class485_0.ContainsKey(index)) return;
+                OpenMolecules(PanelAnnotation(true, index), "reactor.mol.in." + index, InputLanding(index));
+            }
+            else
+            {
+                if (!rd.class485_1.ContainsKey(index) || OutputDisabled(index)) return;
+                OpenMolecules(PanelAnnotation(false, index), "reactor.mol.out." + index);
+            }
+        }
+
         private static string OutputLine(int index)
         {
             var rd = Editor?.reactorDraggable_0;
@@ -259,7 +290,7 @@ namespace SpeechChem.Screens.Reactor
             string zone = Loc.T(index == 0 ? "zone.psi" : "zone.omega");
             var port = rd.class485_1[index];
             var downstream = port.vmethod_0();
-            if (downstream is Class582 research && research.method_15())
+            if (OutputDisabled(index))
                 return zone + ": " + GameText.T("This output") + " " + GameText.T("is disabled.");
             var annotation = downstream?.class485_0.method_4(port.pipeDraggable_0)?.method_0() ?? port.method_0();
             return zone + ": " + AnnotationText(annotation);

@@ -375,7 +375,9 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   landing mode: the whole zone-shaped box the panel draws (4 x 4, 4 x 8 when tall) with every cell
   read as the REACTOR cell it lands on — the molecule's own positions plus the zone offset
   (β 4 rows down; Class80 6 columns across), as InputInstruction.vmethod_7 places it. Outputs stay
-  shape-only (an output zone accepts a molecule anywhere in it).
+  shape-only (an output zone accepts a molecule anywhere in it). M on a grid cell opens the
+  molecule of the zone under the cursor the same way (ZoneOf → the panel's port index); nothing
+  outside a zone or on a disabled output; Escape returns to the cell.
 - COVERED BY ANOTHER GAME SCREEN (dialog, periodic table, Story & Info): the editor stays in the chain,
   so OnPop keeps cursor, trackers and focus (KeepStateOnPop while covered) — closing returns to the
   exact node (e.g. the toolbar button). Leaving the reactor starts over.

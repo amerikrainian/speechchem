@@ -64,6 +64,7 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.status", () => Speech.Tts.Speak(ProgressSection.Summary(), interrupt: true));
             yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
+            yield return new ElementAction("screen.reactor.molecule", OpenZoneMolecules);
             foreach (var a in EditActions()) yield return a;
         }
 

@@ -110,12 +110,25 @@ namespace SpeechChem.Screens.Reactor
         /// or drop them). The laser β is from the decompile, not yet verified live.</summary>
         internal static string ZoneAt(ReactorModel reactor, int x, int y)
         {
-            if (reactor == null) return null;
+            bool input;
+            int index;
+            if (!ZoneOf(reactor, x, y, out input, out index)) return null;
+            return Loc.T(input ? (index == 0 ? "zone.alpha" : "zone.beta") : (index == 0 ? "zone.psi" : "zone.omega"));
+        }
+
+        /// <summary>Which zone a cell lies in: an input (0 = α, 1 = β) or an output (0 = ψ, 1 = ω) —
+        /// the same indices as the side panels' ports. False outside every zone.</summary>
+        internal static bool ZoneOf(ReactorModel reactor, int x, int y, out bool input, out int index)
+        {
+            input = true;
+            index = 0;
+            if (reactor == null) return false;
             int layout = (int)reactor.genum0_0;
-            if (x < 4 && y < 4) return Loc.T("zone.alpha");
-            if (layout == 4)
-                return x >= 6 && x < 10 && y < 4 ? Loc.T("zone.beta") : null;
-            if (x < 4 && y >= 4 && y < 8 && layout != 1) return Loc.T("zone.beta");
+            if (x < 4 && y < 4) return true;
+            index = 1;
+            if (layout == 4) return x >= 6 && x < 10 && y < 4;
+            if (x < 4 && y >= 4 && y < 8 && layout != 1) return true;
+            input = false;
             var outputs = reactor.class77_0?.rectangle_1;
             if (outputs != null)
             {
@@ -125,10 +138,13 @@ namespace SpeechChem.Screens.Reactor
                     if (r.vector2i_1.int_0 <= 0 || r.vector2i_1.int_1 <= 0) continue;
                     if (x >= r.vector2i_0.int_0 && x < r.vector2i_0.int_0 + r.vector2i_1.int_0
                         && y >= r.vector2i_0.int_1 && y < r.vector2i_0.int_1 + r.vector2i_1.int_1)
-                        return Loc.T(i == 0 ? "zone.psi" : "zone.omega");
+                    {
+                        index = i;
+                        return true;
+                    }
                 }
             }
-            return null;
+            return false;
         }
 
         // ---- cell content ----

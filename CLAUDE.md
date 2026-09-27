@@ -478,20 +478,21 @@ method_10): "sensed Nickel, heading down" on a match — also when already headi
 the waldo alone can't show — else "sensed Carbon" / "sensed nothing", the atom the sensor saw;
 verified live 2026-09-27 on a `custom` test puzzle, all three cases; FLIP-FLOP (ToggleInstruction,
 on custom research palettes: vmethod_7 branches when bool_3 is set and clears it, else sets it —
-the run resets it): "flip flop, heading down" / "flip flop, no branch", and during a run the cell
+the run resets it): "flip flop, heading down" / bare "flip flop", and during a run the cell
 reads "on" (next pass branches) / "off" (the game marks the cell while off); verified live;
 FUSION (Class662 fires every Class672: projectile atom on the laser's left cell, target on the
 right; both present and atomic numbers summing to 109 or less → projectile removed, target becomes
-the sum, else nothing): the target cell's element is diffed — "fusion 2, 1, Helium" / "fusion, no
-effect"; the grid names the laser's cells "projectile" / "target" (the game's tooltip words);
+the sum, else nothing): the target cell's element is diffed — "fusion 2, 1, Helium" / bare
+"fusion"; the grid names the laser's cells "projectile" / "target" (the game's tooltip words);
 verified live, including a cut/paste of the laser; FISSION (Class664 fires every Class667: target
 atom on the LEFT cell; unless hydrogen it becomes ceil(Z/2) and a lone floor(Z/2) atom appears on
-the right cell): "fission 1, 1, Beryllium and Lithium" / "fission, no effect"; cells read "target" /
+the right cell): "fission 1, 1, Beryllium and Lithium" / bare "fission"; cells read "target" /
 "product" (the right cell's word is the mod's — the game names only the target); verified live;
 SWAP (Class666 → Class671.smethod_1, only with exactly two tunnels: each tunnel's atom is cut from its
 molecule, all bonds broken, and moved to the other tunnel): "swap: Oxygen to 4, 5, bonds broken",
-"swap: A to x, y; B to x, y", "swap, no effect"; a tunnel cell reads "other end 4, 5" when there are
-exactly two; verified live, including a cut/paste of a tunnel), wall stops
+"swap: A to x, y; B to x, y", bare "swap"; a tunnel cell reads "other end 4, 5" when there are
+exactly two; verified live, including a cut/paste of a tunnel). NO-EFFECT = THE BARE NAME (user rule): an
+instruction that did nothing logs just its name, never "no effect" / "no branch"), wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,

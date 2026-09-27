@@ -26,6 +26,16 @@ namespace SpeechChem.Screens
         /// <summary>Test seam / game boundary: the game's top screen type name.</summary>
         internal static Func<string> GameTopScreenName = GameState.TopScreenName;
 
+        /// <summary>Test seam / game boundary: true while the game's top screen is a widget screen
+        /// (Class54) that has not rebuilt since regaining the top (Class54.bool_1 false).</summary>
+        internal static Func<bool> GameTopSettling = DefaultSettling;
+
+        private static bool DefaultSettling()
+        {
+            var top = Game.GameApi.TopScreen() as Class54;
+            return top != null && !top.bool_1;
+        }
+
         /// <summary>Test seam / game boundary: the curated label for the top screen's DEOB name, for
         /// renamed types whose shipping name must never be spoken (null = stay silent).</summary>
         internal static Func<string> GameTopCuratedLabel = DefaultCuratedLabel;
@@ -76,6 +86,12 @@ namespace SpeechChem.Screens
             try { top = GameTopScreenName(); }
             catch { return; }
             if (top == _lastGameScreen) return;
+            // A widget screen that just regained the top rebuilds on the game's next update; until then
+            // no modeled screen claims it (they read settled screens only) and this fallback would
+            // speak its name one frame before the modeled screen does. Decide next frame instead.
+            bool settling = false;
+            try { settling = GameTopSettling(); } catch { }
+            if (settling) return;
             _lastGameScreen = top;
             if (top == null) return;
             Log.Info("[screen] -> " + LogName(top) + (Current != null ? " (modeled: " + Current.Key + ")" : ""));
@@ -165,6 +181,8 @@ namespace SpeechChem.Screens
             if (_registered.Count > 0) return;
             Register(new MainMenuScreen());
             Register(new NetDialogScreen());
+            Register(new MessageBoxScreen());
+            Register(new LevelSelectScreen());
             Register(new ProfilePickerScreen());
             Register(new NewProfileScreen());
             Register(new DeleteProfileScreen());
@@ -184,6 +202,7 @@ namespace SpeechChem.Screens
             _lastGameScreen = null;
             GameTopScreenName = GameState.TopScreenName;
             GameTopCuratedLabel = DefaultCuratedLabel;
+            GameTopSettling = () => false;
             Navigation.Attach(null);
         }
     }

@@ -157,4 +157,46 @@ namespace SpeechChem.Screens
             if (first != null) b.SetStart(first);
         }
     }
+
+    /// <summary>
+    /// Class58 — the generic message box (a paragraph over a dimmed screen, optional ResearchNet logo,
+    /// a column of buttons; each button may also have hotkeys, e.g. Continue on Escape/Enter). The
+    /// buttons are captured at construction (TitleTextCapture). Arrival speaks the text; the buttons
+    /// are an uncounted vertical list, focus on the first; activation runs the box's own button path
+    /// (method_15: close, then the button's action). Escape stays native (the box's own hotkeys).
+    /// </summary>
+    public sealed class MessageBoxScreen : Screen
+    {
+        public override string Key => "messagebox";
+
+        private static Class58 Box => ProfileUi.Settled<Class58>();
+
+        public override bool IsActive() => Box != null;
+
+        public override void OnFocus()
+        {
+            var box = Box;
+            if (box != null && !string.IsNullOrEmpty(box.string_0)) Speech.Tts.Speak(GameText.Speech(box.string_0));
+        }
+
+        public override void Build(GraphBuilder b)
+        {
+            var box = Box;
+            if (box == null) return;
+            b.AddItem(ControlId.Structural("messagebox.text"), ProfileUi.Text(true, () => GameText.Speech(Box?.string_0)));
+            var buttons = TitleTextCapture.MessageButtonsOf(box);
+            if (buttons == null) return;
+            ControlId first = null;
+            for (int i = 0; i < buttons.Count; i++)
+            {
+                var button = buttons[i];
+                var id = ControlId.Structural("messagebox.button." + i);
+                if (first == null) first = id;
+                var vt = ProfileUi.Button(() => button.string_0, () => Box?.method_15(button.action_0));
+                vt.SpeaksOwnPosition = true;
+                b.AddItem(id, vt);
+            }
+            if (first != null) b.SetStart(first);
+        }
+    }
 }

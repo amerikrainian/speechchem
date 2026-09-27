@@ -258,7 +258,41 @@ Unmodeled screens with RENAMED types announce only through a curated deob-name t
 `Class70` → "63 Corvi". Everything else obfuscated stays silent (never "Class74"). Destinations
 verified announcing and returning on Escape: Level select, Challenges, Settings, Team Fortress 2.
 
-## 12. Hard rules (inherited from Echopunks — same reasons)
+## 12. Level select (`module/src/Screens/LevelSelectScreens.cs`) — verified live 2026-09-27
+`LevelSelectScreen` over `SpaceChem.LevelSelectEditor` (Settled-gated, KeepStateOnPop). TAB STYLE
+(from Echopunks' control panel): a tab strip is its own Tab stop, one row of `ControlTypes.Tab` nodes
+with `Selected` (engine state) + `OnSelect`/`OnActivate` switching — selection follows focus and
+"selected" is never spoken. Four stops:
+- **Planets**: `Levels.smethod_0()` (ordered `Enum147`s); unlocked set = `method_13()`; switching =
+  the bar's own `method_16(index)` (skipped when already current — a rebuild restarts the map
+  animation). Locked planets read "Locked" and have no OnSelect.
+- **Levels** (initial): the planet name (`Levels.dictionary_2`), then the planet's levels in
+  PROGRESSION order — a topological sort over in-planet prerequisites (`Levels.dictionary_3`), ties by
+  map position (`dictionary_6`, y then x). The registry `dictionary_5` is NOT campaign order (the first
+  level came 5th on Sernimir II). Available (`Levels.smethod_12(id)`, all prerequisites complete):
+  "name (`dictionary_4`), button, kind, completed (`smethod_11`), n of m" — kind mirrors
+  `Class306.smethod_0` (Execution = `Class148`, Research ⊂ `Class84`, Production ⊂ `Class123`,
+  Defense ⊂ `DefenseLevelEditor`, "(OPTIONAL)" = `Levels.list_1`). Unavailable levels draw a "?" icon
+  and read "Locked". OnSelect = the hover (`method_21`, score panel), Enter = the click (`method_20`:
+  opens the level + its StoryTrainingPerformanceEditor intro). Planet 0 adds the orientation video
+  node (Class11.smethod_4 with the game's URL). Level ids: `type.smethod_0()` (Class362 extension).
+- **Scores**: three rows for the panel's level (`type_0`): "Elapsed Cycles: BEST n, LAST m"
+  (`Levels.smethod_9(id)`: `score_1` = BEST, `score_0` = LAST — the draw's own labels; metric names
+  `Graph.string_0/1/2`); bare metric name when unsolved. Histograms / Tab leaderboards not read yet.
+- **Actions**: Return to Menu (`method_17`), Generate Forum Signature (`method_23`; writes a PNG to the
+  DESKTOP; built disabled when `Class184.bool_1` → reads "unavailable").
+Escape native (Return to Menu). The game's Left/Right planet keys and Tab (graph/leaderboard toggle)
+are suppressed while modeled.
+
+`MessageBoxScreen` over `Class58` (generic message box; buttons from `Class392(label, keys, action)`,
+captured in a constructor prefix that also materializes the sequence): text spoken, uncounted button
+list, activation = `method_15(action)` (close, then act). Probe `push message` shows one.
+
+Fallback-announce race (fixed): after a covering screen closes, the uncovered Class54 is unsettled
+for a frame, no modeled screen claims it, and the unmodeled fallback spoke its name before the
+modeled screen did — `ScreenManager.GameTopSettling` defers the fallback while the top is unsettled.
+
+## 13. Hard rules (inherited from Echopunks — same reasons)
 - Never commit or ship game code or anything derived from the game's binaries (`game/` stays
   gitignored); the shipped namemap carries name pairs only.
 - Never crash the game: every hook body catches everything; Bootstrap swallows everything.
@@ -274,14 +308,15 @@ verified announcing and returning on Escape: Level select, Challenges, Settings,
 - Keep `module/src/UI/Graph` BCL-pure.
 - Never apply a game Harmony patch before init (first-tick arming).
 
-## 13. Roadmap
+## 14. Roadmap
 1. (done) Injection under CLR 4 in the SANDBOX domain, typed access with publicize +
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. (done) Profile flow (§10), main menu (§11). Next candidates: Options (`Class74` "Settings":
-   Fullscreen / Keep Aspect Ratio / Show Bonder Priority toggles, Language, music/sound sliders, Save
-   Changes / Cancel), Level select, Challenges.
+4. (done) Profile flow (§10), main menu (§11), level select (§12). Next: Challenges, Options
+   (`Class74` "Settings": Fullscreen / Keep Aspect Ratio / Show Bonder Priority toggles, Language,
+   music/sound sliders, Save Changes / Cancel), then StoryTrainingPerformanceEditor (the Story /
+   Training / Performance tabs every level opens with) before the editors themselves.
 5. Level select, research/production level editors (reactor grid + instructions, pipeline).
 6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
    REPLACEMENT must be backed up and restored on uninstall).

@@ -55,6 +55,8 @@ namespace SpeechChem.Patches
                     postfix: new HarmonyMethod(self, nameof(AfterSceneText)));
                 harmony.Patch(Expr.MethodOf(() => default(Class60).method_15(null, null)),
                     prefix: new HarmonyMethod(self, nameof(BeforeDialogButton)));
+                harmony.Patch(typeof(Class58).GetConstructors(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)[0],
+                    prefix: new HarmonyMethod(self, nameof(BeforeMessageBox)));
                 Log.Info("[patch] title text capture armed");
             }
             catch (Exception ex) { Log.Error("[patch] title text capture failed to apply", ex); }
@@ -126,6 +128,31 @@ namespace SpeechChem.Patches
         private static void AfterSceneText(string __1)
         {
             if (_newsLines != null && __1 != null) _newsLines.Add(__1);
+        }
+
+        /// <summary>The buttons of a Class58 message box, in order, or null.</summary>
+        public static List<Class392> MessageButtonsOf(object box)
+        {
+            if (box == null) return null;
+            return MessageButtons.TryGetValue(box, out var b) ? b : null;
+        }
+
+        private static readonly ConditionalWeakTable<object, List<Class392>> MessageButtons = new ConditionalWeakTable<object, List<Class392>>();
+
+        // Class58(text, logo, IEnumerable<Class392> buttons): the constructor turns the buttons into
+        // widgets and keeps none of them. Materialize the sequence once (so the ctor and we see the
+        // same items even for a lazy query) and file it against the new instance.
+        private static void BeforeMessageBox(Class58 __instance, ref IEnumerable<Class392> __2)
+        {
+            try
+            {
+                if (__instance == null || __2 == null) return;
+                var list = new List<Class392>(__2);
+                __2 = list;
+                MessageButtons.Remove(__instance);
+                MessageButtons.Add(__instance, list);
+            }
+            catch (Exception ex) { Log.Error("[capture] message box", ex); }
         }
 
         private static void BeforeDialogButton(Class60 __instance, string __0, Action __1)

@@ -72,6 +72,12 @@ namespace SpeechChem.Dev
                 case "shiplost": screen = new Class154((Enum147)8); break;
                 case "credits": screen = Class152.smethod_12(); break;
                 case "epilogue": screen = Class81.smethod_13(); break;
+                case "message": // a Class58 message box, like the forum-signature notice (dev text)
+                    screen = new Class58("Probe message box.", false, new[]
+                    {
+                        new Class392(GameText.T("Continue"), new[] { Impeller.Keys.Escape, Impeller.Keys.Enter }, () => { }),
+                    });
+                    break;
                 default: return "push what? shiplost | credits | epilogue\n";
             }
             return GameApi.PushScreen(screen) ? "pushed " + what + "\n" : "[push failed]\n";

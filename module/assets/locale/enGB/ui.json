@@ -21,6 +21,10 @@
   "mainmenu.corvi": "63 Corvi",
   "mainmenu.tf2": "Team Fortress 2",
 
+  "levelselect.locked": "Locked",
+  "levelselect.completed": "completed",
+  "levelselect.score": "{metric}: {bestLabel} {best}, {lastLabel} {last}",
+
   "role.button": "button",
   "role.toggle": "toggle",
   "role.slider": "slider",

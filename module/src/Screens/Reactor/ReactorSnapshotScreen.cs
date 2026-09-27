@@ -20,6 +20,7 @@ namespace SpeechChem.Screens.Reactor
     {
         public int Width, Height, Cycle;
         public string[,] Contents; // spoken cell contents, "" when empty
+        public string[,] Details;  // Shift+Backspace: waldo state, atom info, tooltips
         public string[,] Zones;    // zone name or null
         public bool[,] Marked;     // the error box's markers
 
@@ -36,6 +37,7 @@ namespace SpeechChem.Screens.Reactor
                 Height = size.int_1,
                 Cycle = cycle,
                 Contents = new string[size.int_0, size.int_1],
+                Details = new string[size.int_0, size.int_1],
                 Zones = new string[size.int_0, size.int_1],
                 Marked = new bool[size.int_0, size.int_1],
             };
@@ -43,6 +45,7 @@ namespace SpeechChem.Screens.Reactor
                 for (int x = 0; x < s.Width; x++)
                 {
                     s.Contents[x, y] = string.Join(", ", ReactorEditorScreen.CellContents(r, x, y, allLayers: true).ToArray());
+                    s.Details[x, y] = ReactorEditorScreen.CellDetailsOf(r, x, y, allLayers: true);
                     s.Zones[x, y] = ReactorEditorScreen.ZoneAt(r, x, y);
                 }
             if (markers != null)
@@ -61,7 +64,8 @@ namespace SpeechChem.Screens.Reactor
     /// <summary>
     /// A read-only grid over a <see cref="ReactorSnapshot"/>: cells read like the live grid's —
     /// "x, y" first, the zone when entered, the contents — plus "error here" on the error box's
-    /// marked cells. Opens on the first marked cell. Home / End = row edges. A CHILD sub-screen
+    /// marked cells; Shift+Backspace = the cell's details as they were (waldo state, atom info,
+    /// tooltips). Opens on the first marked cell. Home / End = row edges. A CHILD sub-screen
     /// (mod-side modal): Escape closes back to the log entry.
     /// </summary>
     internal sealed class ReactorSnapshotScreen : Screen
@@ -103,6 +107,7 @@ namespace SpeechChem.Screens.Reactor
                         Announcements = new[] { new NodeAnnouncement(() => Readout(cx, cy), kind: AnnouncementKinds.Label) },
                         SpeaksOwnPosition = true,
                         OnSelect = () => Land(cx, cy),
+                        OnTooltip = () => Speech.Tts.Speak(_s.Details[cx, cy], interrupt: true),
                         OnJumpEdge = first => { Navigation.FocusNode(CellId(first ? 0 : _s.Width - 1, cy)); return true; },
                     });
                 }

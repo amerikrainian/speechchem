@@ -148,6 +148,9 @@ namespace SpeechChem.Patches
 
         private static readonly HashSet<Class188> Blocked = new HashSet<Class188>();
 
+        /// <summary>Whether the waldo last tried to move and was held by the wall (until it moves).</summary>
+        internal static bool AtWall(Class188 waldo) => waldo != null && Blocked.Contains(waldo);
+
         private struct MoveState
         {
             public bool Moving;

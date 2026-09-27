@@ -43,15 +43,25 @@ namespace SpeechChem.Screens.Reactor
                 parts.Add(Loc.T(red ? "reactor.waldo.red" : "reactor.waldo.blue"));
                 string heading = Heading(waldo.vector2i_1);
                 if (heading != null) parts.Add(Loc.T("reactor.waldo.heading", new { dir = heading }));
-                var held = waldo.moleculeSheet_0?.molecule_0;
-                parts.Add(held != null ? Loc.T("reactor.waldo.holding", new { molecule = MoleculeText.NameAndFormula(held) }) : Loc.T("reactor.waldo.empty"));
-                string waiting = waldo.method_2();
-                if (!string.IsNullOrEmpty(waiting)) parts.Add(waiting);
-                if (waldo.bool_3) parts.Add(Loc.T("reactor.waldo.rotating"));
-                if (waldo.bool_4) parts.Add(Loc.T("reactor.waldo.sync"));
+                parts.AddRange(WaldoState(waldo));
             }
             Speech.Tts.Speak(string.Join(", ", parts.ToArray()), interrupt: true);
             if (jump) FocusCell(cell.int_0, cell.int_1, announce: false); // the waldo line already names the cell
+        }
+
+        /// <summary>A running waldo's state beyond position and heading: what it holds, the game's
+        /// own waiting text (method_2: "WAITING (α)" …), rotating, syncing, stopped at the wall.</summary>
+        internal static List<string> WaldoState(Class188 waldo)
+        {
+            var parts = new List<string>();
+            var held = waldo.moleculeSheet_0?.molecule_0;
+            parts.Add(held != null ? Loc.T("reactor.waldo.holding", new { molecule = MoleculeText.NameAndFormula(held) }) : Loc.T("reactor.waldo.empty"));
+            string waiting = waldo.method_2();
+            if (!string.IsNullOrEmpty(waiting)) parts.Add(waiting);
+            if (waldo.bool_3) parts.Add(Loc.T("reactor.waldo.rotating"));
+            if (waldo.bool_4) parts.Add(Loc.T("reactor.waldo.sync"));
+            if (Patches.RunCapture.AtWall(waldo)) parts.Add(Loc.T("reactor.waldo.wall"));
+            return parts;
         }
 
         private static StartInstruction FindStart(SpaceChem.Reactor.Reactor r, bool red)

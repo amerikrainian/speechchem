@@ -348,7 +348,10 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
 - GRID: a cell reads bare "x, y" (1-based) FIRST, the zone on the first readout or when crossed, then
   contents (red/blue instruction + arrow labels from `Game/ReactorText`, hardware feature, waldos and
   atoms with bonds while running), "highlighted" (tutorial target), "selected". Empty cell =
-  coordinates only. C reads coordinates. Shift+Backspace = the game's tooltip text
+  coordinates only. While running a waldo reads SHORT: "red waldo, facing down" (user rule).
+  C reads coordinates. Shift+Backspace = the cell's details (`CellDetailsOf`), most useful first:
+  each waldo's state beyond facing (holding / empty, the game's WAITING text, syncing, rotating, at
+  the wall — `WaldoState`, shared with Shift+R), the atom info box, then the game's tooltip text
   (`Patches/TooltipCapture`, Class713.smethod_0 postfix). Home/End = row edges.
 - EDITING (user rules): palette letters place at the cursor in the ACTIVE colour, replacing the slot's
   occupant; Enter on a palette slot arms it, the next Enter on the grid places it (one-shot; Enter with

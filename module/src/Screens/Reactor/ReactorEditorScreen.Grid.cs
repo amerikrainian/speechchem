@@ -186,11 +186,15 @@ namespace SpeechChem.Screens.Reactor
                 parts.Add(ReactorText.FeatureLabel(f));
             if (Live)
             {
+                // Waldos read short here — name and facing (user rule); the rest of their state is
+                // Shift+Backspace (CellDetailsOf) and Shift+R / Shift+B.
                 foreach (var w in r.dictionary_2)
                 {
                     var p = w.Value.method_0();
-                    if (p.int_0 == x && p.int_1 == y)
-                        parts.Add(Loc.T((int)w.Key == ReactorText.Red ? "reactor.waldo.red" : "reactor.waldo.blue"));
+                    if (p.int_0 != x || p.int_1 != y) continue;
+                    parts.Add(Loc.T((int)w.Key == ReactorText.Red ? "reactor.waldo.red" : "reactor.waldo.blue"));
+                    string facing = Heading(w.Value.vector2i_1);
+                    if (facing != null) parts.Add(Loc.T("reactor.waldo.facing", new { dir = facing }));
                 }
                 parts.AddRange(AtomsAt(r, x, y));
             }
@@ -249,28 +253,40 @@ namespace SpeechChem.Screens.Reactor
             return null;
         }
 
-        /// <summary>Shift+Backspace on a cell: the game's hover text for what is there — each
-        /// instruction's palette tooltip (the only description the game has for it), each piece of
-        /// hardware's tooltip, and the atom info box for an atom during a run.</summary>
-        private string CellDetails(int x, int y)
+        /// <summary>Shift+Backspace on a cell.</summary>
+        private string CellDetails(int x, int y) => CellDetailsOf(Model, x, y, allLayers: false);
+
+        /// <summary>A cell's details, most useful first (user rule): during a run each waldo's state
+        /// beyond the grid's "facing" (holding, the game's waiting text, syncing, rotating, at the
+        /// wall), then the atom info box for each atom; then the game's hover text — each
+        /// instruction's palette tooltip (the only description the game has for it) and the
+        /// hardware's tooltip. Also recorded by the crash snapshot.</summary>
+        internal static string CellDetailsOf(ReactorModel r, int x, int y, bool allLayers)
         {
-            var r = Model;
             if (r == null) return null;
             var parts = new List<string>();
+            if (Live)
+            {
+                foreach (var w in r.dictionary_2)
+                {
+                    var p = w.Value.method_0();
+                    if (p.int_0 != x || p.int_1 != y) continue;
+                    var state = new List<string> { Loc.T((int)w.Key == ReactorText.Red ? "reactor.waldo.red" : "reactor.waldo.blue") };
+                    state.AddRange(WaldoState(w.Value));
+                    parts.Add(string.Join(", ", state.ToArray()));
+                }
+                foreach (MoleculeSheet sheet in r.class201_0)
+                    foreach (var kv in sheet.method_14())
+                        if (kv.Key.int_0 == x && kv.Key.int_1 == y) parts.Add(ReactorText.AtomDetails(kv.Value));
+            }
             foreach (int layer in new[] { ReactorText.Red, ReactorText.RedArrow, ReactorText.Blue, ReactorText.BlueArrow })
             {
-                if (!Visible(r, layer)) continue;
+                if (!allLayers && !Visible(r, layer)) continue;
                 var i = InstructionAt(r, x, y, layer);
                 if (i != null) parts.Add(InstructionDetails(i));
             }
             if (r.method_15(new Vector2i(x, y), (Enum114)ReactorText.Background) is ReactorFeature f)
                 parts.Add(Patches.TooltipCapture.Speech(f.class713_0) ?? ReactorText.FeatureLabel(f));
-            if (Live)
-            {
-                foreach (MoleculeSheet sheet in r.class201_0)
-                    foreach (var kv in sheet.method_14())
-                        if (kv.Key.int_0 == x && kv.Key.int_1 == y) parts.Add(ReactorText.AtomDetails(kv.Value));
-            }
             if (parts.Count == 0) return Loc.T("nav.no_tooltip");
             return string.Join(". ", parts.ToArray());
         }

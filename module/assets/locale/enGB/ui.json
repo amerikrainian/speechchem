@@ -33,6 +33,8 @@
   "reactor.waldo.empty": "empty",
   "reactor.waldo.rotating": "rotating",
   "reactor.waldo.sync": "waiting to synchronize",
+  "reactor.waldo.facing": "facing {dir}",
+  "reactor.waldo.wall": "at the wall",
   "reactor.cat": "{name}, {n}",
   "reactor.cat.instructions": "Instructions",
   "reactor.cat.inputs": "Inputs",

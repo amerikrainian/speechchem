@@ -181,6 +181,9 @@ obfuscated names never spoken), `Game/` (GameText, GameApi, SdlNative, Synthetic
 `Patches/` (GameKeySuppression, GateTextCapture), `Update/` (launch update check against
 `amerikrainian/speechchem` releases — 404s until the repo has a release; log line only), `Dev/Probe`.
 
+TAB WRAPS by default on every screen (`Screen.Wrap`, user rule 2026-09-27): Tab past the last stop
+lands on the first, Shift+Tab before the first on the last; a screen may opt out with `Wrap = false`.
+
 SCREEN-SCOPED ACTIONS: any input action id starting with `screen.` is dispatched to the focused
 screen's `GetActions()` (GraphNavigator's default branch). This replaced Echopunks' explicit
 whitelist, whose missing entries silently swallowed bindings.

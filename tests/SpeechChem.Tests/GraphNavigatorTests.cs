@@ -195,7 +195,7 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
-        public void TabCyclesStopsAndConsumesAtTheEnd()
+        public void TabCyclesStopsAndWrapsByDefault()
         {
             var screen = new TestScreen
             {
@@ -212,6 +212,30 @@ namespace SpeechChem.Tests
             Assert.True(_nav.OnInputJustPressed(Action("ui.next")));
             Assert.Equal("Beta", _speech.Spoken[_speech.Spoken.Count - 1]);
 
+            Assert.True(_nav.OnInputJustPressed(Action("ui.next"))); // past the last stop: the first
+            Assert.Equal("Alpha", _speech.Spoken[_speech.Spoken.Count - 1]);
+
+            Assert.True(_nav.OnInputJustPressed(Action("ui.prev"))); // before the first stop: the last
+            Assert.Equal("Beta", _speech.Spoken[_speech.Spoken.Count - 1]);
+        }
+
+        [Fact]
+        public void TabConsumesAtTheEndWhenWrapIsOff()
+        {
+            var screen = new TestScreen
+            {
+                Wrap = false,
+                Declare = b =>
+                {
+                    b.AddItem(ControlId.Structural("a"), Vt("Alpha"));
+                    b.BeginStop();
+                    b.AddItem(ControlId.Structural("b"), Vt("Beta"));
+                },
+            };
+            _nav.Attach(screen);
+            _nav.EnsureFocus();
+
+            Assert.True(_nav.OnInputJustPressed(Action("ui.next")));
             Assert.True(_nav.OnInputJustPressed(Action("ui.next"))); // at the last stop: consume, no wrap
             Assert.Equal("Beta", _speech.Spoken[_speech.Spoken.Count - 1]);
         }

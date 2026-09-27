@@ -16,7 +16,8 @@ namespace SpeechChem.Patches
     /// pressed or every press double-acts.
     ///
     /// Escape is never swallowed (native back/close paths stay), except while the focused screen
-    /// reports a mod-side modal (<see cref="Screens.Screen.ModalCapturesEscape"/>). Suppression never
+    /// reports a mod-side modal (<see cref="Screens.Screen.ModalCapturesEscape"/>) — latched for the
+    /// whole press, since the modal closes before polling screens read the key. Suppression never
     /// applies while the focused screen CapturesRawInput, on unmodeled screens (the game must stay
     /// fully playable), or with focus mode off.
     ///
@@ -57,6 +58,20 @@ namespace SpeechChem.Patches
         private const int EscapeScancode = 41;
         private const int BackspaceScancode = 42;
 
+        // An Escape press a mod-side modal took, held until the key is released. Polling screens
+        // (the reactor's Class77, Reactor) read Escape in the game's update, AFTER our tick — by then
+        // the Back handler has closed the modal, the reactor is the focused screen again, and an
+        // unlatched check would let the same press open the exit prompt.
+        private static bool _escapeLatched;
+
+        /// <summary>FrameLoop step, after the keyboard snapshot and before input dispatch: latch
+        /// Escape while a modal owns it, release the latch once the key is up.</summary>
+        public static void LatchEscape()
+        {
+            if (!Input.SdlKeyboard.Held(EscapeScancode)) { _escapeLatched = false; return; }
+            if (Input.SdlKeyboard.JustPressed(EscapeScancode) && Suppressed(EscapeScancode)) _escapeLatched = true;
+        }
+
         public static void Apply(Harmony harmony)
         {
             try
@@ -80,7 +95,7 @@ namespace SpeechChem.Patches
                 if (!FocusMode.Active) return false;
                 var cur = Screens.ScreenManager.Current;
                 if (cur == null || cur.CapturesRawInput) return false;
-                if (scancode == EscapeScancode) return cur.ModalCapturesEscape;
+                if (scancode == EscapeScancode) return _escapeLatched || cur.ModalCapturesEscape;
                 if (scancode == BackspaceScancode && UI.Navigation.TextEntryFocused) return false;
                 return Keys.Contains(scancode) && !cur.PassKeyToGame(scancode);
             }

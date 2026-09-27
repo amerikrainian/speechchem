@@ -365,6 +365,12 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
 - COVERED BY ANOTHER GAME SCREEN (dialog, periodic table, Story & Info): the editor stays in the chain,
   so OnPop keeps cursor, trackers and focus (KeepStateOnPop while covered) — closing returns to the
   exact node (e.g. the toolbar button). Leaving the reactor starts over.
+- ESCAPE ON MOD LISTS (context menu, path trace, molecule viewer — any `ModalCapturesEscape` child):
+  the reactor POLLS Escape in the game's update, after our tick has already closed the list, so
+  `GameKeySuppression.LatchEscape` (FrameLoop step between the snapshot and dispatch) keeps the press
+  from the game until release; without it every such Escape opened the exit prompt. Test with a
+  PostMessage WM_KEYDOWN/UP VK_ESCAPE to the game window — it reaches SDL's state like a real key
+  (probe `key ui.back` never presses Escape, `rawkey` never updates the mod's snapshot).
 - TEST HYGIENE: tests place instructions in the user's live save; always delete them and sweep all 80
   cells afterwards (Pancakes baseline: red START at 5, 2 and blue START at 5, 7, both facing left). Never
   let a test program complete a level: park the waldo against a wall instead of looping.

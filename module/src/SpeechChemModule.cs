@@ -36,9 +36,11 @@ namespace SpeechChem
             Screens.ScreenManager.Initialize();
 
             // Per-frame steps, in the order they run: one keyboard snapshot, then input dispatch, then
-            // the screen stack (which drives the navigator), then the synthetic-click release.
+            // the screen stack (which drives the navigator), then the synthetic-click release. The
+            // Escape latch sits between the snapshot and dispatch: it must see the modal still open.
             // (The dev pump is host-side, first.)
             FrameLoop.Register("keyboard", Input.SdlKeyboard.Update);
+            FrameLoop.Register("escape", Patches.GameKeySuppression.LatchEscape);
             FrameLoop.Register("input", Input.InputManager.Tick);
             FrameLoop.Register("loc", LocalizationManager.Tick);
             FrameLoop.Register("screens", Screens.ScreenManager.Tick);

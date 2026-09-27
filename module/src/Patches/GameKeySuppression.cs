@@ -39,7 +39,6 @@ namespace SpeechChem.Patches
             88, // KP_Enter      (ui.activate)
             43, // Tab           (ui.next/prev)
             42, // Backspace     (ui.secondary)
-            44, // Space         (ui.tooltip)
             79, // Right
             80, // Left
             81, // Down

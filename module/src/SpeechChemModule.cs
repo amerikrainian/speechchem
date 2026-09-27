@@ -79,7 +79,9 @@ namespace SpeechChem
             Input.InputManager.Register("ui.activate", "Activate", Input.InputCategory.UI)
                 .AddBinding(Input.Scancode.Return).AddBinding(Input.Scancode.KpEnter);
             Input.InputManager.Register("ui.secondary", "Secondary action", Input.InputCategory.UI).AddBinding(Input.Scancode.Backspace);
-            Input.InputManager.Register("ui.tooltip", "Read details", Input.InputCategory.UI).AddBinding(Input.Scancode.Space);
+            // Details (the mouse-over text) on Shift+Backspace: plain Backspace stays the secondary
+            // action, and Space belongs to the game (pause/resume in the reactor) — user rule, 2026-09-27.
+            Input.InputManager.Register("ui.tooltip", "Read details", Input.InputCategory.UI).AddBinding(Input.Scancode.Backspace, shift: true);
             Input.InputManager.Register("ui.back", "Back", Input.InputCategory.UI).AddBinding(Input.Scancode.Escape);
             Input.InputManager.Register("ui.regionPrev", "Previous region", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, ctrl: true).Repeating();
             Input.InputManager.Register("ui.regionNext", "Next region", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, ctrl: true).Repeating();

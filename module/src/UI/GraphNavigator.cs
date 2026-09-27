@@ -312,7 +312,7 @@ namespace SpeechChem.UI
                 {
                     var node = _graph?.CurrentNode;
                     if (node == null) return false;
-                    if (node.Vtable.TextEntry) return false; // Space belongs to the text field
+                    if (node.Vtable.TextEntry) return false; // the text field owns its keys
                     if (node.Vtable.OnTooltip != null) { _graph.Tooltip(); return true; }
                     Speak(Loc.T("nav.no_tooltip"));
                     return true;

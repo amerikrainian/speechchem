@@ -14,10 +14,11 @@ namespace SpeechChem
     /// </summary>
     internal static class FrameLoop
     {
-        private struct Step
+        private sealed class Step
         {
             public string Name;
             public Action Run;
+            public string LastError; // the failure already logged; repeats stay quiet until recovery
         }
 
         // Registration happens once at boot (main thread, before the game loop starts); ticks happen on
@@ -36,8 +37,24 @@ namespace SpeechChem
         {
             for (int i = 0; i < Steps.Count; i++)
             {
-                try { Steps[i].Run(); }
-                catch (Exception ex) { Log.Error("[frameloop] step '" + Steps[i].Name + "' failed", ex); }
+                var step = Steps[i];
+                try
+                {
+                    step.Run();
+                    if (step.LastError != null)
+                    {
+                        Log.Info("[frameloop] step '" + step.Name + "' recovered.");
+                        step.LastError = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // A broken step fails EVERY frame (~60/s); log each distinct failure once.
+                    string key = ex.GetType().FullName + ": " + ex.Message;
+                    if (key == step.LastError) continue;
+                    step.LastError = key;
+                    Log.Error("[frameloop] step '" + step.Name + "' failed (repeats suppressed until it recovers)", ex);
+                }
             }
         }
     }

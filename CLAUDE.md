@@ -292,7 +292,20 @@ Fallback-announce race (fixed): after a covering screen closes, the uncovered Cl
 for a frame, no modeled screen claims it, and the unmodeled fallback spoke its name before the
 modeled screen did — `ScreenManager.GameTopSettling` defers the fallback while the top is unsettled.
 
-## 13. Hard rules (inherited from Echopunks — same reasons)
+## 13. Challenges (`module/src/Screens/ChallengeScreens.cs`) — verified live 2026-09-27
+`ChallengesScreen` over `SpaceChem.ChallengeEditor`: the screen name is the drawn title
+("Challenges", comment "ENGLISH ALPHABET ONLY"); stop 1 = every visible challenge as one list in the
+drawn order — the game's own query `Levels.list_3.Where(!bool_0).OrderBy(int_1)`, which must stay a
+STABLE sort (badge numbers `int_1` repeat; ties keep list_3 order), six per column read column by
+column — "description (`Challenge.method_2()`, game text)[, completed (`method_1()`, the profile's
+"Challenge_…" unlock = the coloured badge)], n of m"; stop 2 = Continue (`method_12`). Control ids by
+POSITION (`int_1` is not unique — keying by it threw "Duplicate control id" every frame). Escape
+native (Continue).
+
+FrameLoop logs a repeating step failure once (per distinct exception) until the step recovers —
+the duplicate-id bug wrote ~2500 identical errors in a minute before this.
+
+## 14. Hard rules (inherited from Echopunks — same reasons)
 - Never commit or ship game code or anything derived from the game's binaries (`game/` stays
   gitignored); the shipped namemap carries name pairs only.
 - Never crash the game: every hook body catches everything; Bootstrap swallows everything.
@@ -308,12 +321,12 @@ modeled screen did — `ScreenManager.GameTopSettling` defers the fallback while
 - Keep `module/src/UI/Graph` BCL-pure.
 - Never apply a game Harmony patch before init (first-tick arming).
 
-## 14. Roadmap
+## 15. Roadmap
 1. (done) Injection under CLR 4 in the SANDBOX domain, typed access with publicize +
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. (done) Profile flow (§10), main menu (§11), level select (§12). Next: Challenges, Options
+4. (done) Profile flow (§10), main menu (§11), level select (§12), challenges (§13). Next: Options
    (`Class74` "Settings": Fullscreen / Keep Aspect Ratio / Show Bonder Priority toggles, Language,
    music/sound sliders, Save Changes / Cancel), then StoryTrainingPerformanceEditor (the Story /
    Training / Performance tabs every level opens with) before the editors themselves.

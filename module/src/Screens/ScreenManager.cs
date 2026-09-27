@@ -183,6 +183,7 @@ namespace SpeechChem.Screens
             Register(new NetDialogScreen());
             Register(new MessageBoxScreen());
             Register(new LevelSelectScreen());
+            Register(new ChallengesScreen());
             Register(new ProfilePickerScreen());
             Register(new NewProfileScreen());
             Register(new DeleteProfileScreen());

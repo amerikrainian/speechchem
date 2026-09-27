@@ -169,7 +169,8 @@ body in a file and `curl --data-binary @file` (JSON quoting). Molecules must be 
 refuses unbonded atoms in one molecule — the game's fusion code crashed on one); inputs of a
 random zone come in a FIXED seeded order, so test each case with a single-molecule zone. The JSON "type" picks the level: "research"
 (reactor), "production" (the pipeline editor; journal.json has 100 examples) or "sandbox" (Class147,
-a DefenseLevelEditor: the pipeline editor with printers, storage tanks and a Control Center).
+a DefenseLevelEditor: the pipeline editor with printers, storage tanks, a programmed input, quota 12 —
+no Control Center building or boss; "Control Center" is only its progress panel's label).
 Profile tests WRITE THE SAVE DATABASE (`%LOCALAPPDATA%\Zachtronics Industries\SpaceChem\.locals`):
 create throwaway profiles and delete them again. Grow it with each screen
 (Echopunks' AuditProbe is the model). `/eval`, `/screen`, `/gui`, `/probe`, `/reload` run on the main

@@ -22,10 +22,47 @@ namespace SpeechChem.Game
         public static string NameAndFormula(Molecule m)
         {
             if (m == null) return null;
-            if (m.string_1 == "???") return FromAtoms(m);
+            if (m.string_1 == "???") return NameAndFormula(Known(m)) ?? FromAtoms(m);
             string name = Name(m), formula = Formula(m);
             if (string.IsNullOrEmpty(formula) || formula == name) return name;
             return name + ", " + formula;
+        }
+
+        /// <summary>The level's named molecule this built one is — matched the way an output accepts
+        /// molecules (Molecule.method_2: the same atoms bonded the same way, any position or
+        /// rotation) against every molecule the pipeline's reactor panels show: each input's
+        /// upstream annotation and each output's downstream one (else the reactor's own note), as
+        /// ReactorEditorScreen.PanelAnnotation reads them. Null when none matches.</summary>
+        private static Molecule Known(Molecule m)
+        {
+            try
+            {
+                var pipeline = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+                if (pipeline == null) return null;
+                foreach (var kv in pipeline)
+                {
+                    if (!(kv.Key is SpaceChem.Pipeline.ReactorDraggable rd)) continue;
+                    foreach (var port in rd.class485_0)
+                        if (Match(port.Value.vmethod_0()?.class485_1.method_4(port.Value.pipeDraggable_0)?.method_0(), m, out var hit)) return hit;
+                    foreach (var port in rd.class485_1)
+                        if (Match(port.Value.vmethod_0()?.class485_0.method_4(port.Value.pipeDraggable_0)?.method_0() ?? port.Value.method_0(), m, out var hit)) return hit;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private static bool Match(SpaceChem.Pipeline.Annotation a, Molecule m, out Molecule hit)
+        {
+            hit = null;
+            if (a == null) return false;
+            foreach (var known in a.vmethod_6())
+            {
+                if (known == null || known.string_1 == "???" || !m.method_2(known)) continue;
+                hit = known;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>One atom: "Fluorine, F", as an input's single atom reads. Several: a formula in

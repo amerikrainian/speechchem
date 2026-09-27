@@ -191,6 +191,8 @@ namespace SpeechChem.Screens
             Register(new MainMenuScreen());
             Register(new NetDialogScreen());
             Register(new MessageBoxScreen());
+            Register(new MessageBoxEditorScreen());
+            Register(new WrongMoleculeScreen());
             Register(new LevelSelectScreen());
             Register(new ChallengesScreen());
             Register(new OptionsScreen());

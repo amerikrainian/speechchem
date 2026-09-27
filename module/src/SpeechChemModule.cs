@@ -112,6 +112,7 @@ namespace SpeechChem
                 Patches.GameKeySuppression.Apply(_harmony); // focus-mode key swallow (see the class doc)
                 Patches.GateTextCapture.Apply(_harmony);    // credit-card and epilogue strings for the click gates
                 Patches.TitleTextCapture.Apply(_harmony);   // main-menu news text + Class60 dialog buttons
+                Patches.DialogCapture.Apply(_harmony);      // in-level message boxes + the wrong-molecule dialog
             }
             if (!_updateAnnounced && _updateCheck != null && _updateCheck.NewerVersion != null)
             {

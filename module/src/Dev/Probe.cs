@@ -79,6 +79,18 @@ namespace SpeechChem.Dev
                 case "shiplost": screen = new Class154((Enum147)8); break;
                 case "credits": screen = Class152.smethod_12(); break;
                 case "epilogue": screen = Class81.smethod_13(); break;
+                case "exitprompt": // the reactor's own exit prompt (Yes/No)
+                    SpaceChem.MessageBoxEditor.smethod_16();
+                    return "exit prompt pushed\n";
+                case "reactionerror": // a Reaction Error box marked at reactor cell (4,3), 1-based (dev text)
+                {
+                    var reactor = Class53.smethod_5<Class77>()?.reactor_0;
+                    if (reactor == null) return "[no reactor open]\n";
+                    var marker = reactor.vector2i_0 + new Impeller.Vector2i(3 * 79 + 40, 2 * 79 + 40);
+                    screen = SpaceChem.MessageBoxEditor.smethod_15(GameText.T("Reaction Error"), "Probe reaction error.",
+                        Struct7.struct7_0, new[] { marker }, () => { });
+                    break;
+                }
                 case "message": // a Class58 message box, like the forum-signature notice (dev text)
                     screen = new Class58("Probe message box.", false, new[]
                     {

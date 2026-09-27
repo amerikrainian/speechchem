@@ -25,6 +25,9 @@
   "levelselect.completed": "completed",
   "levelselect.score": "{metric}: {bestLabel} {best}, {lastLabel} {last}",
 
+  "reactor.cell": "{x}, {y}",
+  "dialog.markers": "At {cells}",
+
   "role.button": "button",
   "role.toggle": "toggle",
   "role.slider": "slider",

@@ -26,6 +26,8 @@ namespace SpeechChem.UI
         private readonly List<TKey> _order = new List<TKey>();
         private readonly Dictionary<TKey, List<string>> _entries = new Dictionary<TKey, List<string>>();
         private readonly Dictionary<TKey, int> _pos = new Dictionary<TKey, int>(); // key -> index in _order
+        // Sparse per-entry payloads (a crash snapshot the view opens on Enter): key -> entry index -> tag.
+        private readonly Dictionary<TKey, Dictionary<int, object>> _tags = new Dictionary<TKey, Dictionary<int, object>>();
         private int _count;
 
         /// <summary>Groups holding entries, oldest first.</summary>
@@ -45,13 +47,23 @@ namespace SpeechChem.UI
             _order.Clear();
             _entries.Clear();
             _pos.Clear();
+            _tags.Clear();
             _count = 0;
             DroppedGroups = 0;
         }
 
-        public void Add(TKey key, string text)
+        public void Add(TKey key, string text) => Add(key, text, null);
+
+        /// <summary>Add an entry carrying a payload the view can act on (null = plain text).</summary>
+        public void Add(TKey key, string text, object tag)
         {
             if (string.IsNullOrEmpty(text)) return;
+            if (tag != null)
+            {
+                Dictionary<int, object> tags;
+                if (!_tags.TryGetValue(key, out tags)) _tags[key] = tags = new Dictionary<int, object>();
+                tags[Entries(key).Count] = tag;
+            }
             List<string> list;
             if (!_entries.TryGetValue(key, out list))
             {
@@ -77,6 +89,7 @@ namespace SpeechChem.UI
                 _count -= _entries[key].Count;
                 _entries.Remove(key);
                 _pos.Remove(key);
+                _tags.Remove(key);
                 k++;
                 DroppedGroups++;
             }
@@ -88,6 +101,14 @@ namespace SpeechChem.UI
         {
             List<string> list;
             return _entries.TryGetValue(key, out list) ? list : (IReadOnlyList<string>)new string[0];
+        }
+
+        /// <summary>The payload of entry <paramref name="index"/> of a group, or null.</summary>
+        public object TagAt(TKey key, int index)
+        {
+            Dictionary<int, object> tags;
+            object tag;
+            return _tags.TryGetValue(key, out tags) && tags.TryGetValue(index, out tag) ? tag : null;
         }
 
         /// <summary>The group's index in <see cref="Groups"/>, or -1 when absent (never added,

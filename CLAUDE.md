@@ -407,7 +407,15 @@ diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid mole
 run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed (run state
 changes always, except the "Stopped" of leaving the level: Class53.smethod_8 / smethod_9 stop the
 run first — Continue after a completion, the exit prompt's Yes — user rule). The log is
-cleared when a run starts from stopped. GroupedLog (ported from Echopunks) keeps the whole run under
+cleared when a run starts from stopped.
+CRASH SNAPSHOT (user request): a reaction error (GoalTracker.smethod_12 — collision, wall, pulled
+apart) pauses under the box and closing it STOPS (wipes molecules, waldos home), so the
+smethod_12 postfix snapshots the frozen reactor (`Screens/Reactor/ReactorSnapshotScreen`: every
+cell's contents on ALL layers, waldos, every atom — CellContents(allLayers), AtomsAt lists both atoms
+of a collision — plus the box's markers as cells) and hangs it on the error's log entry as a TAG
+(GroupedLog.Add(key, text, tag); WindowedLogView turns tagged rows into buttons). Enter opens a
+read-only grid on the marked cell ("error here"); Escape returns to the entry. Atoms collide when
+closer than a cell mid-move, so the marked cell may hold one atom with the other beside it. GroupedLog (ported from Echopunks) keeps the whole run under
 a 10M-entry insurance cap; WindowedLogView is the reusable Tab stop: one region per cycle, a window of
 51 groups / 1200 rows re-centred on focus every rebuild, tail-follow when focus is elsewhere, Home/End
 = the whole log's ends.

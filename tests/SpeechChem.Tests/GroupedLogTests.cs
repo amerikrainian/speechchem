@@ -21,6 +21,22 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void TagsStayWithTheirEntryAndClearWithTheLog()
+        {
+            var log = new GroupedLog<int>(100);
+            var snapshot = new object();
+            log.Add(5, "a");
+            log.Add(5, "crash", snapshot);
+            log.Add(5, "c");
+            Assert.Null(log.TagAt(5, 0));
+            Assert.Same(snapshot, log.TagAt(5, 1));
+            Assert.Null(log.TagAt(5, 2));
+            Assert.Null(log.TagAt(9, 0));
+            log.Clear();
+            Assert.Null(log.TagAt(5, 1));
+        }
+
+        [Fact]
         public void EmptyTextIsIgnored()
         {
             var log = new GroupedLog<int>(100);

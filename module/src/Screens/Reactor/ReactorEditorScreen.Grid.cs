@@ -175,12 +175,13 @@ namespace SpeechChem.Screens.Reactor
             return string.Join(", ", parts.ToArray());
         }
 
-        /// <summary>What a cell holds, as spoken phrases (no coordinates).</summary>
-        internal static List<string> CellContents(ReactorModel r, int x, int y)
+        /// <summary>What a cell holds, as spoken phrases (no coordinates). <paramref name="allLayers"/>
+        /// ignores the layer visibility toggles (the crash snapshot records everything).</summary>
+        internal static List<string> CellContents(ReactorModel r, int x, int y, bool allLayers = false)
         {
             var parts = new List<string>();
-            AddColour(parts, r, x, y, ReactorText.Red, ReactorText.RedArrow, "reactor.red");
-            AddColour(parts, r, x, y, ReactorText.Blue, ReactorText.BlueArrow, "reactor.blue");
+            AddColour(parts, r, x, y, ReactorText.Red, ReactorText.RedArrow, "reactor.red", allLayers);
+            AddColour(parts, r, x, y, ReactorText.Blue, ReactorText.BlueArrow, "reactor.blue", allLayers);
             if (r.method_15(new Vector2i(x, y), (Enum114)ReactorText.Background) is ReactorFeature f)
                 parts.Add(ReactorText.FeatureLabel(f));
             if (Live)
@@ -191,21 +192,20 @@ namespace SpeechChem.Screens.Reactor
                     if (p.int_0 == x && p.int_1 == y)
                         parts.Add(Loc.T((int)w.Key == ReactorText.Red ? "reactor.waldo.red" : "reactor.waldo.blue"));
                 }
-                string atom = AtomAt(r, x, y);
-                if (atom != null) parts.Add(atom);
+                parts.AddRange(AtomsAt(r, x, y));
             }
             return parts;
         }
 
-        private static void AddColour(List<string> parts, ReactorModel r, int x, int y, int layer, int arrowLayer, string colourKey)
+        private static void AddColour(List<string> parts, ReactorModel r, int x, int y, int layer, int arrowLayer, string colourKey, bool allLayers)
         {
             var labels = new List<string>();
-            if (Visible(r, layer))
+            if (allLayers || Visible(r, layer))
             {
                 var i = InstructionAt(r, x, y, layer);
                 if (i != null) labels.Add(ReactorText.Label(i));
             }
-            if (Visible(r, arrowLayer))
+            if (allLayers || Visible(r, arrowLayer))
             {
                 var a = InstructionAt(r, x, y, arrowLayer);
                 if (a != null) labels.Add(ReactorText.Label(a));
@@ -214,28 +214,37 @@ namespace SpeechChem.Screens.Reactor
                 parts.Add(Loc.T(colourKey) + " " + string.Join(", ", labels.ToArray()));
         }
 
-        /// <summary>The atom in a cell during a run, with its bonds ("Oxygen, double bond right").</summary>
-        private static string AtomAt(ReactorModel r, int x, int y)
+        /// <summary>The atoms in a cell during a run, each with its bonds ("Oxygen, double bond
+        /// right") — normally one; two when molecules collide there.</summary>
+        private static List<string> AtomsAt(ReactorModel r, int x, int y)
         {
+            var atoms = new List<string>();
             foreach (MoleculeSheet sheet in r.class201_0)
             {
-                foreach (var kv in sheet.method_14())
+                string atom = AtomIn(sheet, x, y);
+                if (atom != null) atoms.Add(atom);
+            }
+            return atoms;
+        }
+
+        private static string AtomIn(MoleculeSheet sheet, int x, int y)
+        {
+            foreach (var kv in sheet.method_14())
+            {
+                if (kv.Key.int_0 != x || kv.Key.int_1 != y) continue;
+                var parts = new List<string> { kv.Value.method_0() };
+                foreach (var bond in sheet.method_15())
                 {
-                    if (kv.Key.int_0 != x || kv.Key.int_1 != y) continue;
-                    var parts = new List<string> { kv.Value.method_0() };
-                    foreach (var bond in sheet.method_15())
-                    {
-                        var from = bond.Key.vector2i_0;
-                        var to = bond.Key.method_0();
-                        string dir = null;
-                        bool right = bond.Key.enum128_0 == Enum128.Right;
-                        if (from.int_0 == x && from.int_1 == y) dir = Loc.T(right ? "dir.right" : "dir.down");
-                        else if (to.int_0 == x && to.int_1 == y) dir = Loc.T(right ? "dir.left" : "dir.up");
-                        if (dir != null)
-                            parts.Add(Loc.T("reactor.bond", new { kind = ReactorText.BondWord((int)bond.Value), dir }));
-                    }
-                    return string.Join(", ", parts.ToArray());
+                    var from = bond.Key.vector2i_0;
+                    var to = bond.Key.method_0();
+                    string dir = null;
+                    bool right = bond.Key.enum128_0 == Enum128.Right;
+                    if (from.int_0 == x && from.int_1 == y) dir = Loc.T(right ? "dir.right" : "dir.down");
+                    else if (to.int_0 == x && to.int_1 == y) dir = Loc.T(right ? "dir.left" : "dir.up");
+                    if (dir != null)
+                        parts.Add(Loc.T("reactor.bond", new { kind = ReactorText.BondWord((int)bond.Value), dir }));
                 }
+                return string.Join(", ", parts.ToArray());
             }
             return null;
         }

@@ -305,9 +305,21 @@ namespace SpeechChem.Patches
 
         // ---- failures and completion (the dialogs speak themselves; the log keeps a line) ----
 
-        private static void AfterReactionError(string __1)
+        /// <summary>The error entry carries the crash snapshot: the run is paused under the box
+        /// here, and closing the box stops it (which wipes the scene) — see ReactorSnapshot.</summary>
+        private static void AfterReactionError(Struct116<Class77> __0, string __1, IEnumerable<Vector2i> __3)
         {
-            try { Add(GameText.T("Reaction Error") + ": " + GameText.Speech(__1), speak: false); }
+            try
+            {
+                Screens.Reactor.ReactorSnapshot snapshot = null;
+                try
+                {
+                    var editor = __0.bool_0 ? __0.method_0() : Class53.smethod_5<Class77>();
+                    snapshot = Screens.Reactor.ReactorSnapshot.Capture(editor?.reactor_0, __3, Cycle);
+                }
+                catch (Exception ex) { SpeechChem.Log.Error("[run] crash snapshot", ex); }
+                Log.Add(Cycle, GameText.T("Reaction Error") + ": " + GameText.Speech(__1), snapshot);
+            }
             catch { }
         }
 

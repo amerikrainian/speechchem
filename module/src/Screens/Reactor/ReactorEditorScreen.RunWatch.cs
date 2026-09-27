@@ -22,7 +22,9 @@ namespace SpeechChem.Screens.Reactor
         {
             _logView.Build(b, LogStop, Loc.T("run.log"), RunCapture.Log,
                 cycle => Loc.T("run.cycle", new { n = cycle }),
-                (Navigation.Active as GraphNavigator)?.FocusCursorId);
+                (Navigation.Active as GraphNavigator)?.FocusCursorId,
+                // A reaction error's entry opens the crash snapshot (Enter).
+                tag => tag is ReactorSnapshot s ? () => PushChild(new ReactorSnapshotScreen(s)) : (System.Action)null);
         }
 
         /// <summary>A new run cleared the store: the window goes back to following the tail.</summary>

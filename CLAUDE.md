@@ -503,7 +503,10 @@ SWAP (Class666 → Class671.smethod_1, only with exactly two tunnels: each tunne
 molecule, all bonds broken, and moved to the other tunnel): "swap: Oxygen to 4, 5, bonds broken",
 "swap: A to x, y; B to x, y", bare "swap"; a tunnel cell reads "linked to 4, 5" (two-way, no
 point of view — user) when there are exactly two; verified live, including a cut/paste of a tunnel). NO-EFFECT = THE BARE NAME (user rule): an
-instruction that did nothing logs just its name, never "no effect" / "no branch"), wall stops
+instruction that did nothing logs just its name, never "no effect" / "no branch"; PAUSE (Class665:
+pauses the run, and switches to its reactor — matters only with several): speech is the state
+change "Paused" (events are spoken only while running, and the run is already paused when the
+waldo's "red: pause" is logged, just after it) — verified live on a test puzzle), wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,

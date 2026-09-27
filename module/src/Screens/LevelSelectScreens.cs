@@ -68,7 +68,7 @@ namespace SpeechChem.Screens
         // without an OnSelect (stop landings skip it), and the mouse's un-hover (method_22) can clear
         // it too — so the scores read bare metric names for a completed level. Every render re-points
         // the panel: at the focused level, or, from the Scores / Actions stops, at the level last
-        // chosen on this planet. ----
+        // chosen on this planet; a level left over from another planet is cleared. ----
 
         private static Type _chosen;
         private static readonly Dictionary<string, Type> _levelIds = new Dictionary<string, Type>();
@@ -89,6 +89,10 @@ namespace SpeechChem.Screens
                 if (_chosen != null && _levelIds.ContainsValue(_chosen)) want = _chosen; // on this planet
             }
             if (want != null && select.type_0 != want) select.method_21(want);
+            // Nothing to point at, and the panel still shows a level from another planet (the game
+            // keeps the last hover across a planet switch — a new area read the old level's BEST):
+            // clear it, as the game's panel is before any level on this map is hovered.
+            else if (want == null && select.type_0 != null && !_levelIds.ContainsValue(select.type_0)) select.type_0 = null;
         }
 
         // ---- planets ----

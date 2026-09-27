@@ -1,0 +1,119 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- SpeechChem — screen-reader accessibility mod for SpaceChem (Zachtronics).
+       SpaceChem is a single .NET x86 executable (CLR 2.0 IL) running Zachtronics' own SDL2/OpenGL
+       engine ("Impeller") — NOT Unity. This project builds SpeechChem.dll, which the STOCK
+       SpaceChem.exe loads by itself via deploy/SpaceChem.exe.config (CLR 4 + AppDomainManager →
+       src/Bootstrap.cs) before any game code runs. See CLAUDE.md for the full rationale. -->
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <!-- The game is a 32-bit process; we host it in-process, so we must match its architecture. -->
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>SpeechChem</AssemblyName>
+    <RootNamespace>SpeechChem</RootNamespace>
+    <!-- Pinned: deploy/SpaceChem.exe.config binds the AppDomainManager by FULL display name
+         (Version=1.0.0.0). Version releases via FileVersion/InformationalVersion instead; if you ever
+         bump AssemblyVersion, bump the config in lockstep or the zero-loader path silently dies. -->
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <!-- Never compile the decompiled game tree (game/, gitignored), the vendored libraries, or the
+       test project into the mod. game/ holds hundreds of .cs files that the default SDK glob would
+       otherwise pull in. -->
+  <ItemGroup>
+    <Compile Remove="game/**/*.cs" />
+    <None Remove="game/**" />
+    <Compile Remove="third_party/**/*.cs" />
+    <Compile Remove="tests/**/*.cs" />
+    <Compile Remove="module/**/*.cs" />
+    <Compile Remove="tools/**/*.cs" />
+  </ItemGroup>
+
+  <!-- The unit-test project exercises internals; the reloadable module (module/) shares the host's
+       internal seams (MemberResolver, dev plumbing). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="SpeechChem.Tests" />
+    <InternalsVisibleTo Include="SpeechChem.Module" />
+  </ItemGroup>
+
+  <!-- Paths. Override GameDir on the command line if your install differs:
+       dotnet build -p:GameDir="D:\...\SpaceChem" -->
+  <PropertyGroup>
+    <GameDir>C:\Program Files (x86)\Steam\steamapps\common\SpaceChem</GameDir>
+    <SteamAppId>92800</SteamAppId>
+    <ThirdParty>$(MSBuildProjectDirectory)\third_party</ThirdParty>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Harmony 2.4.2 (net48, MIT) — vendored in third_party/harmony. Ships next to the host dll. -->
+    <Reference Include="0Harmony">
+      <HintPath>$(ThirdParty)\harmony\0Harmony.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <!-- In-box framework assemblies (nothing shipped): SAPI fallback + settings.json parsing. -->
+    <Reference Include="System.Speech" />
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+  <!-- Mono.Cecil (MIT): the load-time remap of the module's game references (deob → shipping
+       names). Ships next to the host dll. -->
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+
+  <!-- Dev-only /screenshot capture (PrintWindow → PNG). In-box; the whole feature is #if DEBUG. -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+
+  <!-- Mono.CSharp powers the DEBUG-only dev server's /eval REPL (live introspection of the
+       obfuscated game). The dev server is all #if DEBUG, so a Release build neither compiles
+       against nor ships this. -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <Reference Include="Mono.CSharp">
+      <HintPath>$(ThirdParty)\monocsharp\Mono.CSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Deploy into the game folder after a Debug build; then just launch SpaceChem. -->
+  <Target Name="DeployMod" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <ItemGroup>
+      <Payload Include="$(OutputPath)SpeechChem.dll" />
+      <Payload Include="$(OutputPath)0Harmony.dll" />
+      <!-- Native screen-reader bridge (Prism → NVDA/JAWS/SAPI/OneCore). The x86 build: the game
+           is a 32-bit process, and upstream publishes x64/arm64 only (third_party/prism/x86/BUILD.md
+           records how it was built). Must sit next to the exe so P/Invoke resolves it. Absent, the
+           speech chain falls back to SAPI. -->
+      <Payload Include="$(ThirdParty)\prism\x86\prism.dll" Condition="Exists('$(ThirdParty)\prism\x86\prism.dll')" />
+      <!-- The hookup: CLR 4 + legacy CAS policy + the AppDomainManager (see the file's comment). -->
+      <Payload Include="$(MSBuildProjectDirectory)\deploy\SpaceChem.exe.config" />
+      <!-- The module remapper (see src/Modularity/GameRefRemapper.cs). -->
+      <Payload Include="$(OutputPath)Mono.Cecil.dll" />
+    </ItemGroup>
+    <!-- The stock config is a game file we overwrite: keep a pristine copy once, next to it, so a
+         manual uninstall is "copy SpaceChem.exe.config.vanilla back". -->
+    <Copy SourceFiles="$(GameDir)\SpaceChem.exe.config" DestinationFiles="$(GameDir)\SpaceChem.exe.config.vanilla"
+          Condition="!Exists('$(GameDir)\SpaceChem.exe.config.vanilla') And Exists('$(GameDir)\SpaceChem.exe.config')"
+          ContinueOnError="true" />
+    <!-- ContinueOnError: the dll is locked while the game runs, and a test build (dotnet test also
+         builds this project) must not fail just because the game is open — the deploy is then stale
+         and the warning says so. -->
+    <Copy SourceFiles="@(Payload)" DestinationFolder="$(GameDir)" ContinueOnError="true" Retries="0" />
+    <!-- Mono.CSharp for the DEBUG-only /eval; harmless to place next to the game. -->
+    <Copy SourceFiles="$(ThirdParty)\monocsharp\Mono.CSharp.dll" DestinationFolder="$(GameDir)"
+          Condition="'$(Configuration)' == 'Debug'" ContinueOnError="true" Retries="0" />
+    <!-- steam_appid.txt so a launch that didn't come from Steam is accepted by Steamworks and NOT
+         restarted through Steam by Program.Main's RestartAppIfNecessary check. Bootstrap also writes
+         this at runtime as a fallback. -->
+    <WriteLinesToFile File="$(GameDir)\steam_appid.txt" Lines="$(SteamAppId)" Overwrite="true" ContinueOnError="true" />
+    <Message Importance="high" Text="SpeechChem deployed to $(GameDir)" />
+  </Target>
+
+</Project>

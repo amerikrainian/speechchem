@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Unit tests for the game-independent logic: resolution primitives, text/presentation mapping,
+       the speech ring buffer, and (as they land) localization and the UI graph core. net48 to match
+       the mod exactly; the mod grants InternalsVisibleTo. Run: dotnet test (from the repo root). -->
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <!-- x86 like the mod: the module references the 32-bit game assembly. -->
+    <PlatformTarget>x86</PlatformTarget>
+    <AssemblyName>SpeechChem.Tests</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SpeechChem.csproj" />
+    <ProjectReference Include="..\..\module\SpeechChem.Module.csproj" />
+  </ItemGroup>
+
+  <!-- The real locale tables, so label tests run against shipping data (a curated label can't
+       drift out of ui.json unnoticed). -->
+  <ItemGroup>
+    <None Include="..\..\module\assets\locale\**\*.json"
+          Link="assets\locale\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

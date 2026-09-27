@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Build tool: writes a COMPILE-ONLY copy of game/SpaceChem-deob.exe with every type and member
+       made public. Eazfuscator internalized the whole game (every type is `internal`), so the module
+       cannot name game types at compile time; at RUNTIME the module declares
+       [assembly: IgnoresAccessChecksTo("SpaceChem")], which the .NET Framework 4.8 CLR honors
+       (verified with a two-assembly experiment: internal type + private method reached from another
+       assembly), so the JIT skips the visibility checks the publicized reference skipped at compile
+       time. The output is never loaded or shipped; the assembly name stays "SpaceChem" so module
+       references bind to the live game.
+
+       Usage: dotnet run - -project tools/Publicize - - <in.exe> <out.exe> -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,42 @@
+{
+  "app.ready": "SpeechChem ready.",
+  "app.update_available": "SpeechChem update {version} available.",
+
+  "screen.MainMenuEditor": "Main menu",
+  "screen.LevelSelectEditor": "Level select",
+  "screen.PipelineEditor": "Pipeline",
+  "screen.ChallengeEditor": "Challenge",
+  "screen.MessageBoxEditor": "Message",
+  "screen.RecordingEditor": "Recording",
+  "screen.DefenseLevelEditor": "Defense level",
+  "screen.ResearchNetJournalEditor": "ResearchNet journal",
+  "screen.ResearchNetCustomEditor": "ResearchNet custom assignment",
+  "screen.ResearchNetInputEditor": "ResearchNet input editor",
+  "screen.ResearchNetOutputEditor": "ResearchNet output editor",
+  "screen.StoryTrainingPerformanceEditor": "Training performance",
+
+  "role.button": "button",
+  "role.toggle": "toggle",
+  "role.slider": "slider",
+  "role.radio button": "radio button",
+  "role.combo box": "combo box",
+  "role.tab": "tab",
+  "role.expanded": "expanded",
+  "role.collapsed": "collapsed",
+  "role.text field": "text field",
+
+  "nav.position": "{index} of {count}",
+  "nav.no_tooltip": "No details",
+  "nav.no_details": "No details",
+
+  "value.selected": "selected",
+  "value.unavailable": "unavailable",
+  "value.percent": "{value} percent",
+
+  "text.blank": "blank",
+  "text.space": "space",
+  "text.capital": "Cap {letter}",
+  "text.selected": "{text} selected",
+  "text.unselected": "{text} unselected",
+  "text.newline": "new line"
+}

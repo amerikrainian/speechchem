@@ -1,0 +1,99 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The RELOADABLE half of the mod: every feature (announcers, localization, input, UI graph)
+       lives here. The host (SpeechChem.dll, ../SpeechChem.csproj) byte-loads this dll via
+       Modularity/ModuleLoader, so the file is never locked — rebuild with the game running, then
+       POST /reload hot-swaps the features without a game restart. See
+       src/Modularity/IModModule.cs for the rules. -->
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>SpeechChem.Module</AssemblyName>
+    <RootNamespace>SpeechChem</RootNamespace>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GameDir>C:\Program Files (x86)\Steam\steamapps\common\SpaceChem</GameDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The host: shared statics (Log, GameState, Tts, MemberResolver) and the module contract.
+         Private=false — the host deploys itself; we ship only SpeechChem.Module.dll from here. -->
+    <ProjectReference Include="..\SpeechChem.csproj" Private="false" />
+    <!-- Module-owned Harmony patches (per-load unique id + UnpatchSelf — see IModModule). -->
+    <Reference Include="0Harmony">
+      <HintPath>..\third_party\harmony\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- THE GAME, typed: the local de4dot output (readable names; assembly name "SpaceChem", same
+         as shipping, so the reference binds to the loaded game at runtime). The host's load-time
+         remapper rewrites our deob-name references to the shipping obfuscated names via the
+         namemap.tsv generated below. BUILD PREREQUISITE: game/SpaceChem-deob.exe must exist locally
+         (never committed, never shipped — see CLAUDE.md "Analysis workspace"). The deob exe is CLR 2
+         IL; referencing it from net48 is fine (framework references unify to 4.0).
+         The HintPath is the PUBLICIZED copy (tools/Publicize, generated below): Eazfuscator made
+         every game type internal. At runtime [assembly: IgnoresAccessChecksTo("SpaceChem")]
+         (src/AccessChecks.cs) makes the CLR skip the matching visibility checks. -->
+    <Reference Include="SpaceChem">
+      <HintPath>..\game\SpaceChem-deob.ref.exe</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- In-box framework assembly (nothing shipped): locale JSON parsing. -->
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+  <!-- The orig copy is just bytes from the installed game — fetch it automatically. -->
+  <Target Name="EnsureOrigExe" BeforeTargets="CheckDeobExists"
+          Condition="!Exists('..\game\SpaceChem.orig.exe') And Exists('$(GameDir)\SpaceChem.exe')">
+    <MakeDir Directories="..\game" />
+    <Copy SourceFiles="$(GameDir)\SpaceChem.exe" DestinationFiles="..\game\SpaceChem.orig.exe" />
+    <Message Importance="high" Text="Copied game\SpaceChem.orig.exe from $(GameDir)" />
+  </Target>
+
+  <Target Name="CheckDeobExists" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('..\game\SpaceChem-deob.exe') Or !Exists('..\game\SpaceChem.orig.exe')"
+           Text="game/SpaceChem-deob.exe is required to build the module (typed game access — see CLAUDE.md). One-time setup: run tools\prepare-game.ps1 (needs the game installed; de4dot is vendored)." />
+  </Target>
+
+  <!-- The compile-time reference: the deob exe with every type/member public. Regenerated only
+       when the deob exe changes. -->
+  <Target Name="GeneratePublicRef" AfterTargets="CheckDeobExists" BeforeTargets="ResolveAssemblyReferences"
+          Inputs="..\game\SpaceChem-deob.exe" Outputs="..\game\SpaceChem-deob.ref.exe">
+    <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)\..\tools\Publicize&quot; -- &quot;$(MSBuildProjectDirectory)\..\game\SpaceChem-deob.exe&quot; &quot;$(MSBuildProjectDirectory)\..\game\SpaceChem-deob.ref.exe&quot;" />
+  </Target>
+
+  <!-- The deob → shipping rename table the host applies at module load. Regenerated only when the
+       game binaries change; deployed next to the locale files. -->
+  <Target Name="GenerateNameMap" AfterTargets="Build"
+          Inputs="..\game\SpaceChem.orig.exe;..\game\SpaceChem-deob.exe"
+          Outputs="$(IntermediateOutputPath)namemap.tsv">
+    <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)\..\tools\NameMap&quot; -- &quot;$(MSBuildProjectDirectory)\..\game\SpaceChem.orig.exe&quot; &quot;$(MSBuildProjectDirectory)\..\game\SpaceChem-deob.exe&quot; &quot;$(IntermediateOutputPath)namemap.tsv&quot;" />
+  </Target>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SpeechChem.Tests" />
+  </ItemGroup>
+
+  <!-- Byte-loaded means never file-locked: this copy succeeds even while the game is running.
+       That IS the hot-reload loop — build, then /reload. -->
+  <Target Name="DeployModule" AfterTargets="GenerateNameMap" Condition="'$(Configuration)' == 'Debug'">
+    <Copy SourceFiles="$(OutputPath)SpeechChem.Module.dll" DestinationFolder="$(GameDir)" />
+    <Copy SourceFiles="$(IntermediateOutputPath)namemap.tsv" DestinationFolder="$(GameDir)\SpeechChem" />
+    <!-- Locale tables land under <game>\SpeechChem\locale\<lang>\*.json (the module is byte-loaded
+         and has no disk location, so LocalizationManager roots off the host dll's folder). A module
+         hot-reload re-reads them: edit a string, build, /reload, hear it. -->
+    <ItemGroup>
+      <LocaleFiles Include="$(MSBuildProjectDirectory)\assets\locale\**\*.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LocaleFiles)"
+          DestinationFiles="@(LocaleFiles->'$(GameDir)\SpeechChem\locale\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Message Importance="high" Text="SpeechChem.Module + namemap + locale deployed to $(GameDir)" />
+  </Target>
+
+</Project>

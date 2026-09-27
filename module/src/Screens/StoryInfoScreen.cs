@@ -112,12 +112,14 @@ namespace SpeechChem.Screens
             var lines = tab == StoryCapture.Tab.Story ? StoryLines(e)
                 : tab == StoryCapture.Tab.Training ? TrainingLines(e)
                 : PerformanceLines(e);
+            ControlId lastLine = null;
             for (int i = 0; i < lines.Count; i++)
             {
                 string text = lines[i];
-                b.AddItem(ControlId.Structural("story.line." + tab + "." + i), ProfileUi.Text(true, () => text));
+                lastLine = ControlId.Structural("story.line." + tab + "." + i);
+                b.AddItem(lastLine, ProfileUi.Text(true, () => text));
             }
-            if (tab == StoryCapture.Tab.Performance) BuildMetrics(b, e);
+            if (tab == StoryCapture.Tab.Performance) BuildMetrics(b, e, lastLine);
             BuildActions(b, e, tab);
         }
 
@@ -326,11 +328,13 @@ namespace SpeechChem.Screens
             return string.Join(", ", parts.ToArray());
         }
 
-        /// <summary>The three stats in ONE Tab stop (user rule, 2026-09-27): each stat a column —
-        /// its caption with the THIS / BEST numbers the game prints over its markers, then the
-        /// histogram's bars or the leaderboard's rows, whichever view the game shows. Up/Down walk a
-        /// column; Left/Right switch stats, landing on the caption so the stat is named.</summary>
-        private static void BuildMetrics(GraphBuilder b, Editor e)
+        /// <summary>The three stats, in the TEXT stop right under the performance lines (user rule,
+        /// 2026-09-27: Down from the last line reaches the stats; Up from any caption returns there).
+        /// Each stat a column — its caption with the THIS / BEST numbers the game prints over its
+        /// markers, then the histogram's bars or the leaderboard's rows, whichever view the game
+        /// shows. Up/Down walk a column; Left/Right switch stats, landing on the caption so the stat
+        /// is named.</summary>
+        private static void BuildMetrics(GraphBuilder b, Editor e, ControlId above)
         {
             string level = GoalTracker.string_0;
             try { if (SpaceChem.Levels.Levels.smethod_13(level)) return; } catch { }
@@ -346,7 +350,6 @@ namespace SpeechChem.Screens
                 catch { }
             }
             string view = boards ? "b" : "h";
-            b.BeginStop("story.metrics");
             var columns = new List<List<ControlId>>();
             for (int k = 0; k < 3; k++)
             {
@@ -372,7 +375,9 @@ namespace SpeechChem.Screens
                     if (k > 0) b.Connect(col[i], GraphDir.Left, columns[k - 1][0]);
                     if (k < columns.Count - 1) b.Connect(col[i], GraphDir.Right, columns[k + 1][0]);
                 }
+                if (above != null && col.Count > 0) b.Connect(col[0], GraphDir.Up, above);
             }
+            if (above != null && columns.Count > 0 && columns[0].Count > 0) b.Connect(above, GraphDir.Down, columns[0][0]);
         }
 
         private static List<string> HistogramLines(int k, int? mine, int? best, string data)

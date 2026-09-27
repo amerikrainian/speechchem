@@ -175,13 +175,61 @@ namespace SpeechChem.Screens.Reactor
             foreach (var kv in rd.class485_0)
             {
                 int index = kv.Key;
-                b.AddItem(ControlId.Structural("reactor.mol.in." + index), ProfileUi.Text(true, () => InputLine(index)));
+                var vt = ProfileUi.Text(true, () => InputLine(index));
+                vt.OnActivate = () => OpenMolecules(PanelAnnotation(true, index), "reactor.mol.in." + index);
+                b.AddItem(ControlId.Structural("reactor.mol.in." + index), vt);
             }
             foreach (var kv in rd.class485_1)
             {
                 int index = kv.Key;
-                b.AddItem(ControlId.Structural("reactor.mol.out." + index), ProfileUi.Text(true, () => OutputLine(index)));
+                var vt = ProfileUi.Text(true, () => OutputLine(index));
+                vt.OnActivate = () => OpenMolecules(PanelAnnotation(false, index), "reactor.mol.out." + index);
+                b.AddItem(ControlId.Structural("reactor.mol.out." + index), vt);
             }
+        }
+
+        /// <summary>A panel's annotation (input: the upstream port's; output: the downstream port's,
+        /// else the reactor's own output note), or null.</summary>
+        private static Annotation PanelAnnotation(bool input, int index)
+        {
+            var rd = Editor?.reactorDraggable_0;
+            if (rd == null) return null;
+            if (input)
+            {
+                if (!rd.class485_0.ContainsKey(index)) return null;
+                var port = rd.class485_0[index];
+                return port.vmethod_0()?.class485_1.method_4(port.pipeDraggable_0)?.method_0();
+            }
+            if (!rd.class485_1.ContainsKey(index)) return null;
+            var outPort = rd.class485_1[index];
+            return outPort.vmethod_0()?.class485_0.method_4(outPort.pipeDraggable_0)?.method_0() ?? outPort.method_0();
+        }
+
+        /// <summary>Enter on a panel row: its molecule in the mini-grid viewer (a chooser first when
+        /// the panel lists several).</summary>
+        private void OpenMolecules(Annotation a, string key)
+        {
+            var molecules = new List<Molecule>();
+            if (a != null)
+                foreach (var m in a.vmethod_6())
+                    if (m != null && !m.method_6()) molecules.Add(m);
+            if (molecules.Count == 0) return;
+            if (molecules.Count == 1)
+            {
+                PushChild(new MoleculeViewerScreen(key + ".view", molecules[0]));
+                return;
+            }
+            var items = new List<ActionListScreen.Item>();
+            foreach (var m in molecules)
+            {
+                var molecule = m;
+                items.Add(new ActionListScreen.Item
+                {
+                    Label = () => MoleculeText.NameAndFormula(molecule),
+                    Run = () => PushChild(new MoleculeViewerScreen(key + ".view", molecule)),
+                });
+            }
+            PushChild(new ActionListScreen(key + ".choose", null, items));
         }
 
         private static string InputLine(int index)

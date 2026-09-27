@@ -350,7 +350,9 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   nothing armed does nothing); Delete / Ctrl+X / Ctrl+C / Ctrl+V act on the active colour only; START
   moves only via cut/paste; Shift+arrows = rectangular selection; Backspace (ui.secondary) = the context menu (the
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
-  `Screens/ActionListScreen`. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
+  `Screens/ActionListScreen`; the layer and icon-variant items are RADIO GROUPS (families share one
+  `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant
+  in one visit); Delete / Change Trigger Element still run and close. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
   1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape. NO single-step (the game has none — user rule).
 - QUERIES (user rule: bare letters stay the game's palette hotkeys, waldos go on R / B under modifiers):
   Shift+R / Shift+B red / blue waldo (stopped: its START; running: cell, heading, holding, waiting text,

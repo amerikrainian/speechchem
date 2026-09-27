@@ -394,6 +394,7 @@ namespace SpeechChem.Screens.Reactor
                     Label = label,
                     Selected = () => { try { return it.isSelectedFunc_0(member); } catch { return false; } },
                     Run = () => RunMenuItem(r, member, it),
+                    Group = MenuItemGroup(item),
                 });
             }
             string title = ColourWord((int)(r.method_19(member)?.enum114_0 ?? 0)) + " " + ReactorText.Label(member);
@@ -408,6 +409,18 @@ namespace SpeechChem.Screens.Reactor
             return null;
         }
 
+        /// <summary>Which mutually exclusive family a menu item belongs to, or null for a plain
+        /// action. Each family's items share one selected-test method, closed over their own value
+        /// (Class722.method_0 for the layers, a per-type closure for the icons — a control
+        /// instruction has two families: its letters and its directions). Text items (Delete,
+        /// Change Trigger Element) are actions, whatever default test they carry.</summary>
+        private static object MenuItemGroup(MenuItem<Instruction> item)
+        {
+            if (!(item is Class720) && !(item is InstructionMenuItem)) return null;
+            try { return item.isSelectedFunc_0?.Method; }
+            catch { return null; }
+        }
+
         private void RunMenuItem(ReactorModel r, Instruction member, MenuItem<Instruction> item)
         {
             if (Live) return;
@@ -420,7 +433,8 @@ namespace SpeechChem.Screens.Reactor
             }
             catch (Exception ex) { Log.Error("[reactor] menu item failed", ex); }
             finally { try { r.method_27(); } catch { } }
-            // No readout here: focus returning from the menu re-reads the cell, changed.
+            // No readout here: a radio item says "selected" itself, and focus returning from the
+            // menu re-reads the cell, changed.
         }
 
         /// <summary>Right-click on empty grid: the "Reactor Grid" menu (ReactorMenu — Swap Waldo

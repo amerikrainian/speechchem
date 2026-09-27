@@ -13,6 +13,10 @@ namespace SpeechChem.Screens
     /// its place — nested menus), Escape closes without acting (mod-side modal: Escape never reaches
     /// the game). Items may report a "selected" state (the menu's current choice, e.g. an arrow's
     /// direction), spoken like the game's highlighted icon.
+    ///
+    /// Items sharing a non-null <see cref="Item.Group"/> are mutually exclusive choices: RADIO
+    /// BUTTONS that apply on Enter, say "selected" and leave the list open, so several properties
+    /// (a layer and a variant) can be set in one visit (user rule, 2026-09-27).
     /// </summary>
     public sealed class ActionListScreen : Screen
     {
@@ -21,6 +25,8 @@ namespace SpeechChem.Screens
             public Func<string> Label;
             public Func<bool> Selected;
             public Action Run;
+            /// <summary>Non-null = one of a set of mutually exclusive choices (a radio button).</summary>
+            public object Group;
         }
 
         private readonly string _key;
@@ -50,18 +56,20 @@ namespace SpeechChem.Screens
             for (int i = 0; i < _items.Count; i++)
             {
                 var item = _items[i];
+                bool radio = item.Group != null;
+                Func<string> selected = () => item.Selected != null && item.Selected() ? Loc.T("value.selected") : null;
                 b.AddItem(ControlId.Structural(_key + ".item." + i), new NodeVtable
                 {
-                    ControlType = ControlTypes.Text,
+                    ControlType = radio ? ControlTypes.RadioButton : ControlTypes.Text,
                     Announcements = new[]
                     {
                         new NodeAnnouncement(item.Label, kind: AnnouncementKinds.Label),
-                        new NodeAnnouncement(() => item.Selected != null && item.Selected() ? Loc.T("value.selected") : null,
-                            kind: AnnouncementKinds.Tooltip),
+                        new NodeAnnouncement(selected, kind: radio ? AnnouncementKinds.Selected : AnnouncementKinds.Tooltip),
                     },
+                    StateText = radio ? selected : null, // spoken after Enter: the choice took
                     OnActivate = () =>
                     {
-                        Close();
+                        if (!radio) Close();
                         try { item.Run?.Invoke(); }
                         catch (Exception ex) { Log.Error("[actions] item failed in " + _key, ex); }
                     },

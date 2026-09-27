@@ -111,7 +111,15 @@ namespace SpeechChem.Screens.Pipeline
                     SpeaksOwnPosition = true,
                 };
                 if (d is ReactorDraggable rd) vt.OnActivate = () => OpenReactor(rd);
+                // A component with ports is a ROW: Right walks its inputs, then its outputs.
+                bool ports = d.class485_0.Count > 0 || d.class485_1.Count > 0;
+                if (ports) b.StartRow();
                 b.AddItem(ComponentId(d), vt);
+                if (ports)
+                {
+                    BuildPorts(b, d);
+                    b.EndRow();
+                }
             }
         }
 

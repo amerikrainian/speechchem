@@ -92,6 +92,8 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.waldo.blue", "Blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
             Input.InputManager.Register("screen.reactor.jump.red", "Jump to red waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.N, shift: true);
             Input.InputManager.Register("screen.reactor.jump.blue", "Jump to blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.M, shift: true);
+            Input.InputManager.Register("screen.reactor.trace.red", "Trace red waldo path", Input.InputCategory.UI).AddBinding(Input.Scancode.N, ctrl: true);
+            Input.InputManager.Register("screen.reactor.trace.blue", "Trace blue waldo path", Input.InputCategory.UI).AddBinding(Input.Scancode.M, ctrl: true);
             Input.InputManager.Register("screen.reactor.status", "Read status", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
             Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.F1);
             Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);

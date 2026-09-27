@@ -54,6 +54,8 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.waldo.blue", () => SpeakWaldo(red: false, jump: false));
             yield return new ElementAction("screen.reactor.jump.red", () => SpeakWaldo(red: true, jump: true));
             yield return new ElementAction("screen.reactor.jump.blue", () => SpeakWaldo(red: false, jump: true));
+            yield return new ElementAction("screen.reactor.trace.red", () => TraceWaldo(red: true));
+            yield return new ElementAction("screen.reactor.trace.blue", () => TraceWaldo(red: false));
             yield return new ElementAction("screen.reactor.status", () => Speech.Tts.Speak(ProgressSection.Summary(), interrupt: true));
             yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
@@ -99,6 +101,7 @@ namespace SpeechChem.Screens.Reactor
             _zoneInit = false;
             _lastStep = null;
             _armedKey = -1;
+            _pendingJump = null;
             ResetEditState();
         }
 
@@ -110,6 +113,7 @@ namespace SpeechChem.Screens.Reactor
             TrackCursor();
             WatchTutorial(editor);
             UpdateRunWatch(editor);
+            ApplyPendingJump();
         }
 
         /// <summary>A game dialog over the reactor (a Reaction Error, the exit prompt) pops this

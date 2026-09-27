@@ -278,7 +278,9 @@ with `Selected` (engine state) + `OnSelect`/`OnActivate` switching — selection
   "name (`dictionary_4`), button, kind, completed (`smethod_11`), n of m" — kind mirrors
   `Class306.smethod_0` (Execution = `Class148`, Research ⊂ `Class84`, Production ⊂ `Class123`,
   Defense ⊂ `DefenseLevelEditor`, "(OPTIONAL)" = `Levels.list_1`). Unavailable levels draw a "?" icon
-  and read "Locked". OnSelect = the hover (`method_21`, score panel), Enter = the click (`method_20`:
+  and read "Locked". OnSelect = the hover (`method_21`, score panel; it only sets `type_0`, which a
+  return from a level and the mouse's un-hover clear, so every render re-points it at the focused
+  level, or from Scores / Actions at the last chosen one on this planet), Enter = the click (`method_20`:
   opens the level + its StoryTrainingPerformanceEditor intro). Planet 0 adds the orientation video
   node (Class11.smethod_4 with the game's URL). Level ids: `type.smethod_0()` (Class362 extension).
 - **Scores**: three rows for the panel's level (`type_0`): "Elapsed Cycles: BEST n, LAST m"

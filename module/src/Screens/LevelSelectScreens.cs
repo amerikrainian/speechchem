@@ -57,8 +57,38 @@ namespace SpeechChem.Screens
 
             BuildPlanets(b, select);
             BuildLevels(b, select);
+            SyncPanel(select);
             BuildScores(b, select);
             BuildActions(b);
+        }
+
+        // ---- the score panel follows the level the user is on. The hover (method_21) only sets
+        // type_0, and only OnSelect runs it — an arrow landing. Coming back from a level the game
+        // rebuilds the screen (type_0 cleared) while focus is restored onto the level you left
+        // without an OnSelect (stop landings skip it), and the mouse's un-hover (method_22) can clear
+        // it too — so the scores read bare metric names for a completed level. Every render re-points
+        // the panel: at the focused level, or, from the Scores / Actions stops, at the level last
+        // chosen on this planet. ----
+
+        private static Type _chosen;
+        private static readonly Dictionary<string, Type> _levelIds = new Dictionary<string, Type>();
+
+        private static void SyncPanel(SpaceChem.LevelSelectEditor select)
+        {
+            Type want = null;
+            object stop = Navigation.FocusedStopKey;
+            string key = Navigation.FocusedNodeId?.StructuralKey as string;
+            if (LevelStop.Equals(stop))
+            {
+                if (key != null && key.StartsWith("levelselect.level.", StringComparison.Ordinal))
+                    _levelIds.TryGetValue(key.Substring("levelselect.level.".Length), out want);
+                if (want != null) _chosen = want;
+            }
+            else if (ScoreStop.Equals(stop) || ActionStop.Equals(stop))
+            {
+                if (_chosen != null && _levelIds.ContainsValue(_chosen)) want = _chosen; // on this planet
+            }
+            if (want != null && select.type_0 != want) select.method_21(want);
         }
 
         // ---- planets ----
@@ -120,6 +150,8 @@ namespace SpeechChem.Screens
                 ProfileUi.Text(true, () => { var s = Select; return s == null ? null : LevelsDb.dictionary_2[s.enum147_0]; }));
 
             var levels = LevelsOn(planet);
+            _levelIds.Clear();
+            foreach (var t in levels) _levelIds[t.smethod_0()] = t;
             int count = levels.Count + ((int)planet == 0 ? 1 : 0);
             int index = 0;
 
@@ -162,7 +194,7 @@ namespace SpeechChem.Screens
                         Position(position, count),
                     };
                     vt.SpeaksOwnPosition = true;
-                    vt.OnSelect = () => Select?.method_21(level); // the hover: the score panel follows
+                    vt.OnSelect = () => { _chosen = level; Select?.method_21(level); }; // the hover: the score panel follows
                 }
                 b.AddItem(ControlId.Structural("levelselect.level." + id), vt);
             }

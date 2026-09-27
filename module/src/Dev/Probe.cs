@@ -97,7 +97,11 @@ namespace SpeechChem.Dev
                         new Class392(GameText.T("Continue"), new[] { Impeller.Keys.Escape, Impeller.Keys.Enter }, () => { }),
                     });
                     break;
-                default: return "push what? shiplost | credits | epilogue\n";
+                case "performance": // the completion screen with a made-up score (150/1/10, best 140/1/12); dismiss with pop, NOT Continue (it leaves the level)
+                    screen = new SpaceChem.StoryTrainingPerformanceEditor(Struct7.struct7_0, Struct7.struct7_0,
+                        new SpaceChem.Score(150, 1, 10), new SpaceChem.Score(140, 1, 12), Struct7.struct7_0, false, true);
+                    break;
+                default: return "push what? shiplost | credits | epilogue | performance\n";
             }
             return GameApi.PushScreen(screen) ? "pushed " + what + "\n" : "[push failed]\n";
         }

@@ -408,6 +408,10 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
 ## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
 Only events the game has (user rule), worded as what HAPPENED ("grabbed Oxygen", "nothing to drop"):
 waldo steps (Class188.method_3: input, grab/drop, waits reported once, sync, rotation reported once;
+bonds — BondInstruction → Class668.smethod_1 bonds immediately over the connected bonder pairs
+(Class668.smethod_0), so a BondBoard snapshot is diffed per pair: "bonded Fluorine at 2, 6 and
+Fluorine at 3, 6, single bond", "… now double bond", "unbonded …", "could not bond …" (the game's
+failure flash: atoms full or already triple), "nothing to bond / unbond";
 any heading change "blue: heading up" — an arrow the waldo already follows logs nothing), wall stops
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter

@@ -96,6 +96,7 @@ namespace SpeechChem.Patches
             public Vector2i Heading;
             public int Molecules;
             public Instruction Instruction;
+            public BondBoard Bonds; // only under a bond instruction
         }
 
         private static void BeforeWaldo(Class188 __instance, out WaldoState __state)
@@ -113,6 +114,7 @@ namespace SpeechChem.Patches
                 __state.Heading = __instance.vector2i_1;
                 __state.Molecules = r.class201_0.Count;
                 __state.Instruction = r.method_15(cell, __instance.enum114_0) as Instruction;
+                if (__state.Instruction is BondInstruction) __state.Bonds = BondBoard.Of(r);
             }
             catch { }
         }
@@ -219,6 +221,8 @@ namespace SpeechChem.Patches
                     return Loc.T("run.holding", new { molecule = MoleculeText.NameAndFormula(before.Held.molecule_0) });
                 return Loc.T(i.method_3() == 2 ? "run.drop.none" : "run.grab.none");
             }
+            if (i is BondInstruction && before.Bonds != null)
+                return BondEffect(r, before.Bonds, i.method_3() == 0);
             if (i is RotateInstruction)
             {
                 // Two cycles (RotateInstruction.vmethod_7 toggles bool_3): the first sets it and the
@@ -240,6 +244,70 @@ namespace SpeechChem.Patches
                 return Loc.T("run.turned", new { what = label, dir = Heading(w.vector2i_1) });
             }
             return label;
+        }
+
+        // ---- bonds: BondInstruction.vmethod_7 → Class668.smethod_1 changes bonds immediately, pair
+        // by pair over the connected bonders (Class668.smethod_0, each pair a Struct98: a cell and
+        // Right / Down to its neighbour): bond plus raises the pair's bond by one (max triple) when
+        // both cells hold atoms — or flashes a failure when the atoms can't take it
+        // (Molecule.method_30) — and bond minus lowers it, splitting molecules at zero. So the step
+        // is diffed per pair: "bonded Hydrogen at 3, 2 and Oxygen at 4, 2, single bond". ----
+
+        /// <summary>Every bond (by cell + Right/Down, reactor coordinates) and atom on the board.</summary>
+        internal sealed class BondBoard
+        {
+            public readonly Dictionary<long, int> Bonds = new Dictionary<long, int>();
+            public readonly Dictionary<long, string> Atoms = new Dictionary<long, string>();
+
+            public static long Cell(Vector2i c) => ((long)c.int_0 << 32) | (uint)c.int_1;
+            public static long Bond(Vector2i c, bool right) => (Cell(c) << 1) | (right ? 1L : 0L);
+
+            public static BondBoard Of(SpaceChem.Reactor.Reactor r)
+            {
+                var b = new BondBoard();
+                foreach (MoleculeSheet sheet in r.class201_0)
+                {
+                    foreach (var kv in sheet.method_14()) b.Atoms[Cell(kv.Key)] = kv.Value.method_0();
+                    foreach (var kv in sheet.method_15()) b.Bonds[Bond(kv.Key.vector2i_0, kv.Key.enum128_0 == Enum128.Right)] = (int)kv.Value;
+                }
+                return b;
+            }
+
+            public int Order(Vector2i c, bool right) { int n; return Bonds.TryGetValue(Bond(c, right), out n) ? n : 0; }
+            public string Atom(Vector2i c) { string a; return Atoms.TryGetValue(Cell(c), out a) ? a : null; }
+        }
+
+        private static string BondEffect(SpaceChem.Reactor.Reactor r, BondBoard before, bool plus)
+        {
+            var after = BondBoard.Of(r);
+            var parts = new List<string>();
+            foreach (var pair in Class668.smethod_0(r, (Enum146)(plus ? 0 : 1)))
+            {
+                var c1 = pair.vector2i_0;
+                var c2 = pair.method_0();
+                bool right = pair.enum128_0 == Enum128.Right;
+                string a = before.Atom(c1) ?? after.Atom(c1), b = before.Atom(c2) ?? after.Atom(c2);
+                if (a == null || b == null) continue; // an empty bonder: nothing to act on
+                int was = before.Order(c1, right), now = after.Order(c1, right);
+                var args = new
+                {
+                    a, b,
+                    c1 = Loc.T("reactor.cell", new { x = c1.int_0 + 1, y = c1.int_1 + 1 }),
+                    c2 = Loc.T("reactor.cell", new { x = c2.int_0 + 1, y = c2.int_1 + 1 }),
+                    kind = ReactorText.BondWord(now),
+                };
+                if (now == was)
+                {
+                    // Bond plus on two atoms that didn't change: the game's failure flash (no free
+                    // bonds, or already triple). Bond minus with no bond there does nothing.
+                    if (plus) parts.Add(Loc.T("run.bond.failed", args));
+                }
+                else if (was == 0) parts.Add(Loc.T("run.bonded", args));
+                else if (now == 0) parts.Add(Loc.T("run.unbonded", args));
+                else parts.Add(Loc.T("run.bond.now", args));
+            }
+            if (parts.Count == 0) return Loc.T(plus ? "run.bond.none" : "run.unbond.none");
+            return string.Join("; ", parts.ToArray());
         }
 
         private static string Heading(Vector2i v)

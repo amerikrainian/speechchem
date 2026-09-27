@@ -103,15 +103,19 @@ namespace SpeechChem.Screens.Reactor
         // ---- zones ----
 
         /// <summary>The named zone a cell lies in ("alpha input", "psi output"), or null. Inputs
-        /// follow the reactor's zone layout (GEnum0: 1 = disassembly has only α; the laser layout 4
-        /// names only α too); outputs are the editor's own output rectangles (Class77.rectangle_1:
-        /// [0] ψ, [1] ω; the variants shrink or drop them).</summary>
+        /// follow the reactor's zone layout as Reactor.method_43 draws it (GEnum0: 1 = disassembly
+        /// has only α; 4 = the laser reactor puts β TOP-RIGHT, columns 6-9 rows 0-3 — where
+        /// InputInstruction.vmethod_7 drops it, six columns across — and has no outputs); outputs are
+        /// the editor's own output rectangles (Class77.rectangle_1: [0] ψ, [1] ω; the variants shrink
+        /// or drop them). The laser β is from the decompile, not yet verified live.</summary>
         internal static string ZoneAt(ReactorModel reactor, int x, int y)
         {
             if (reactor == null) return null;
             int layout = (int)reactor.genum0_0;
             if (x < 4 && y < 4) return Loc.T("zone.alpha");
-            if (x < 4 && y >= 4 && y < 8 && layout != 1 && layout != 4) return Loc.T("zone.beta");
+            if (layout == 4)
+                return x >= 6 && x < 10 && y < 4 ? Loc.T("zone.beta") : null;
+            if (x < 4 && y >= 4 && y < 8 && layout != 1) return Loc.T("zone.beta");
             var outputs = reactor.class77_0?.rectangle_1;
             if (outputs != null)
             {

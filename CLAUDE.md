@@ -396,6 +396,10 @@ the wrong molecule's produced/accepted molecules). Probe: `push exitprompt|react
 Generic over every Class77 variant (research, production, disassembly, laser). Tab stops: Grid, Palette,
 Layers, Tools (shared `Common/ToolbarSection`), Molecules, Status (shared `Common/ProgressSection`),
 Tutorial, Run log. Game Tab rebound to L (switch active layer).
+VARIANTS VERIFIED LIVE (2026-09-27): standard layout 0 (campaign research), the quantum layout 5
+(QT-1: tunnels, junction), the LARGE OUTPUT layout 3 (Class78, custom `has-large-output`: ψ is
+columns 7-10 on all 8 rows, no ω line, the tall output opens in the viewer). NOT verified: assembly
+(2) / disassembly (1) — production only — and the laser reactor (4) — defense only.
 - GRID: a cell reads bare "x, y" (1-based) FIRST, the zone on the first readout or when crossed, then
   contents (red/blue instruction + arrow labels from `Game/ReactorText`, hardware feature, waldos and
   atoms with bonds while running), "highlighted" (tutorial target), "selected". Empty cell =

@@ -1,0 +1,308 @@
+using System;
+using System.Collections.Generic;
+using Impeller;
+using SpaceChem;
+using SpaceChem.Pipeline;
+using SpaceChem.Reactor;
+using SpaceChem.UI;
+using SpeechChem.Game;
+using SpeechChem.Localization;
+using SpeechChem.UI;
+using SpeechChem.UI.Graph;
+
+namespace SpeechChem.Screens.Reactor
+{
+    public sealed partial class ReactorEditorScreen
+    {
+        // ---- palette: the instruction slots this reactor allows (Class715.dictionary_0, keyed by
+        // the slot's hotkey scancode, in the drawn order), "W, arrow up". The templates are the
+        // game's own (recoloured for the active layer by Class715.method_4). Enter ARMS a slot (the
+        // next Enter on a grid cell places it — user rule); Shift+Backspace reads the slot's
+        // tooltip. ----
+
+        private int _armedKey = -1; // scancode of the armed palette slot, -1 = none
+
+        /// <summary>The letter printed under a palette slot (Keys values are SDL scancodes: A = 4).</summary>
+        internal static string KeyLetter(int scancode)
+            => scancode >= 4 && scancode <= 29 ? ((char)('A' + scancode - 4)).ToString() : scancode.ToString();
+
+        internal static InstructionMenuItem Slot(Class77 editor, int scancode)
+        {
+            var palette = editor?.class715_0;
+            if (palette == null) return null;
+            foreach (var kv in palette.dictionary_0)
+                if ((int)kv.Key == scancode) return kv.Value.struct116_0.bool_0 ? kv.Value : null;
+            return null;
+        }
+
+        private void BuildPalette(GraphBuilder b, Class77 editor)
+        {
+            var palette = editor.class715_0;
+            if (palette == null) return;
+            b.BeginStop(PaletteStop);
+            foreach (var kv in palette.dictionary_0)
+            {
+                if (!kv.Value.struct116_0.bool_0) continue;
+                int key = (int)kv.Key;
+                b.AddItem(ControlId.Structural("reactor.palette." + key), new NodeVtable
+                {
+                    ControlType = ControlTypes.Button,
+                    Announcements = new[]
+                    {
+                        new NodeAnnouncement(() => PaletteLabel(key), kind: AnnouncementKinds.Label),
+                        new NodeAnnouncement(() => _armedKey == key ? Loc.T("reactor.armed") : null, kind: AnnouncementKinds.Selected),
+                    },
+                    OnActivate = () => Arm(key),
+                    OnTooltip = () =>
+                    {
+                        var slot = Slot(Editor, key);
+                        Speech.Tts.Speak(Patches.TooltipCapture.Speech(slot?.class713_0)
+                            ?? ReactorText.GameName(slot?.struct116_0.method_0().GetType()) ?? Loc.T("nav.no_tooltip"), interrupt: true);
+                    },
+                });
+            }
+        }
+
+        private static string PaletteLabel(int key)
+        {
+            var slot = Slot(Editor, key);
+            if (slot == null) return null;
+            return KeyLetter(key) + ", " + ReactorText.Label(slot.struct116_0.method_0());
+        }
+
+        private void Arm(int key)
+        {
+            var slot = Slot(Editor, key);
+            if (slot == null) return;
+            _armedKey = key;
+            Speech.Tts.Speak(Loc.T("reactor.armed.instr", new { instruction = ReactorText.Label(slot.struct116_0.method_0()) }), interrupt: true);
+        }
+
+        // ---- layer controls (Class714 over the reactor's masks): Active red/blue (radio — the
+        // active layer is what new instructions get), Visible red/blue, Locked red/blue (toggles).
+        // Labels are the panel's own ("Active", "Visible", "Locked") plus the colour. ----
+
+        private void BuildLayers(GraphBuilder b, Class77 editor)
+        {
+            if (editor.class715_0?.class714_0 == null) return;
+            b.BeginStop(LayersStop);
+            ActiveRadio(b, true);
+            ActiveRadio(b, false);
+            LayerToggle(b, "visible", true);
+            LayerToggle(b, "visible", false);
+            LayerToggle(b, "locked", true);
+            LayerToggle(b, "locked", false);
+        }
+
+        private static Class714 Layers => Editor?.class715_0?.class714_0;
+
+        private static bool RedActive => Layers != null && ((int)Layers.method_0() & ReactorText.Red) != 0;
+
+        private void ActiveRadio(GraphBuilder b, bool red)
+        {
+            b.AddItem(ControlId.Structural("reactor.layer.active." + (red ? "red" : "blue")), new NodeVtable
+            {
+                ControlType = ControlTypes.RadioButton,
+                Announcements = new[]
+                {
+                    new NodeAnnouncement(() => GameText.T("Active") + ", " + Loc.T(red ? "reactor.red" : "reactor.blue"), kind: AnnouncementKinds.Label),
+                    new NodeAnnouncement(() => RedActive == red ? Loc.T("value.selected") : null, kind: AnnouncementKinds.Selected),
+                },
+                OnActivate = () => SetActive(red),
+            });
+        }
+
+        private void SetActive(bool red)
+        {
+            var l = Layers;
+            if (l == null || RedActive == red) return;
+            Class428.class14_4.vmethod_0();
+            l.method_1((Enum114)(red ? ReactorText.AllRed : ReactorText.AllBlue));
+        }
+
+        /// <summary>L: the game's Tab (Class714.method_10), which is navigation while modeled.</summary>
+        private void ToggleActiveLayer()
+        {
+            var l = Layers;
+            if (l == null) return;
+            l.method_10();
+            Speech.Tts.Speak(Loc.T(RedActive ? "reactor.layer.redactive" : "reactor.layer.blueactive"), interrupt: true);
+        }
+
+        private void LayerToggle(GraphBuilder b, string kind, bool red)
+        {
+            bool visible = kind == "visible";
+            int bits = red ? ReactorText.AllRed : ReactorText.AllBlue;
+            Func<bool> on = () =>
+            {
+                var l = Layers;
+                if (l == null) return false;
+                int mask = (int)(visible ? l.method_2() : l.method_4());
+                return (mask & bits) == bits;
+            };
+            Func<string> state = () => Loc.T(on() ? "value.on" : "value.off");
+            b.AddItem(ControlId.Structural("reactor.layer." + kind + "." + (red ? "red" : "blue")), new NodeVtable
+            {
+                ControlType = ControlTypes.Toggle,
+                Announcements = new[]
+                {
+                    new NodeAnnouncement(() => GameText.T(visible ? "Visible" : "Locked") + ", " + Loc.T(red ? "reactor.red" : "reactor.blue"), kind: AnnouncementKinds.Label),
+                    new NodeAnnouncement(state, kind: AnnouncementKinds.Value),
+                },
+                StateText = state,
+                OnActivate = () =>
+                {
+                    var l = Layers;
+                    if (l == null) return;
+                    Class428.class14_4.vmethod_0();
+                    int mask = (int)(visible ? l.method_2() : l.method_4());
+                    int next = on() ? mask & ~bits : mask | bits;
+                    if (visible) l.method_3((Enum114)next);
+                    else l.method_5((Enum114)next);
+                },
+            });
+        }
+
+        // ---- molecules: the side panels — each input (α, β) and output (ψ, ω) of this reactor, read
+        // the way Class77.vmethod_7 / vmethod_8 draw them: through each port's connection to its
+        // annotation (research inputs, production tanks, another reactor's output note…). ----
+
+        private void BuildMolecules(GraphBuilder b, Class77 editor)
+        {
+            var rd = editor.reactorDraggable_0;
+            if (rd == null) return;
+            b.BeginStop(MoleculesStop);
+            foreach (var kv in rd.class485_0)
+            {
+                int index = kv.Key;
+                b.AddItem(ControlId.Structural("reactor.mol.in." + index), ProfileUi.Text(true, () => InputLine(index)));
+            }
+            foreach (var kv in rd.class485_1)
+            {
+                int index = kv.Key;
+                b.AddItem(ControlId.Structural("reactor.mol.out." + index), ProfileUi.Text(true, () => OutputLine(index)));
+            }
+        }
+
+        private static string InputLine(int index)
+        {
+            var rd = Editor?.reactorDraggable_0;
+            if (rd == null || !rd.class485_0.ContainsKey(index)) return null;
+            string zone = Loc.T(index == 0 ? "zone.alpha" : "zone.beta");
+            var port = rd.class485_0[index];
+            var upstream = port.vmethod_0();
+            var annotation = upstream?.class485_1.method_4(port.pipeDraggable_0)?.method_0();
+            return zone + ": " + AnnotationText(annotation);
+        }
+
+        private static string OutputLine(int index)
+        {
+            var rd = Editor?.reactorDraggable_0;
+            if (rd == null || !rd.class485_1.ContainsKey(index)) return null;
+            string zone = Loc.T(index == 0 ? "zone.psi" : "zone.omega");
+            var port = rd.class485_1[index];
+            var downstream = port.vmethod_0();
+            if (downstream is Class582 research && research.method_15())
+                return zone + ": " + GameText.T("This output") + " " + GameText.T("is disabled.");
+            var annotation = downstream?.class485_0.method_4(port.pipeDraggable_0)?.method_0() ?? port.method_0();
+            return zone + ": " + AnnotationText(annotation);
+        }
+
+        /// <summary>What a panel annotation shows: input molecules with their percentages, an
+        /// output's molecule with "produced of required", or a reactor output note's molecules.</summary>
+        private static string AnnotationText(Annotation a)
+        {
+            if (a is InputAnnotation input)
+            {
+                var parts = new List<string>();
+                foreach (var kv in input.list_0)
+                    parts.Add(Loc.T("reactor.mol.input", new { molecule = MoleculeText.NameAndFormula(kv.Key), percent = (int)(kv.Value * 100.0) }));
+                if (parts.Count > 0) return string.Join("; ", parts.ToArray());
+            }
+            else if (a is Class562 output && output.draggable_0 is Class578 counter)
+            {
+                foreach (var kv in counter)
+                    return Loc.T("reactor.mol.output", new { molecule = MoleculeText.NameAndFormula(kv.Key), done = kv.Value.int_0, required = kv.Value.int_1 });
+            }
+            else if (a != null)
+            {
+                var names = MoleculeText.JoinNames(a.vmethod_6());
+                if (!string.IsNullOrEmpty(names)) return names;
+            }
+            return Loc.T("reactor.mol.none");
+        }
+
+        // ---- tutorial: the game shows the FIRST scripted step the reactor doesn't satisfy yet
+        // (Class77.method_10 over Class424.smethod_2(): a step is met while the expected piece sits
+        // in its cell and layer — Class77.method_9 matches type, variant and direction). There is
+        // no step counter; the stop and the announcements recompute it the same way. ----
+
+        private object _lastStep;
+
+        /// <summary>The active step, or null (no tutorial, or all placement steps met).</summary>
+        internal static Class288 ActiveStep(Class77 editor)
+        {
+            var r = editor?.reactor_0;
+            if (r == null) return null;
+            try
+            {
+                foreach (Class288 step in Class424.smethod_2())
+                {
+                    var m = r.method_17(step.reactorBin_0);
+                    if (step.bool_0 || m == null || !editor.method_9(m, step.reactorMember_0)) return step;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private static string StepText(Class288 step)
+        {
+            if (step == null) return null;
+            string text = GameText.Speech(step.string_0);
+            if (step.bool_0 || step.reactorMember_0 == null) return text;
+            var cell = step.reactorBin_0.vector2i_0;
+            string what = step.reactorMember_0 is Instruction i ? ReactorText.Label(i) : ReactorText.GameName(step.reactorMember_0.GetType());
+            int layer = (int)step.reactorBin_0.enum114_0;
+            string colour = (layer & (ReactorText.Red | ReactorText.RedArrow)) != 0 ? Loc.T("reactor.red")
+                : (layer & (ReactorText.Blue | ReactorText.BlueArrow)) != 0 ? Loc.T("reactor.blue") : null;
+            string place = Loc.T("tutorial.place", new
+            {
+                instruction = colour == null ? what : colour + " " + what,
+                cell = Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }),
+            });
+            return text + " " + place;
+        }
+
+        private bool IsTutorialTarget(int x, int y)
+        {
+            var step = ActiveStep(Editor);
+            if (step == null || step.bool_0) return false;
+            var c = step.reactorBin_0.vector2i_0;
+            return c.int_0 == x && c.int_1 == y;
+        }
+
+        private void BuildTutorial(GraphBuilder b, Class77 editor)
+        {
+            if (ActiveStep(editor) == null) return;
+            b.BeginStop(TutorialStop);
+            b.AddItem(ControlId.Structural("reactor.tutorial.step"), ProfileUi.Text(true, () => StepText(ActiveStep(Editor))));
+        }
+
+        /// <summary>Speak the step whenever the active one changes (arrival, a step met, an earlier
+        /// step undone).</summary>
+        private void WatchTutorial(Class77 editor)
+        {
+            var step = ActiveStep(editor);
+            if (ReferenceEquals(step, _lastStep)) return;
+            _lastStep = step;
+            if (step != null) Speech.Tts.Speak(StepText(step));
+        }
+
+        private void RepeatTutorial()
+        {
+            var step = ActiveStep(Editor);
+            Speech.Tts.Speak(step != null ? StepText(step) : Loc.T("tutorial.none"), interrupt: true);
+        }
+    }
+}

@@ -86,6 +86,16 @@ namespace SpeechChem
             Input.InputManager.Register("ui.regionPrev", "Previous region", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, ctrl: true).Repeating();
             Input.InputManager.Register("ui.regionNext", "Next region", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, ctrl: true).Repeating();
 
+            // Reactor editor (screen-scoped; user-approved keys, 2026-09-27).
+            Input.InputManager.Register("screen.reactor.coords", "Read coordinates", Input.InputCategory.UI).AddBinding(Input.Scancode.C);
+            Input.InputManager.Register("screen.reactor.waldo.red", "Red waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.N);
+            Input.InputManager.Register("screen.reactor.waldo.blue", "Blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
+            Input.InputManager.Register("screen.reactor.jump.red", "Jump to red waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.N, shift: true);
+            Input.InputManager.Register("screen.reactor.jump.blue", "Jump to blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.M, shift: true);
+            Input.InputManager.Register("screen.reactor.status", "Read status", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
+            Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.F1);
+            Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);
+
             Input.InputManager.ActiveCategoriesProvider = () =>
                 new System.Collections.Generic.List<Input.InputCategory>(Screens.ScreenManager.ActiveInputCategories());
             Input.InputManager.UiDispatcher = UI.Navigation.DispatchJustPressed;
@@ -113,6 +123,7 @@ namespace SpeechChem
                 Patches.GateTextCapture.Apply(_harmony);    // credit-card and epilogue strings for the click gates
                 Patches.TitleTextCapture.Apply(_harmony);   // main-menu news text + Class60 dialog buttons
                 Patches.DialogCapture.Apply(_harmony);      // in-level message boxes + the wrong-molecule dialog
+                Patches.TooltipCapture.Apply(_harmony);     // hover tooltip text (palette slots, reactor hardware, pipeline pieces)
             }
             if (!_updateAnnounced && _updateCheck != null && _updateCheck.NewerVersion != null)
             {

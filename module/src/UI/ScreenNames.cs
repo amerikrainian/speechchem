@@ -27,6 +27,7 @@ namespace SpeechChem.UI
                 { "Class74", () => Game.GameText.T("Settings") },            // Options (its drawn title)
                 { "Class67", () => Localization.Loc.T("mainmenu.tf2") },     // the TF2 icon's levels
                 { "Class70", () => Localization.Loc.T("mainmenu.corvi") },   // the 63 Corvi DLC levels
+                { "Class76", () => Localization.Loc.T("toolbar.periodic") }, // the periodic table / element picker
             };
 
         /// <summary>The curated label for a renamed screen's deob type name, or null (stay silent —

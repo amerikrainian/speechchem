@@ -167,8 +167,9 @@ strings `name;formula;` + one `x y Z right down` token per atom, under the fixed
 the module references the game's System.Data.SQLite compile-only for that one statement). Put the
 body in a file and `curl --data-binary @file` (JSON quoting). Molecules must be CONNECTED (the probe
 refuses unbonded atoms in one molecule — the game's fusion code crashed on one); inputs of a
-random zone come in a FIXED seeded order, so test each case with a single-molecule zone. Only research puzzles: production and
-sandbox need the pipeline / defense screens.
+random zone come in a FIXED seeded order, so test each case with a single-molecule zone. The JSON "type" picks the level: "research"
+(reactor), "production" (the pipeline editor; journal.json has 100 examples) or "sandbox" (Class147,
+a DefenseLevelEditor: the pipeline editor with printers, storage tanks and a Control Center).
 Profile tests WRITE THE SAVE DATABASE (`%LOCALAPPDATA%\Zachtronics Industries\SpaceChem\.locals`):
 create throwaway profiles and delete them again. Grow it with each screen
 (Echopunks' AuditProbe is the model). `/eval`, `/screen`, `/gui`, `/probe`, `/reload` run on the main

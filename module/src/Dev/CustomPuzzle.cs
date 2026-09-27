@@ -8,8 +8,11 @@ using SpeechChem.Game;
 namespace SpeechChem.Dev
 {
     /// <summary>
-    /// Probe "custom": a test bench for reactor mechanics. Opens a ResearchNet research puzzle built
-    /// from a journal.json-style level object — the same JSON the published puzzles use, e.g.
+    /// Probe "custom": a test bench for reactor and pipeline mechanics. Opens a ResearchNet puzzle
+    /// built from a journal.json-style level object — the same JSON the published puzzles use. Its
+    /// "type" picks what the game builds (Levels.smethod_15): "research" (Class85, straight into the
+    /// reactor), "production" (Class136, the pipeline editor) or "sandbox" (Class147, a defense-style
+    /// level editor). E.g.
     ///
     ///   {"type":"research","name":"Fusion test","author":"","difficulty":0,"bonder-count":0,
     ///    "has-fuser":true,"input-zones":{"0":{"inputs":[{"molecule":"Hydrogen;H;000100","count":1}]}},
@@ -20,7 +23,7 @@ namespace SpeechChem.Dev
     ///
     /// It opens the way the journal's card click does (PublishedLevelCache.smethod_3: the profile's
     /// current custom level, the known molecules, Levels.smethod_14), under the fixed id
-    /// <see cref="TestId"/> — a "custom-" id, so the game builds a Class85 from the custom level.
+    /// <see cref="TestId"/> — a "custom-" id, so the game builds its level from the custom level.
     /// The game AUTO-SAVES the reactor under that id like any solution; "custom clean" wipes it with
     /// the game's own solution delete (SpaceChemUserWorker.method_74, what deleting a custom
     /// assignment runs) plus the status row opening a level writes (Level). The puzzle itself is
@@ -51,7 +54,6 @@ namespace SpeechChem.Dev
                 level.vmethod_1(); // the import path's normalization (CustomLevel.smethod_1)
             }
             catch (Exception ex) { return "[bad level json] " + ex.Message + "\n"; }
-            if (!(level is CustomResearchLevel)) return "[only research puzzles open straight into a reactor]\n";
             // The game's editor only builds connected molecules, and its code relies on it: fusing
             // the atoms of one unbonded two-atom "molecule" crashed the game (Class672.method_7 looks
             // for the target's fragment after dropping the projectile's whole molecule).

@@ -366,7 +366,16 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   `Screens/ActionListScreen`; the layer and icon-variant items are RADIO GROUPS (families share one
   `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant
   in one visit); Delete / Change Trigger Element still run and close. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
-  1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape. NO single-step (the game has none — user rule).
+  1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape.
+- SINGLE-CYCLE STEP (`Patches/StepControl`; user request 2026-09-27, replacing the old "no single-step"
+  rule — the game has no step): 0, or the toolbar's "Step one cycle" (between Pause and Play 1).
+  Class258.smethod_22 runs 10 sub-ticks per cycle (sub-tick 10k = the boundary: waldos move and act,
+  then int_1++; every sub-tick = collision checks via PipelineSimulator.method_4) and loops only while
+  Running, so a postfix on method_4 pauses at the target cycle's last sub-tick — exact at any speed
+  (it runs at the speed last used; nothing to restore). Says "Cycle N", then that cycle's events queue
+  (RunCapture speaks events while stepping); its own Running/Paused are neither logged nor spoken;
+  paused mid-cycle it finishes that cycle silently and steps the next; any other state change (an
+  error, a completion) ends it; FrameLoop "step" is the safety net (overshoot or 10 s).
 - UNDO / REDO feedback (`Patches/UndoCapture`): keys and toolbar both land in SpaceChemUserWorker
   method_46 / method_47 (SQLite history, no descriptions; method_52/54 rebuild the reactor
   synchronously), so prefix/postfix diff the open reactor's members: "red grab drop at 3, 2",

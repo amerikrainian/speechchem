@@ -121,6 +121,7 @@
   "atom.details": "{name}, atomic number {number}, {bondsLabel} {bonds}",
   "toolbar.stop": "Stop",
   "toolbar.pause": "Pause",
+  "toolbar.step": "Step one cycle",
   "toolbar.play": "Play, speed {n}",
   "toolbar.periodic": "Periodic table",
   "run.running": "Running, speed {n}",

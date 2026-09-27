@@ -45,6 +45,7 @@ namespace SpeechChem
             FrameLoop.Register("loc", LocalizationManager.Tick);
             FrameLoop.Register("screens", Screens.ScreenManager.Tick);
             FrameLoop.Register("click", Game.SyntheticClick.Tick);
+            FrameLoop.Register("step", Patches.StepControl.Tick); // the single-cycle step's safety net
 
             // One greeting per game launch (the module loads while the boot splash plays). A hot reload
             // mid-session doesn't re-greet.
@@ -106,6 +107,8 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.T, ctrl: true); // bare T = the game's Sync hotkey
             Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);
             Input.InputManager.Register("screen.reactor.molecule", "Molecule of this zone", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
+            // Single-cycle step on 0, beside the game's speed keys 1-4 (the game doesn't use 0).
+            Input.InputManager.Register("screen.reactor.step", "Step one cycle", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0);
             // Palette letters place that instruction at the grid cursor (the scancode is the id).
             foreach (var letter in new[] { Input.Scancode.Q, Input.Scancode.W, Input.Scancode.E, Input.Scancode.R, Input.Scancode.T,
                 Input.Scancode.Y, Input.Scancode.U, Input.Scancode.I, Input.Scancode.A, Input.Scancode.S, Input.Scancode.D,
@@ -152,6 +155,7 @@ namespace SpeechChem
                 Patches.RunCapture.Apply(_harmony);         // run events -> the run log (spoken at the slowest speed)
                 Patches.StoryCapture.Apply(_harmony);       // training captions + the story screen's current tab
                 Patches.UndoCapture.Apply(_harmony);        // what an undo / redo changed in the open reactor
+                Patches.StepControl.Apply(_harmony);        // single-cycle step: pause at the cycle's last sub-tick
             }
             if (!_updateAnnounced && _updateCheck != null && _updateCheck.NewerVersion != null)
             {

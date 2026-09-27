@@ -65,6 +65,7 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
             yield return new ElementAction("screen.reactor.molecule", OpenZoneMolecules);
+            yield return new ElementAction("screen.reactor.step", Patches.StepControl.Step);
             foreach (var a in EditActions()) yield return a;
         }
 

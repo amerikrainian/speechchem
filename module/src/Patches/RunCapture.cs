@@ -76,7 +76,10 @@ namespace SpeechChem.Patches
 
         private static int Cycle => Class258.int_1;
 
-        private static bool SpeakEvents => (int)Class258.smethod_16() == 1 && Class258.smethod_14() == SimulatorSpeed.Slow;
+        // Spoken at the slowest speed, and during a single-cycle step at any speed (they queue after
+        // the step's "Cycle N").
+        private static bool SpeakEvents => StepControl.Active
+            || ((int)Class258.smethod_16() == 1 && Class258.smethod_14() == SimulatorSpeed.Slow);
 
         private static void Add(string text, bool speak)
         {
@@ -436,6 +439,10 @@ namespace SpeechChem.Patches
                 }
                 // Stopping zeroes the cycle counter first (Class258.smethod_17), so "Stopped" would
                 // file under cycle 0 — the log's TOP. It belongs at the end: the last group.
+                // A single-cycle step's own start and pause stay out of the log and speech (it says
+                // "Cycle N" itself); any other change during a step ends the step.
+                if (StepControl.Quiet) return;
+                if (StepControl.Active) StepControl.OnForeignStateChange();
                 int key = now == 0 && !Log.IsEmpty ? Log.Groups[Log.Groups.Count - 1] : Cycle;
                 Log.Add(key, Screens.Common.ProgressSection.RunState());
                 if (_leaving == 0) Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());

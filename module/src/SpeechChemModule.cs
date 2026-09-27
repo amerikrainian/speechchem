@@ -157,6 +157,7 @@ namespace SpeechChem
                 Patches.StoryCapture.Apply(_harmony);       // training captions + the story screen's current tab
                 Patches.UndoCapture.Apply(_harmony);        // what an undo / redo changed in the open reactor
                 Patches.StepControl.Apply(_harmony);        // single-cycle step: pause at the cycle's last sub-tick
+                Patches.ModifierMask.Apply(_harmony);       // hide Ctrl from the pipeline's drop during mod moves
             }
             if (!_updateAnnounced && _updateCheck != null && _updateCheck.NewerVersion != null)
             {

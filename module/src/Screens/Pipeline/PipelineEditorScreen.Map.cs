@@ -147,11 +147,6 @@ namespace SpeechChem.Screens.Pipeline
             return 0;
         }
 
-        /// <summary>Enter on a map cell (placing from the Shelf, pipe drawing: later).</summary>
-        private void ActivateMapCell(int x, int y)
-        {
-        }
-
         // ---- categories ([ ] and , . — the reactor editor's keys): components by role and the
         // open pipe ends, each in reading order; an item moves the map cursor there. ----
 

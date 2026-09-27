@@ -53,7 +53,9 @@ namespace SpeechChem.Screens.Common
                 OnActivate = () =>
                 {
                     var w = widget();
-                    if (w != null && w.method_7()) w.method_12();
+                    if (w == null) return;
+                    if (w.method_7()) w.method_12();
+                    else Speech.Tts.Speak(Loc.T("value.unavailable"), interrupt: true); // e.g. Pause while stopped
                 },
             });
         }
@@ -72,7 +74,14 @@ namespace SpeechChem.Screens.Common
                 OnActivate = () =>
                 {
                     var w = widget();
-                    if (w == null || !w.method_7()) return;
+                    if (w == null) return;
+                    if (!w.method_7())
+                    {
+                        // The game ignores a disabled button; say so instead of nothing (Undo / Redo
+                        // at the end of the history, Pause while stopped).
+                        Speech.Tts.Speak(Loc.T("value.unavailable"), interrupt: true);
+                        return;
+                    }
                     try
                     {
                         Class428.class14_4.vmethod_0(); // the GClass15 press sound

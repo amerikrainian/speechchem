@@ -359,6 +359,12 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant
   in one visit); Delete / Change Trigger Element still run and close. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
   1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape. NO single-step (the game has none — user rule).
+- UNDO / REDO feedback (`Patches/UndoCapture`): keys and toolbar both land in SpaceChemUserWorker
+  method_46 / method_47 (SQLite history, no descriptions; method_52/54 rebuild the reactor
+  synchronously), so prefix/postfix diff the open reactor's members: "red grab drop at 3, 2",
+  "removed … at …", "… moved from … to …", a changed cell = its new occupant, "N changes: …" past 3;
+  no "Undo:" prefix (user rule). "Nothing to undo / redo" when the toolbar's button is disabled.
+  Pressing any disabled toolbar button says "unavailable". Test keys with PostMessage Ctrl chords.
 - QUERIES (user rule: bare letters stay the game's palette hotkeys, waldos go on R / B under modifiers):
   Shift+R / Shift+B red / blue waldo (stopped: its START; running: cell, heading, holding, waiting text,
   rotating, sync); Ctrl+Shift+R / Ctrl+Shift+B also jump the cursor (focus moves silently); Ctrl+R / Ctrl+B =

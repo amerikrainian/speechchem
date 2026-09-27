@@ -151,6 +151,7 @@ namespace SpeechChem
                 Patches.TooltipCapture.Apply(_harmony);     // hover tooltip text (palette slots, reactor hardware, pipeline pieces)
                 Patches.RunCapture.Apply(_harmony);         // run events -> the run log (spoken at the slowest speed)
                 Patches.StoryCapture.Apply(_harmony);       // training captions + the story screen's current tab
+                Patches.UndoCapture.Apply(_harmony);        // what an undo / redo changed in the open reactor
             }
             if (!_updateAnnounced && _updateCheck != null && _updateCheck.NewerVersion != null)
             {

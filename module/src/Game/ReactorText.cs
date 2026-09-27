@@ -93,7 +93,9 @@ namespace SpeechChem.Game
         }
 
         /// <summary>A placed feature (bonder, sensor, laser target, tunnel): its captured tooltip
-        /// title, else its own name field.</summary>
+        /// title, else its own name field, else the plain word "hardware" — never the type name,
+        /// which is obfuscated in the shipping game (the laser targets carry an empty name field,
+        /// so a missing tooltip capture, e.g. after a dev reload, would have spoken "#=q…").</summary>
         public static string FeatureLabel(ReactorFeature f)
         {
             if (f == null) return null;
@@ -106,7 +108,7 @@ namespace SpeechChem.Game
                 if (!string.IsNullOrEmpty(s)) return s;
             }
             catch { }
-            return f.GetType().Name;
+            return Loc.T("reactor.hardware");
         }
 
         /// <summary>The bottom info box for an atom (Class712.method_0): name, atomic number and

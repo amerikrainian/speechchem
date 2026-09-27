@@ -354,7 +354,12 @@ namespace SpeechChem.Screens.Reactor
             var cell = step.reactorBin_0.vector2i_0;
             string square = Loc.T("tutorial.square", new { cell = Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }) });
             if (!(step.reactorMember_0 is Instruction i))
-                return text + " " + Loc.T("tutorial.shown", new { what = ReactorText.GameName(step.reactorMember_0.GetType()) }) + " " + square;
+                return text + " " + Loc.T("tutorial.shown", new
+                {
+                    // Hardware keeps its name per piece (the tooltip title / ReactorFeature.string_0),
+                    // not in the static field GameName reads — which left "Shown: ." for a Bonder.
+                    what = step.reactorMember_0 is ReactorFeature f ? ReactorText.FeatureLabel(f) : ReactorText.GameName(step.reactorMember_0.GetType()),
+                }) + " " + square;
 
             int layer = (int)step.reactorBin_0.enum114_0;
             string colour = (layer & (ReactorText.Red | ReactorText.RedArrow)) != 0 ? Loc.T("reactor.red")

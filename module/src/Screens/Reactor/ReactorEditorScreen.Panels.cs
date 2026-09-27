@@ -359,7 +359,7 @@ namespace SpeechChem.Screens.Reactor
         private void RepeatTutorial()
         {
             var step = ActiveStep(Editor);
-            Speech.Tts.Speak(step != null ? StepText(step) : Loc.T("tutorial.none"), interrupt: true);
+            if (step != null) Speech.Tts.Speak(StepText(step), interrupt: true); // no step: silent (user rule)
         }
     }
 }

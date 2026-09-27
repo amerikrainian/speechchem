@@ -504,16 +504,16 @@ namespace SpeechChem.Patches
         {
             try
             {
+                // Reading-order numbers, the pipeline screen's own (Game/PipelineText).
                 var editor = Class53.smethod_5<PipelineEditor>();
                 if (editor == null || r == null) return null;
-                int n = 0, mine = 0;
-                foreach (var kv in editor.pipeline_0)
+                foreach (var rd in PipelineText.Reactors(editor.pipeline_0))
                 {
-                    if (!(kv.Key is ReactorDraggable rd)) continue;
-                    n++;
-                    if (rd.class77_0 != null && rd.class77_0.reactor_0 == r) mine = n;
+                    if (rd.class77_0 == null || rd.class77_0.reactor_0 != r) continue;
+                    int n = PipelineText.ReactorNumber(editor.pipeline_0, rd);
+                    return n > 0 ? Loc.T("run.reactor", new { n }) : null;
                 }
-                return n > 1 && mine > 0 ? Loc.T("run.reactor", new { n = mine }) : null;
+                return null;
             }
             catch { return null; }
         }

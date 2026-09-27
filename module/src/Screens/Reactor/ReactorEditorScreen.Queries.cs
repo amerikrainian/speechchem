@@ -9,7 +9,7 @@ namespace SpeechChem.Screens.Reactor
 {
     public sealed partial class ReactorEditorScreen
     {
-        // ---- waldo readouts (N red, M blue; Shift jumps the grid cursor there). A waldo (Class188)
+        // ---- waldo readouts (Shift+R red, Shift+B blue; Ctrl+Shift also jumps the grid cursor there). A waldo (Class188)
         // sits on its START marker while the reactor is stopped; during a run: its cell, heading
         // (vector2i_1, the movement it will make), the molecule it holds, and the game's own waiting
         // text (method_2: "WAITING (α)" …), rotating / blocked on sync when so. ----
@@ -21,8 +21,10 @@ namespace SpeechChem.Screens.Reactor
             Class188 waldo;
             if (!r.dictionary_2.TryGetValue((Enum114)(red ? ReactorText.Red : ReactorText.Blue), out waldo) || waldo == null) return;
 
+            // Worded like the grid's cell readout (user rule): coordinates first, then "red start
+            // left" when stopped or "red waldo, heading …" during a run.
             Vector2i cell = waldo.method_0();
-            var parts = new List<string> { Loc.T(red ? "reactor.waldo.red" : "reactor.waldo.blue") };
+            var parts = new List<string>();
             if (!Live)
             {
                 // Stopped: the waldo is drawn on its START marker.
@@ -32,12 +34,13 @@ namespace SpeechChem.Screens.Reactor
                     var bin = r.method_19(start);
                     if (bin.HasValue) cell = bin.Value.vector2i_0;
                     parts.Add(Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }));
-                    parts.Add(ReactorText.Label(start));
+                    parts.Add(Loc.T(red ? "reactor.red" : "reactor.blue") + " " + ReactorText.Label(start));
                 }
             }
             else
             {
                 parts.Add(Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }));
+                parts.Add(Loc.T(red ? "reactor.waldo.red" : "reactor.waldo.blue"));
                 string heading = Heading(waldo.vector2i_1);
                 if (heading != null) parts.Add(Loc.T("reactor.waldo.heading", new { dir = heading }));
                 var held = waldo.moleculeSheet_0?.molecule_0;

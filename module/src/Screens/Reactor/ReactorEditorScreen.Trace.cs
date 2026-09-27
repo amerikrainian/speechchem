@@ -9,7 +9,7 @@ namespace SpeechChem.Screens.Reactor
 {
     public sealed partial class ReactorEditorScreen
     {
-        // ---- waldo path trace (Ctrl+N red, Ctrl+M blue): the path lines the game draws, walked by
+        // ---- waldo path trace (Ctrl+R red, Ctrl+B blue): the path lines the game draws, walked by
         // Game/PathTrace and shown as a list, one line per event (start, instruction, turn, branch,
         // wall, loop); Enter moves the grid cursor to that line's cell, Escape closes. ----
 

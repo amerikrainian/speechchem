@@ -21,7 +21,8 @@ namespace SpeechChem.Screens.Reactor
     /// controls → run and tools (the shared ToolbarSection) → molecules (input/output panels) →
     /// status (the shared ProgressSection) → tutorial (only while a tutorial step is active) → run
     /// log (the shared WindowedLogView over Patches/RunCapture; only once a run has logged events).
-    /// Screen keys: C coordinates, N / M red / blue waldo (Shift jumps the cursor there), P status,
+    /// Screen keys: C coordinates, Shift+R / Shift+B red / blue waldo (Ctrl+Shift also jumps
+    /// the cursor there, Ctrl alone traces its path), P status,
     /// F1 repeats the tutorial step, L switches the active layer (the game's Tab, which is
     /// navigation here), Shift+Backspace details. The game keeps 1-4, ~ and Space (run controls),
     /// Ctrl+Z / Ctrl+Y and Escape (native exit / stop / deselect).

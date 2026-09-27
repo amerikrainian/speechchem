@@ -349,8 +349,9 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
   `Screens/ActionListScreen`. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
   1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape. NO single-step (the game has none — user rule).
-- QUERIES: N / M red / blue waldo (stopped: its START; running: cell, heading, holding, waiting text,
-  rotating, sync); Shift+N / Shift+M also jump the cursor (focus moves silently); Ctrl+N / Ctrl+M =
+- QUERIES (user rule: bare letters stay the game's palette hotkeys, waldos go on R / B under modifiers):
+  Shift+R / Shift+B red / blue waldo (stopped: its START; running: cell, heading, holding, waiting text,
+  rotating, sync); Ctrl+Shift+R / Ctrl+Shift+B also jump the cursor (focus moves silently); Ctrl+R / Ctrl+B =
   path trace (`Game/PathTrace`, mirrors Reactor.method_46/47: arrows turn, directed instructions branch,
   START only on its own cell, a branch ends at the wall or a repeated cell+heading) as a list; Enter
   jumps to the line's cell (deferred a frame: closing the list restores focus after the item runs).
@@ -358,7 +359,7 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
 - CATEGORIES (user request): [ / ] cycle Instructions, Inputs, Outputs, Hardware, Waldos, Red program,
   Blue program ("name, count"); , / . cycle items in READING ORDER (fixed by the board, never by the
   cursor — the user asked for a stable order). Grid items move the cursor; an instruction item arms it
-  and just names it (no "armed" — user); waldo items read like N / M.
+  and just names it (no "armed" — user); waldo items read like Shift+R / Shift+B.
 - MOLECULES stop: input/output lines from the port annotations; Enter opens `Screens/MoleculeViewerScreen`
   (a molecule as a navigable mini-grid, reusable anywhere a molecule is drawn).
 - COVERED BY ANOTHER GAME SCREEN (dialog, periodic table, Story & Info): the editor stays in the chain,

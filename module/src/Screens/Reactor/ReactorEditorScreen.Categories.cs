@@ -14,7 +14,7 @@ namespace SpeechChem.Screens.Reactor
     {
         // ---- category cycling (user request, 2026-09-27): [ and ] step through categories, , and .
         // through the category's items. Grid items move the cursor there (read as if arrowed onto);
-        // Instructions arm the palette slot for the next Enter on the grid; Waldos read like N / M
+        // Instructions arm the palette slot for the next Enter on the grid; Waldos read like Shift+R / Shift+B
         // and jump. Items are listed in READING ORDER (row by row, left to right) — fixed by the
         // board, not by the cursor, so the same keys always land on the same places. Items are
         // recomputed on every press (the program changes); the index is kept and clamped. ----

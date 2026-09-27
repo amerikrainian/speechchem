@@ -88,12 +88,14 @@ namespace SpeechChem
 
             // Reactor editor (screen-scoped; user-approved keys, 2026-09-27).
             Input.InputManager.Register("screen.reactor.coords", "Read coordinates", Input.InputCategory.UI).AddBinding(Input.Scancode.C);
-            Input.InputManager.Register("screen.reactor.waldo.red", "Red waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.N);
-            Input.InputManager.Register("screen.reactor.waldo.blue", "Blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
-            Input.InputManager.Register("screen.reactor.jump.red", "Jump to red waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.N, shift: true);
-            Input.InputManager.Register("screen.reactor.jump.blue", "Jump to blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.M, shift: true);
-            Input.InputManager.Register("screen.reactor.trace.red", "Trace red waldo path", Input.InputCategory.UI).AddBinding(Input.Scancode.N, ctrl: true);
-            Input.InputManager.Register("screen.reactor.trace.blue", "Trace blue waldo path", Input.InputCategory.UI).AddBinding(Input.Scancode.M, ctrl: true);
+            // Waldos on R / B under modifiers (user rule, 2026-09-27): the bare letters stay the game's
+            // own palette hotkeys (R = Input); the game gives Ctrl only V / Y / Z.
+            Input.InputManager.Register("screen.reactor.waldo.red", "Red waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.R, shift: true);
+            Input.InputManager.Register("screen.reactor.waldo.blue", "Blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.B, shift: true);
+            Input.InputManager.Register("screen.reactor.jump.red", "Jump to red waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.R, ctrl: true, shift: true);
+            Input.InputManager.Register("screen.reactor.jump.blue", "Jump to blue waldo", Input.InputCategory.UI).AddBinding(Input.Scancode.B, ctrl: true, shift: true);
+            Input.InputManager.Register("screen.reactor.trace.red", "Trace red waldo path", Input.InputCategory.UI).AddBinding(Input.Scancode.R, ctrl: true);
+            Input.InputManager.Register("screen.reactor.trace.blue", "Trace blue waldo path", Input.InputCategory.UI).AddBinding(Input.Scancode.B, ctrl: true);
             Input.InputManager.Register("screen.reactor.cat.prev", "Previous category", Input.InputCategory.UI).AddBinding(Input.Scancode.LeftBracket);
             Input.InputManager.Register("screen.reactor.cat.next", "Next category", Input.InputCategory.UI).AddBinding(Input.Scancode.RightBracket);
             Input.InputManager.Register("screen.reactor.item.prev", "Previous item in category", Input.InputCategory.UI).AddBinding(Input.Scancode.Comma).Repeating();

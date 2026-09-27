@@ -23,7 +23,7 @@ namespace SpeechChem.Screens.Reactor
     /// log (the shared WindowedLogView over Patches/RunCapture; only once a run has logged events).
     /// Screen keys: C coordinates, Shift+R / Shift+B red / blue waldo (Ctrl+Shift also jumps
     /// the cursor there, Ctrl alone traces its path), P status,
-    /// F1 repeats the tutorial step, L switches the active layer (the game's Tab, which is
+    /// Ctrl+T repeats the tutorial step, L switches the active layer (the game's Tab, which is
     /// navigation here), Shift+Backspace details. The game keeps 1-4, ~ and Space (run controls),
     /// Ctrl+Z / Ctrl+Y and Escape (native exit / stop / deselect).
     /// </summary>

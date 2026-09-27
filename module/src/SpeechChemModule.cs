@@ -103,7 +103,7 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.item.prev", "Previous item in category", Input.InputCategory.UI).AddBinding(Input.Scancode.Comma).Repeating();
             Input.InputManager.Register("screen.reactor.item.next", "Next item in category", Input.InputCategory.UI).AddBinding(Input.Scancode.Period).Repeating();
             Input.InputManager.Register("screen.reactor.status", "Read status", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
-            Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.F1);
+            Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.T, ctrl: true); // bare T = the game's Sync hotkey
             Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);
             // Palette letters place that instruction at the grid cursor (the scancode is the id).
             foreach (var letter in new[] { Input.Scancode.Q, Input.Scancode.W, Input.Scancode.E, Input.Scancode.R, Input.Scancode.T,

@@ -21,10 +21,11 @@ namespace SpeechChem.Screens
     ///     disabled with empty handlers and "More Information" is hidden, so none of them is a node.
     ///  3. Extras — the clickable art the title-screen base draws on the main menu only (lettered art,
     ///     so the labels are mod transcriptions): the ResearchNet tablet ("Sign On" — the journal, or
-    ///     the game's ACCESS DENIED dialog before it unlocks), the 63 Corvi planet (only when the DLC is
-    ///     owned — the draw's own gate), the Team Fortress 2 icon (an Australium bar on a map of
-    ///     Australia, no lettering: it reads as the drawn title of the screen it opens, "Australium
-    ///     Research Sites"); then the profile plate (name, rank).
+    ///     the game's ACCESS DENIED dialog before it unlocks), the 63 Corvi planet (the game's own
+    ///     planet name, Levels.dictionary_2; only when the DLC is owned — the draw's own gate), the
+    ///     Team Fortress 2 icon (an Australium bar on a map of Australia, no lettering: it reads as the
+    ///     drawn title of the screen it opens, "Australium Research Sites"); then the profile plate
+    ///     (name, rank).
     ///
     /// Escape stays native: on the main menu it QUITS THE GAME immediately (MainMenuEditor.imethod_0).
     /// </summary>
@@ -74,7 +75,7 @@ namespace SpeechChem.Screens
             var extras = new List<KeyValuePair<string, KeyValuePair<Func<string>, Action>>>();
             extras.Add(Extra("mainmenu.researchnet", () => Loc.T("mainmenu.researchnet"), () => Menu?.method_12()));
             if (Class280.bool_5 || Class47.smethod_10())
-                extras.Add(Extra("mainmenu.corvi", () => Loc.T("mainmenu.corvi"), () => Menu?.method_14()));
+                extras.Add(Extra("mainmenu.corvi", () => GameText.T("63 Corvi", "ENGLISH ALPHABET ONLY"), () => Menu?.method_14()));
             if (Class448.bool_0)
                 extras.Add(Extra("mainmenu.tf2", () => Loc.T("mainmenu.tf2"), () => Menu?.method_13()));
             b.BeginStop(ExtrasStop);

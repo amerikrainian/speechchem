@@ -246,7 +246,8 @@ return lands on the button you left through). Three Tab stops:
   Information button are not nodes.
 - **Extras** (TitleScreenEditor art hotspots, main menu only; lettered art → mod labels):
   "ResearchNet, Sign On" (`method_12`: journal, or `Class61` ACCESS DENIED before unlock),
-  "63 Corvi" (`method_14` → `Class70`; shown when `Class280.bool_5 || Class47.smethod_10()` — DLC
+  "63 Corvi" (the game's planet name, `Levels.dictionary_2[10]`; `method_14` → `Class70`; shown
+  when `Class280.bool_5 || Class47.smethod_10()` — DLC
   92803 owned), "Australium Research Sites" (the Team Fortress 2 icon: an Australium bar on a map
   of Australia, no lettering, so it reads as the drawn title of what it opens; `method_13` → `Class67`;
   `Class448.bool_0` is constant true) —
@@ -262,7 +263,7 @@ generation shows no buttons after `/reload` (probe `pop` it); never an issue in 
 
 Unmodeled screens with RENAMED types announce only through a curated deob-name table
 (`ScreenNames.ForDeob`): `Class74` → the game's "Settings", `Class67` → "Australium Research Sites",
-`Class70` → "63 Corvi". Everything else obfuscated stays silent (never "Class74"). Destinations
+`Class70` → the game's "63 Corvi". Everything else obfuscated stays silent (never "Class74"). Destinations
 verified announcing and returning on Escape: Level select, Challenges, Settings, Australium Research Sites.
 
 ## 12. Level select (`module/src/Screens/LevelSelectScreens.cs`) — verified live 2026-09-27

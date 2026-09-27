@@ -26,7 +26,7 @@ namespace SpeechChem.UI
             {
                 { "Class74", () => Game.GameText.T("Settings") },            // Options (its drawn title)
                 { "Class67", () => Localization.Loc.T("mainmenu.tf2") },     // the TF2 icon's levels (drawn title)
-                { "Class70", () => Localization.Loc.T("mainmenu.corvi") },   // the 63 Corvi DLC levels
+                { "Class70", () => Game.GameText.T("63 Corvi", "ENGLISH ALPHABET ONLY") }, // the DLC planet's own name
                 { "Class76", () => Localization.Loc.T("toolbar.periodic") }, // the periodic table / element picker
             };
 

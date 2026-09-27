@@ -265,7 +265,8 @@ verified announcing and returning on Escape: Level select, Challenges, Settings,
 
 ## 12. Level select (`module/src/Screens/LevelSelectScreens.cs`) — verified live 2026-09-27
 `LevelSelectScreen` over `SpaceChem.LevelSelectEditor` (Settled-gated, KeepStateOnPop). TAB STYLE
-(from Echopunks' control panel): a tab strip is its own Tab stop, one row of `ControlTypes.Tab` nodes
+(from Echopunks' control panel): a tab strip is its own Tab stop of `ControlTypes.Tab` nodes (the
+planets as a VERTICAL list, Up/Down — user layout)
 with `Selected` (engine state) + `OnSelect`/`OnActivate` switching — selection follows focus and
 "selected" is never spoken. Four stops:
 - **Planets**: `Levels.smethod_0()` (ordered `Enum147`s); unlocked set = `method_13()`; switching =

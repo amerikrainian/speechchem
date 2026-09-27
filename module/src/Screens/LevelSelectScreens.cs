@@ -98,7 +98,7 @@ namespace SpeechChem.Screens
             var planets = LevelsDb.smethod_0();
             var unlocked = select.method_13();
             b.BeginStop(PlanetStop);
-            b.StartRow();
+            // A vertical list, one tab per row: Up/Down switch planets (user layout, 2026-09-27).
             for (int i = 0; i < planets.Count; i++)
             {
                 var planet = planets[i];
@@ -123,7 +123,6 @@ namespace SpeechChem.Screens
                 }
                 b.AddItem(ControlId.Structural("levelselect.planet." + i), vt);
             }
-            b.EndRow();
         }
 
         /// <summary>The planet bar's click (method_16 rebuilds the map). Skipped when the planet is

@@ -410,7 +410,7 @@ tracked by postfixes on method_21/22/24 (inferred from the constructor rule afte
 Stops: tabs (follow focus), entry (combo box over unlocked entries), text — on Performance the three
 stats sit IN the text stop under the lines, as columns (user rules: Down from the last line reaches
 the first caption, Up from any caption returns; Left/Right switch stats landing on the caption,
-Up/Down walk rows), buttons. Histograms read like Echopunks' panels and show nothing the game doesn't (user rule):
+Up/Down walk rows), buttons (uncounted, like the dialogs). Histograms read like Echopunks' panels and show nothing the game doesn't (user rule):
 caption with the THIS / BEST numbers, then one row per non-empty bucket "lo to hi: N%" (bar height vs
 the tallest; "under 1%" for a drawn bar that rounds to 0), marker buckets tagged (marker x =
 clamp(v + 0.5)). Leaderboard view = the game's 11-row window around you. The view button flips the

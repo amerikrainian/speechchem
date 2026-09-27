@@ -444,16 +444,18 @@ namespace SpeechChem.Screens
 
         // ---- buttons ----
 
+        /// <summary>The buttons: a plain vertical list with no counts (user layout, like the dialogs).</summary>
         private static void BuildActions(GraphBuilder b, Editor e, StoryCapture.Tab tab)
         {
             b.BeginStop(ActionsStop);
+            Action<string, NodeVtable> add = (id, vt) => { vt.SpeaksOwnPosition = true; b.AddItem(ControlId.Structural(id), vt); };
             if (tab == StoryCapture.Tab.Performance && e.struct116_2.bool_0)
             {
                 bool confidential = false;
                 try { confidential = SpaceChem.Levels.Levels.smethod_13(GoalTracker.string_0); } catch { }
                 if (!confidential)
                 {
-                    b.AddItem(ControlId.Structural("story.view"), ProfileUi.Button(
+                    add("story.view", ProfileUi.Button(
                         () => Loc.T(Safe(Class280.smethod_0) ? "story.view.histograms" : "story.view.leaderboards"),
                         () =>
                         {
@@ -472,11 +474,11 @@ namespace SpeechChem.Screens
                 record.OnTooltip = () => Speech.Tts.Speak(GameText.T(Class184.bool_1 ? "This action is disabled."
                     : confidential ? "The details of this assignment are SpaceChem confidential and may not be shared with unprivileged employees."
                     : "After recording your solution, a video file will be saved to your desktop."), interrupt: true);
-                b.AddItem(ControlId.Structural("story.record"), record);
+                add("story.record", record);
             }
             if (e.bool_2)
-                b.AddItem(ControlId.Structural("story.back"), ProfileUi.Button(() => GameText.T("Back"), () => Ed?.method_26()));
-            b.AddItem(ControlId.Structural("story.continue"), ProfileUi.Button(() => GameText.T("Continue"), () => Ed?.method_30()));
+                add("story.back", ProfileUi.Button(() => GameText.T("Back"), () => Ed?.method_26()));
+            add("story.continue", ProfileUi.Button(() => GameText.T("Continue"), () => Ed?.method_30()));
         }
 
         private static bool Safe(Func<bool> f)

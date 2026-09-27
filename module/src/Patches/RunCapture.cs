@@ -363,7 +363,10 @@ namespace SpeechChem.Patches
                     Generation++;
                     Blocked.Clear();
                 }
-                Log.Add(Cycle, Screens.Common.ProgressSection.RunState());
+                // Stopping zeroes the cycle counter first (Class258.smethod_17), so "Stopped" would
+                // file under cycle 0 — the log's TOP. It belongs at the end: the last group.
+                int key = now == 0 && !Log.IsEmpty ? Log.Groups[Log.Groups.Count - 1] : Cycle;
+                Log.Add(key, Screens.Common.ProgressSection.RunState());
                 if (_leaving == 0) Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());
             }
             catch { }

@@ -124,6 +124,7 @@
   "run.paused": "Paused",
   "run.stopped": "Stopped",
   "run.progress": "{label}: {percent} percent",
+  "run.percent": "{percent} percent",
   "run.summary": "{state}. {cyclesLabel} {cycles}, {symbolsLabel} {symbols}, {reactorsLabel} {reactors}. {progress}.",
   "reactor.edit.running": "Stop the reactor to edit.",
   "reactor.edit.locked": "The {colour} layer is locked or hidden.",

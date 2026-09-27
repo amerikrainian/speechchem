@@ -24,7 +24,17 @@ namespace SpeechChem.Screens.Common
             Row(b, idPrefix + ".cycles", () => GameText.T("Cycles") + " " + GoalTracker.score_0.int_0);
             Row(b, idPrefix + ".symbols", () => GameText.T("Symbols") + " " + GoalTracker.score_0.int_2);
             Row(b, idPrefix + ".reactors", () => GameText.T("Reactors") + " " + GoalTracker.score_0.int_1);
-            Row(b, idPrefix + ".progress", Progress);
+            // The one LIVE row (user rule): while focused, each change of the percentage is spoken
+            // on its own ("20 percent") as a run produces. The other rows only read on arrival.
+            b.AddItem(ControlId.Structural(idPrefix + ".progress"), new NodeVtable
+            {
+                ControlType = ControlTypes.Text,
+                Announcements = new[]
+                {
+                    new NodeAnnouncement(() => GameText.T("Current Progress"), kind: AnnouncementKinds.Label),
+                    new NodeAnnouncement(() => Loc.T("run.percent", new { percent = ProgressPercent() }), live: true, kind: AnnouncementKinds.Value),
+                },
+            });
         }
 
         private static void Row(GraphBuilder b, string id, Func<string> text)
@@ -59,11 +69,12 @@ namespace SpeechChem.Screens.Common
         }
 
         public static string Progress()
+            => Loc.T("run.progress", new { label = GameText.T("Current Progress"), percent = ProgressPercent() });
+
+        private static int ProgressPercent()
         {
-            int percent = 0;
-            try { percent = (int)Math.Round(GoalTracker.smethod_1() * 100f); }
-            catch { }
-            return Loc.T("run.progress", new { label = GameText.T("Current Progress"), percent });
+            try { return (int)Math.Round(GoalTracker.smethod_1() * 100f); }
+            catch { return 0; }
         }
 
         /// <summary>The whole panel in one line, for the status key.</summary>

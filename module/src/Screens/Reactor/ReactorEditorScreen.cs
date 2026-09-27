@@ -56,6 +56,10 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.jump.blue", () => SpeakWaldo(red: false, jump: true));
             yield return new ElementAction("screen.reactor.trace.red", () => TraceWaldo(red: true));
             yield return new ElementAction("screen.reactor.trace.blue", () => TraceWaldo(red: false));
+            yield return new ElementAction("screen.reactor.cat.prev", () => StepCategory(-1));
+            yield return new ElementAction("screen.reactor.cat.next", () => StepCategory(1));
+            yield return new ElementAction("screen.reactor.item.prev", () => StepItem(-1));
+            yield return new ElementAction("screen.reactor.item.next", () => StepItem(1));
             yield return new ElementAction("screen.reactor.status", () => Speech.Tts.Speak(ProgressSection.Summary(), interrupt: true));
             yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
@@ -102,6 +106,7 @@ namespace SpeechChem.Screens.Reactor
             _lastStep = null;
             _armedKey = -1;
             _pendingJump = null;
+            _category = _item = -1;
             ResetEditState();
         }
 

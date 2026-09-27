@@ -92,11 +92,11 @@ namespace SpeechChem.Screens.Reactor
         }
 
         /// <summary>Move the grid cursor (and focus) to a cell — the waldo jump keys.</summary>
-        private void FocusCell(int x, int y)
+        private void FocusCell(int x, int y, bool announce = true)
         {
             LandOnCell(x, y);
             Navigation.FocusStop(GridStop);
-            Navigation.FocusNode(CellId(x, y));
+            Navigation.FocusNode(CellId(x, y), announce);
         }
 
         // ---- zones ----

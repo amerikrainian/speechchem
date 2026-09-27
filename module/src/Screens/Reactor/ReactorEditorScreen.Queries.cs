@@ -48,7 +48,7 @@ namespace SpeechChem.Screens.Reactor
                 if (waldo.bool_4) parts.Add(Loc.T("reactor.waldo.sync"));
             }
             Speech.Tts.Speak(string.Join(", ", parts.ToArray()), interrupt: true);
-            if (jump) FocusCell(cell.int_0, cell.int_1);
+            if (jump) FocusCell(cell.int_0, cell.int_1, announce: false); // the waldo line already names the cell
         }
 
         private static StartInstruction FindStart(SpaceChem.Reactor.Reactor r, bool red)

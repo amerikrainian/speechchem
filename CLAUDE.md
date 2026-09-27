@@ -324,6 +324,23 @@ Transcript (pane title + `StoryInfoScreen.CleanStory` of the body), Return to Me
 KeepStateOnPop only while covered. UNTESTED live: switching transcripts (one unlocked on the test
 profile) and solved scores.
 
+## 12a. ResearchNet journal (`Screens/JournalScreens.cs`) — verified live 2026-09-27
+`JournalScreen` over `SpaceChem.ResearchNetJournalEditor` (a `Class59` paged ResearchNet screen;
+name = the drawn "The Journal of" + "Reaction Engineering"). Data: `PublishedLevelCache.theJournal_0`
+(journal.json: 97 issues, 291 puzzles), issues newest first (`dateTime_0` descending), puzzles by
+sorted key. ONE LIST, PAGE FOLLOWS (user decision): the Issues stop holds every issue (header row
+"Volume, Issue, title" + one ROW per puzzle), each issue a region (Ctrl+Up/Down); while focus is in it
+the game's page `int_1` (3 per page) is set to the focused issue's and `method_13()` rebuilds. Puzzle
+row (user decision: both) = button "name, author, difficulty[, completed], n of m" (difficulty is
+the pictograph `icon_easy/medium/hard` → mod words) + the card's drawn molecules as cells ("…,
+output"; research = output zones, production = random + fixed inputs then outputs, sandbox =
+inputs) opening `MoleculeViewerScreen`; Shift+Backspace on the puzzle = the same as one line.
+Enter = `PublishedLevelCache.smethod_3(id)`; hover = `method_18(id)` → `class469_0` panel. `Class680`
+cards read the game's "Unavailable" text. Actions: Back (`method_12`), Create or Import an Assignment
+(`method_20` → the unmodeled ResearchNetCustomEditor), Newer / Older (`vmethod_11/12`, enabled =
+`GClass15.method_7()`; then focus the new page's first issue; disabled → "unavailable", no click).
+KeepStateOnPop only while covered.
+
 ## 13. Challenges (`module/src/Screens/ChallengeScreens.cs`) — verified live 2026-09-27
 `ChallengesScreen` over `SpaceChem.ChallengeEditor`: the screen name is the drawn title
 ("Challenges", comment "ENGLISH ALPHABET ONLY"); stop 1 = every visible challenge as one list in the
@@ -519,9 +536,9 @@ dismiss with `pop` — Continue would leave the level).
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. (done) Profile flow (§10), main menu (§11), level select + Australium sites + 63 Corvi (§12), challenges (§13), options (§14),
-   in-level dialogs (§15), reactor editor (§16) + run log (§17), periodic table (§18), Story / Training
-   / Performance (§19).
+4. (done) Profile flow (§10), main menu (§11), level select + Australium sites + 63 Corvi (§12),
+   ResearchNet journal (§12a), challenges (§13), options (§14), in-level dialogs (§15), reactor editor
+   (§16) + run log (§17), periodic table (§18), Story / Training / Performance (§19).
 5. Next (agreed order): the pipeline editor, defense levels, the ResearchNet builders.
 6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
    REPLACEMENT must be backed up and restored on uninstall).

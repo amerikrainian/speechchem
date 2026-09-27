@@ -101,6 +101,7 @@
   "reactor.laser.target": "target",
   "reactor.laser.product": "product",
   "reactor.tunnel.other": "other end {cell}",
+  "reactor.junction.crossed": "crossed quantum junction",
   "instr.control": "control {letter} {dir}",
   "instr.fuse": "fuse",
   "instr.fission": "fission",

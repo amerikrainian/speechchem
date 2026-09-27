@@ -24,6 +24,12 @@ namespace SpeechChem.Screens.Reactor
         private string _lastZone;
         private Vector2i? _zoneFor; // the cell whose readout carries the zone name just crossed into
         private bool _zoneInit;     // the first readout names its zone (no crossing precedes it)
+        private Vector2i? _junctionFor; // the cell whose readout says the quantum junction was just crossed
+
+        // A quantum reactor's junction (Reactor.bool_1): the line at 395 px, between columns 5 and 6
+        // (cells are 79 px). Atoms may cross it only through a quantum tunnel (Reactor.method_37's
+        // reaction error otherwise).
+        private const int JunctionColumn = 5;
 
         private static ControlId CellId(int x, int y) => ControlId.Structural("reactor.cell." + x + "." + y);
 
@@ -59,6 +65,9 @@ namespace SpeechChem.Screens.Reactor
         /// <summary>Directional landing on a cell: note the cursor and whether a zone was crossed.</summary>
         private void LandOnCell(int x, int y)
         {
+            var model = Model;
+            bool crossed = model != null && model.bool_1 && (_cursorX < JunctionColumn) != (x < JunctionColumn);
+            _junctionFor = crossed ? new Vector2i(x, y) : (Vector2i?)null;
             _cursorX = x;
             _cursorY = y;
             string zone = ZoneAt(Model, x, y);
@@ -169,6 +178,8 @@ namespace SpeechChem.Screens.Reactor
             }
             else if (_zoneFor.HasValue && _zoneFor.Value.int_0 == x && _zoneFor.Value.int_1 == y)
                 parts.Add(ZoneAt(r, x, y));
+            if (_junctionFor.HasValue && _junctionFor.Value.int_0 == x && _junctionFor.Value.int_1 == y)
+                parts.Add(Loc.T("reactor.junction.crossed"));
             parts.AddRange(CellContents(r, x, y));
             if (IsTutorialTarget(x, y)) parts.Add(Loc.T("reactor.highlighted"));
             if (InSelection(x, y)) parts.Add(Loc.T("text.selectedword"));

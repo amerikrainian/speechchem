@@ -400,6 +400,11 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   contents (red/blue instruction + arrow labels from `Game/ReactorText`, hardware feature, waldos and
   atoms with bonds while running), "highlighted" (tutorial target), "selected". Empty cell =
   coordinates only. While running a waldo reads SHORT: "red waldo, facing down" (user rule).
+  QUANTUM JUNCTION (Reactor.bool_1 — QT levels, Teleporters, Precursor Compounds, Collapsar; custom
+  puzzles never get it): the line between columns 5 and 6 (395 px, 79 px cells); the cell the cursor
+  lands on after crossing it adds "crossed quantum junction" (arrows, Home/End, jumps). Carrying an
+  atom across stops the run with the game's own reaction error ("Atoms may only be teleported across
+  the quantum junction …", marked at the last cell before it) — verified live on QT-1 2026-09-27.
   C reads coordinates. Shift+Backspace = the cell's details (`CellDetailsOf`), most useful first:
   each waldo's state beyond facing (holding / empty, the game's WAITING text, syncing, rotating, at
   the wall — `WaldoState`, shared with Shift+R), the atom info box, then the game's tooltip text

@@ -155,12 +155,25 @@ namespace SpeechChem.Screens.Pipeline
         private static ControlId ComponentId(Draggable d)
             => ControlId.Structural("pipeline.comp." + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(d));
 
-        /// <summary>"Assembly Reactor 2, 12, 3" — the name, then its top-left cell.</summary>
+        /// <summary>"Assembly Reactor 2, 12, 3" — the name, then its top-left cell; during a run a
+        /// reactor adds its waldos' waiting text, as its thumbnail shows it (Class188.method_2).</summary>
         internal static string ComponentLabel(SpaceChem.Pipeline.Pipeline p, Draggable d)
         {
             var at = p?.method_9(d);
             string name = PipelineText.Name(p, d);
-            return at.HasValue ? name + ", " + PipelineText.Cell(at.Value) : name;
+            string text = at.HasValue ? name + ", " + PipelineText.Cell(at.Value) : name;
+            if ((int)Class258.smethod_16() != 0 && d is ReactorDraggable rd && rd.class77_0?.reactor_0 != null)
+            {
+                var waldos = rd.class77_0.reactor_0.dictionary_2;
+                foreach (var colour in new[] { Enum114.Alpha, Enum114.Beta })
+                {
+                    if (!waldos.ContainsKey(colour)) continue;
+                    string status = waldos[colour].method_2();
+                    if (!string.IsNullOrEmpty(status))
+                        text += ", " + Loc.T(colour == Enum114.Alpha ? "reactor.red" : "reactor.blue") + " " + GameText.Speech(status);
+                }
+            }
+            return text;
         }
 
         /// <summary>The game's double-click on a reactor (ReactorDraggable.vmethod_2 → the reactor

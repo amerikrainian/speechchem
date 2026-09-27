@@ -112,6 +112,8 @@ namespace SpeechChem.Screens.Pipeline
                 {
                     parts.Add(PipeLabel(p, d, outIndex));
                     if (pipe.linkedList_0.Count > 0 && pipe.linkedList_0.Last.Value == local) parts.Add(Loc.T("pipeline.pipe.end"));
+                    string carried = MoleculeIn(pipe, local);
+                    if (carried != null) parts.Add(carried);
                     if (pipe.dictionary_4.TryGetValue(local, out var other) && other?.draggable_0 != null)
                         parts.Add(Loc.T("pipeline.pipe.crossing", new { pipe = PipeLabel(p, other.draggable_0, OutputIndex(other)) }));
                     return parts;
@@ -134,6 +136,26 @@ namespace SpeechChem.Screens.Pipeline
                 inIndex++;
             }
             return parts;
+        }
+
+        /// <summary>During a run, the molecule in a pipe cell: the pipe keeps one slot per cell
+        /// (PipeDraggable.linkedList_1, in the cells' order), shifted along each cycle.</summary>
+        private static string MoleculeIn(PipeDraggable pipe, Vector2i local)
+        {
+            if ((int)Class258.smethod_16() == 0) return null;
+            int i = 0;
+            foreach (var c in pipe.linkedList_0)
+            {
+                if (c == local) break;
+                i++;
+            }
+            int j = 0;
+            foreach (var slot in pipe.linkedList_1)
+            {
+                if (j++ != i) continue;
+                return slot.molecule_0 == null ? null : MoleculeText.NameAndFormula(slot.molecule_0);
+            }
+            return null;
         }
 
         /// <summary>"pipe, Assembly Reactor 2 psi output".</summary>

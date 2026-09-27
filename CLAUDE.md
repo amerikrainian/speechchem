@@ -356,7 +356,12 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
 - EDITING (user rules): palette letters place at the cursor in the ACTIVE colour, replacing the slot's
   occupant; Enter on a palette slot arms it, the next Enter on the grid places it (one-shot; Enter with
   nothing armed does nothing); Delete / Ctrl+X / Ctrl+C / Ctrl+V act on the active colour only; START
-  moves only via cut/paste; Shift+arrows = rectangular selection; Backspace (ui.secondary) = the context menu (the
+  moves only via cut/paste; HARDWARE (bonders, sensors, tunnels, lasers — all built undeletable) moves
+  only via cut/paste too: Ctrl+X takes a cell's hardware when the active colour gave nothing there
+  (none, or that colour locked — the game's own pick order walks red, red arrow, blue, blue arrow,
+  hardware LAST and skips locked/hidden layers, so locking is how a player reaches hardware under
+  instructions); it stays put until the paste, which checks every covered cell (in the grid, no
+  other hardware) and moves it with the game's drop (method_18 + vmethod_1); Shift+arrows = rectangular selection; Backspace (ui.secondary) = the context menu (the
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
   `Screens/ActionListScreen`; the layer and icon-variant items are RADIO GROUPS (families share one
   `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant

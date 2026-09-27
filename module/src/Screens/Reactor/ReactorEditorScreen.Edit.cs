@@ -234,6 +234,18 @@ namespace SpeechChem.Screens.Reactor
             public int Layer;
             public Instruction Source; // for a copy: cloned on paste; for a cut START: moved on paste
             public bool MoveStart;
+            public ReactorFeature Feature; // cut hardware: moved on paste (never copied or deleted)
+        }
+
+        /// <summary>The hardware a cut takes from a cell whose active colour gave nothing (none
+        /// there, or that colour locked) — the game's own pick order: its mouse press walks a cell
+        /// red, red arrow, blue, blue arrow, hardware LAST, skipping pieces on locked or hidden
+        /// layers (Reactor.method_50 / ReactorMember.method_1), so locking the instruction layers is
+        /// how a player reaches hardware under them. Null when there is none or it can't move.</summary>
+        private static ReactorFeature HardwareAt(ReactorModel r, Vector2i cell)
+        {
+            var f = r.method_15(cell, (Enum114)ReactorText.Background) as ReactorFeature;
+            return f != null && !f.method_1() ? f : null;
         }
 
         private readonly List<ClipEntry> _clip = new List<ClipEntry>();
@@ -249,7 +261,10 @@ namespace SpeechChem.Screens.Reactor
             foreach (var c in cells) { ox = Math.Min(ox, c.int_0); oy = Math.Min(oy, c.int_1); }
             var entries = new List<ClipEntry>();
             var toRemove = new List<Instruction>();
+            var hardware = new HashSet<ReactorFeature>();
             foreach (var cell in cells)
+            {
+                bool took = false;
                 foreach (int layer in ActiveLayers())
                 {
                     if (!Visible(r, layer)) continue;
@@ -259,15 +274,30 @@ namespace SpeechChem.Screens.Reactor
                     if (i is StartInstruction)
                     {
                         // START can only move: a cut remembers it and the paste relocates it.
-                        if (cut && LayerEditable(r, layer)) entries.Add(new ClipEntry { Offset = offset, Layer = layer, Source = i, MoveStart = true });
+                        if (cut && LayerEditable(r, layer)) { entries.Add(new ClipEntry { Offset = offset, Layer = layer, Source = i, MoveStart = true }); took = true; }
                         continue;
                     }
                     if (cut && !LayerEditable(r, layer)) continue;
                     // Keep a detached copy, so later edits to the original don't change the clipboard.
                     var copy = i.vmethod_2(r) as Instruction;
                     entries.Add(new ClipEntry { Offset = offset, Layer = layer, Source = copy });
+                    took = true;
                     if (cut) toRemove.Add(i);
                 }
+                // Nothing of the active colour taken here: a cut reaches the hardware (user rule, the
+                // game's pick order). Like START it only moves — it stays put until the paste — and a
+                // copy never takes it (the game has no way to duplicate hardware). Offsets come from
+                // the piece's own origin, so a piece covering several cells moves whole.
+                if (cut && !took)
+                {
+                    var f = HardwareAt(r, cell);
+                    if (f != null && hardware.Add(f))
+                    {
+                        var origin = r.method_19(f).Value.vector2i_0;
+                        entries.Add(new ClipEntry { Offset = new Vector2i(origin.int_0 - ox, origin.int_1 - oy), Layer = ReactorText.Background, Feature = f });
+                    }
+                }
+            }
             if (entries.Count == 0)
             {
                 Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true);
@@ -287,8 +317,20 @@ namespace SpeechChem.Screens.Reactor
                 }
             }
             ClearSelection();
-            Speech.Tts.Speak(Loc.T(cut ? "reactor.edit.cut" : "reactor.edit.copied", new { n = entries.Count }), interrupt: true);
+            var names = new List<string>();
+            foreach (var e in entries) names.Add(ClipLabel(e));
+            Speech.Tts.Speak(Loc.T(cut ? "reactor.edit.cut" : "reactor.edit.copied", new { what = Summary(names) }), interrupt: true);
         }
+
+        private const int MaxNamed = 3;
+
+        /// <summary>What a clipboard entry is: "red grab drop", "Bonder".</summary>
+        private static string ClipLabel(ClipEntry e)
+            => e.Feature != null ? ReactorText.FeatureLabel(e.Feature) : ColourWord(e.Layer) + " " + ReactorText.Label(e.Source);
+
+        /// <summary>Up to three phrases named, joined; more = "5 items".</summary>
+        private static string Summary(List<string> phrases, string separator = ", ")
+            => phrases.Count <= MaxNamed ? string.Join(separator, phrases.ToArray()) : Loc.T("reactor.edit.items", new { n = phrases.Count });
 
         private void Paste()
         {
@@ -298,11 +340,23 @@ namespace SpeechChem.Screens.Reactor
             if (!CanEdit()) return;
             var size = r.method_1();
             int placed = 0, skipped = 0;
+            var landed = new List<string>(); // "red grab drop at 3, 2", one per placed item
+            Action<ClipEntry, Vector2i> land = (e, at) =>
+            {
+                placed++;
+                landed.Add(Loc.T("reactor.edit.at", new { what = ClipLabel(e), cell = Loc.T("reactor.cell", new { x = at.int_0 + 1, y = at.int_1 + 1 }) }));
+            };
             using (UndoStep())
             {
                 foreach (var e in _clip)
                 {
                     var cell = new Vector2i(_cursorX + e.Offset.int_0, _cursorY + e.Offset.int_1);
+                    if (e.Feature != null)
+                    {
+                        if (MoveHardware(r, e.Feature, cell)) land(e, cell);
+                        else skipped++;
+                        continue;
+                    }
                     if (cell.int_0 >= size.int_0 || cell.int_1 >= size.int_1 || !LayerEditable(r, e.Layer)) { skipped++; continue; }
                     var bin = new ReactorBin(cell, (Enum114)e.Layer);
                     var existing = r.method_17(bin);
@@ -316,7 +370,7 @@ namespace SpeechChem.Screens.Reactor
                         }
                         r.method_18(bin, e.Source);
                         e.Source.vmethod_1(bin);
-                        placed++;
+                        land(e, cell);
                         continue;
                     }
                     if (existing is StartInstruction) { skipped++; continue; }
@@ -328,15 +382,43 @@ namespace SpeechChem.Screens.Reactor
                     var clone = e.Source.vmethod_2(r) as Instruction;
                     if (clone == null) { skipped++; continue; }
                     r.method_18(bin, clone);
-                    placed++;
+                    land(e, cell);
                 }
             }
-            // A START moves once; later pastes of the same clipboard should not move it again.
-            _clip.RemoveAll(e => e.MoveStart);
+            // A START or a piece of hardware moves once; later pastes of the same clipboard should
+            // not move it again.
+            _clip.RemoveAll(e => e.MoveStart || e.Feature != null);
             Class428.class14_11.vmethod_0();
-            Speech.Tts.Speak(skipped > 0
-                ? Loc.T("reactor.edit.pasted.skipped", new { n = placed, skipped })
-                : Loc.T("reactor.edit.pasted", new { n = placed }), interrupt: true);
+            // What landed where ("Bonder at 9, 2"; past three, "5 items at 3, 2" from the cursor),
+            // then what didn't fit.
+            string what = placed == 0 ? null
+                : placed <= MaxNamed ? string.Join("; ", landed.ToArray())
+                : Loc.T("reactor.edit.at", new { what = Loc.T("reactor.edit.items", new { n = placed }), cell = Loc.T("reactor.cell", new { x = _cursorX + 1, y = _cursorY + 1 }) });
+            string text = what == null ? Loc.T("reactor.edit.nofit", new { n = skipped })
+                : skipped > 0 ? Loc.T("reactor.edit.pasted.skipped", new { what, skipped })
+                : what;
+            Speech.Tts.Speak(text, interrupt: true);
+        }
+
+        /// <summary>Move a piece of hardware so its origin sits at <paramref name="origin"/> — the
+        /// game's drop (Reactor.method_30: method_18 then the member's vmethod_1). Refused when a
+        /// cell it would cover lies outside the grid or holds other hardware, or the piece's layer
+        /// is locked or hidden. The instruction layers are separate, so instructions don't block it.</summary>
+        private static bool MoveHardware(ReactorModel r, ReactorFeature f, Vector2i origin)
+        {
+            if (f.method_1()) return false;
+            var size = r.method_1();
+            foreach (Vector2i offset in f)
+            {
+                int x = origin.int_0 + offset.int_0, y = origin.int_1 + offset.int_1;
+                if (x < 0 || y < 0 || x >= size.int_0 || y >= size.int_1) return false;
+                var there = r.method_17(new ReactorBin(new Vector2i(x, y), (Enum114)ReactorText.Background));
+                if (there != null && there != f) return false;
+            }
+            var bin = new ReactorBin(origin, (Enum114)ReactorText.Background);
+            r.method_18(bin, f);
+            f.vmethod_1(bin);
+            return true;
         }
 
         // ---- context menu (Backspace on the grid) ----

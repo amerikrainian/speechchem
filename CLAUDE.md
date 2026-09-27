@@ -383,8 +383,11 @@ Tutorial, Run log. Game Tab rebound to L (switch active layer).
   let a test program complete a level: park the waldo against a wall instead of looping.
 
 ## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
-Only events the game has (user rule): waldo steps (Class188.method_3: input, grab/drop, turns, waits
-reported once, sync, rotation; arrows logged but not spoken), outputs (Class578.vmethod_11 counter
+Only events the game has (user rule), worded as what HAPPENED ("grabbed Oxygen", "nothing to drop"):
+waldo steps (Class188.method_3: input, grab/drop, waits reported once, sync, rotation reported once;
+any heading change "blue: heading up" — an arrow the waldo already follows logs nothing), wall stops
+(Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
+once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,
 run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed. The log is
 cleared when a run starts from stopped. GroupedLog (ported from Echopunks) keeps the whole run under

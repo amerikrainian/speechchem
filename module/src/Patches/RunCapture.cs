@@ -24,9 +24,11 @@ namespace SpeechChem.Patches
     ///                      (vmethod_7), then the arrow. Prefix snapshots the waldo (held molecule,
     ///                      waiting / sync flags, heading) and the reactor's molecule count; postfix
     ///                      diffs → "red: in alpha, took Oxygen", "red: grabbed Oxygen",
-    ///                      "red: sync, waiting", "red: arrow down" (arrows are logged, not spoken).
+    ///                      "red: sync, waiting", "red: heading down" (a turn, whatever made it).
     ///                      A wait is reported once when it starts, not every cycle it lasts; so is
     ///                      a rotation (two cycles: "red: rotate clockwise, rotated Oxygen").
+    ///   Class188.method_4  the move: a waldo that should move but stays put is at the wall →
+    ///                      "red: hit the wall at 10, 4", once until it moves again.
     ///   Class578.vmethod_11  an output consuming molecules: counter (Class503.int_0) diff → "Research
     ///                      Output ψ: Oxygen, 3 of 10".
     ///   GoalTracker.smethod_12  "Reaction Error" (message); Draggable.method_7 an invalid molecule;
@@ -49,6 +51,8 @@ namespace SpeechChem.Patches
                 var self = typeof(RunCapture);
                 harmony.Patch(Expr.MethodOf(() => default(Class188).method_3()),
                     prefix: new HarmonyMethod(self, nameof(BeforeWaldo)), postfix: new HarmonyMethod(self, nameof(AfterWaldo)));
+                harmony.Patch(Expr.MethodOf(() => default(Class188).method_4()),
+                    prefix: new HarmonyMethod(self, nameof(BeforeMove)), postfix: new HarmonyMethod(self, nameof(AfterMove)));
                 harmony.Patch(Expr.OverrideOf(typeof(Class578), Expr.MethodOf(() => default(Class578).vmethod_11())),
                     prefix: new HarmonyMethod(self, nameof(BeforeOutput)), postfix: new HarmonyMethod(self, nameof(AfterOutput)));
                 harmony.Patch(Expr.MethodOf(() => GoalTracker.smethod_12(default(Struct116<Class77>), null, default(Struct116<Vector2i>), null)),
@@ -88,7 +92,6 @@ namespace SpeechChem.Patches
             public Vector2i Heading;
             public int Molecules;
             public Instruction Instruction;
-            public ArrowInstruction Arrow;
         }
 
         private static void BeforeWaldo(Class188 __instance, out WaldoState __state)
@@ -106,7 +109,6 @@ namespace SpeechChem.Patches
                 __state.Heading = __instance.vector2i_1;
                 __state.Molecules = r.class201_0.Count;
                 __state.Instruction = r.method_15(cell, __instance.enum114_0) as Instruction;
-                __state.Arrow = r.method_15(cell, (Enum114)((int)__instance.enum114_0 >> 1)) as ArrowInstruction;
             }
             catch { }
         }
@@ -127,10 +129,53 @@ namespace SpeechChem.Patches
                     string text = InstructionEffect(__instance, __state, i, ref nonArrowTurned, turned);
                     if (text != null) Add(who + ": " + text, speak: true);
                 }
-                if (__state.Arrow != null && !nonArrowTurned)
-                    Add(who + ": " + ReactorText.Label(__state.Arrow), speak: false);
+                // A turn the instruction above didn't already report (an arrow): the new heading.
+                // An arrow the waldo already follows changes nothing and logs nothing.
+                if (turned && !nonArrowTurned)
+                    Add(who + ": " + Loc.T("run.heading", new { dir = Heading(__instance.vector2i_1) }), speak: true);
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] waldo step capture", ex); }
+        }
+
+        // ---- wall stops: Class188.method_4 moves the waldo one cell along its heading unless it is
+        // waiting (bool_0), syncing (bool_4) or rotating (bool_3); method_1 clamps the new cell to
+        // the grid, so a move that leaves the waldo where it was is the wall. Reported once when it
+        // starts; the waldo counts as blocked until it moves again. ----
+
+        private static readonly HashSet<Class188> Blocked = new HashSet<Class188>();
+
+        private struct MoveState
+        {
+            public bool Moving;
+            public Vector2i Cell;
+        }
+
+        private static void BeforeMove(Class188 __instance, out MoveState __state)
+        {
+            __state = default(MoveState);
+            try
+            {
+                var w = __instance;
+                __state.Cell = w.method_0();
+                __state.Moving = !GoalTracker.bool_0 && !w.bool_4 && !w.bool_0 && !w.bool_3
+                    && (w.vector2i_1.int_0 != 0 || w.vector2i_1.int_1 != 0);
+            }
+            catch { }
+        }
+
+        private static void AfterMove(Class188 __instance, MoveState __state)
+        {
+            try
+            {
+                var cell = __instance.method_0();
+                if (cell != __state.Cell) { Blocked.Remove(__instance); return; }
+                if (!__state.Moving || !Blocked.Add(__instance)) return;
+                Add(WaldoName(__instance) + ": " + Loc.T("run.wall", new
+                {
+                    cell = Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }),
+                }), speak: true);
+            }
+            catch (Exception ex) { SpeechChem.Log.Error("[run] waldo move capture", ex); }
         }
 
         /// <summary>What the non-arrow instruction did, or null when nothing new happened (a wait that
@@ -300,6 +345,7 @@ namespace SpeechChem.Patches
                 {
                     Log.Clear();
                     Generation++;
+                    Blocked.Clear();
                 }
                 Log.Add(Cycle, Screens.Common.ProgressSection.RunState());
                 Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());

@@ -15,14 +15,54 @@ namespace SpeechChem.Game
 
         public static string Formula(Molecule m) => Clean(m?.string_1);
 
-        /// <summary>"Oxygen, O2": the name and formula as the panels draw them.</summary>
+        /// <summary>"Oxygen, O2": the name and formula as the panels draw them. A molecule built in
+        /// the reactor (bonded or split — MoleculeSheet.method_8 makes a fresh Molecule) still holds
+        /// the class's placeholders, "Unknown" / "???" (Molecule fields string_0 / string_1): the
+        /// game never names it — outputs match structure — so it is described from its atoms.</summary>
         public static string NameAndFormula(Molecule m)
         {
             if (m == null) return null;
+            if (m.string_1 == "???") return FromAtoms(m);
             string name = Name(m), formula = Formula(m);
             if (string.IsNullOrEmpty(formula) || formula == name) return name;
             return name + ", " + formula;
         }
+
+        /// <summary>One atom: "Fluorine, F", as an input's single atom reads. Several: a formula in
+        /// Hill order — carbon, then hydrogen, then the rest alphabetically (with no carbon, all
+        /// alphabetically), the order the game's own formulas follow: "AgF", "H2O", "CH4".</summary>
+        private static string FromAtoms(Molecule m)
+        {
+            var counts = new Dictionary<string, int>();
+            Atom? only = null;
+            int atoms = 0;
+            foreach (var atom in m.dictionary_2.Values)
+            {
+                atoms++;
+                only = atom;
+                string symbol = atom.element_0.smethod_2();
+                counts[symbol] = counts.TryGetValue(symbol, out var n) ? n + 1 : 1;
+            }
+            if (atoms == 0) return null;
+            if (atoms == 1) return only.Value.method_0() + ", " + only.Value.element_0.smethod_2();
+            var symbols = new List<string>(counts.Keys);
+            bool carbon = counts.ContainsKey("C");
+            symbols.Sort((a, b) =>
+            {
+                int ra = Rank(a, carbon), rb = Rank(b, carbon);
+                return ra != rb ? ra.CompareTo(rb) : string.CompareOrdinal(a, b);
+            });
+            var formula = new System.Text.StringBuilder();
+            foreach (var s in symbols)
+            {
+                formula.Append(s);
+                if (counts[s] > 1) formula.Append(counts[s]);
+            }
+            return formula.ToString();
+        }
+
+        private static int Rank(string symbol, bool carbon)
+            => !carbon ? 2 : symbol == "C" ? 0 : symbol == "H" ? 1 : 2;
 
         /// <summary>Strip the formula font markup.</summary>
         public static string Clean(string s)

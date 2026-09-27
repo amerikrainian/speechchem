@@ -388,7 +388,9 @@ namespace SpeechChem.Screens
             foreach (var bin in h.Bins(mine, best))
             {
                 string tags = (bin.This ? ", " + Loc.T("story.marker.this") : "") + (bin.Best ? ", " + Loc.T("story.marker.best") : "");
-                string pct = bin.Percent == 0 && bin.Drawn ? Loc.T("story.bin.tiny") : Loc.T("story.bin.pct", new { n = bin.Percent });
+                string pct = h.Shares
+                    ? (bin.Percent == 0 && bin.Drawn ? Loc.T("story.bin.tiny") : Loc.T("story.bin.pct", new { n = bin.Percent }))
+                    : (bin.Percent == 0 && bin.Drawn ? Loc.T("story.bin.tiny.tallest") : Loc.T("story.bin.pct.tallest", new { n = bin.Percent }));
                 lines.Add(bin.Low == bin.High
                     ? Loc.T("story.bin.one", new { lo = bin.Low, pct, tags })
                     : Loc.T("story.bin", new { lo = bin.Low, hi = bin.High, pct, tags }));

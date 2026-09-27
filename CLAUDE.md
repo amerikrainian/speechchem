@@ -422,8 +422,10 @@ Stops: tabs (follow focus), entry (combo box over unlocked entries), text — on
 stats sit IN the text stop under the lines, as columns (user rules: Down from the last line reaches
 the first caption, Up from any caption returns; Left/Right switch stats landing on the caption,
 Up/Down walk rows), buttons (uncounted, like the dialogs). Histograms read like Echopunks' panels and show nothing the game doesn't (user rule):
-caption with the THIS / BEST numbers, then one row per non-empty bucket "lo to hi: N%" (bar height vs
-the tallest; "under 1%" for a drawn bar that rounds to 0), marker buckets tagged (marker x =
+caption with the THIS / BEST numbers, then one row per non-empty bucket "lo to hi: N%"
+(the bar's share of the chart's filled area = its share of players, since the step plot's heights
+are count − yMin and yMin is 0 in all 597 shipped histograms — user decision; "% of the tallest
+bar" fallback if yMin ≠ 0; "under 1%" for a drawn bar that rounds to 0), marker buckets tagged (marker x =
 clamp(v + 0.5)). Leaderboard view = the game's 11-row window around you. The view button flips the
 game's own Tab toggle (a setting) — flip it back after tests. Probe `push performance` (fake score;
 dismiss with `pop` — Continue would leave the level).

@@ -9,10 +9,16 @@ namespace SpeechChem.Game
     /// ReactorCounts / SymbolCounts), parsed like Graph.smethod_3: space-separated invariant
     /// numbers "xMin xMax width yMin yMax yPad count0 count1 …", bucket k covering
     /// [xMin + k·width, xMin + (k+1)·width), width 0 read as 1. The game draws only the bars (no
-    /// counts, no y axis) and the THIS / BEST markers at clamp(value + 0.5, xMin, xMax); so, as the
-    /// Echopunks leaderboard panels do, the bars read as their height relative to the tallest bar,
-    /// and a marker names the bucket it stands over. Nothing is derived the game doesn't show.
-    /// BCL-pure; unit-tested.
+    /// counts, no y axis) and the THIS / BEST markers at clamp(value + 0.5, xMin, xMax); a marker
+    /// names the bucket it stands over.
+    ///
+    /// Bars read as their SHARE OF ENGINEERS (user decision, 2026-09-27): the chart is a filled
+    /// step plot of equal-width buckets whose heights are (count − yMin) over a fixed scale, and
+    /// yMin is 0 in every shipped histogram — so a bar's share of the total filled area is its
+    /// share of the players, which is what the picture shows. The old "percent of the tallest bar"
+    /// read like a share and wasn't one (a chart summed to 193%). With a non-zero yMin the heights
+    /// stop being proportional to counts, so the bars fall back to relative height
+    /// (<see cref="Shares"/> false). BCL-pure; unit-tested.
     /// </summary>
     internal sealed class Histogram
     {
@@ -22,10 +28,14 @@ namespace SpeechChem.Game
         public sealed class Bin
         {
             public long Low, High;  // the integer scores the bucket holds, inclusive
-            public int Percent;     // bar height, percent of the tallest bar
+            public int Percent;     // share of engineers (Shares), else percent of the tallest bar
             public bool Drawn;      // a bar is drawn (non-zero height; may still round to 0%)
             public bool This, Best; // a marker stands over it
         }
+
+        /// <summary>True when bar heights are proportional to player counts (baseline 0), so
+        /// <see cref="Bin.Percent"/> is a share of engineers; false = relative to the tallest bar.</summary>
+        public bool Shares => YMin == 0;
 
         public static Histogram Parse(string data)
         {
@@ -63,8 +73,13 @@ namespace SpeechChem.Game
         {
             int mine = thisRun != null ? MarkerBucket(thisRun.Value) : -1;
             int prev = best != null ? MarkerBucket(best.Value) : -1;
-            double tallest = 0;
-            foreach (var c in Counts) tallest = Math.Max(tallest, c - YMin);
+            double tallest = 0, total = 0;
+            foreach (var c in Counts)
+            {
+                tallest = Math.Max(tallest, c - YMin);
+                total += Math.Max(0, c - YMin);
+            }
+            double scale = Shares ? total : tallest;
             var bins = new List<Bin>();
             for (int k = 0; k < Counts.Count; k++)
             {
@@ -76,7 +91,7 @@ namespace SpeechChem.Game
                 {
                     Low = low,
                     High = Math.Max(low, high),
-                    Percent = tallest > 0 ? (int)Math.Round(100 * height / tallest) : 0,
+                    Percent = scale > 0 ? (int)Math.Round(100 * height / scale) : 0,
                     Drawn = height > 0,
                     This = k == mine,
                     Best = k == prev,

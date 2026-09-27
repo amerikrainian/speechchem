@@ -20,13 +20,27 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
-        public void EmptyBinsAreSkippedAndHeightsAreRelativeToTheTallest()
+        public void EmptyBinsAreSkippedAndBarsAreSharesOfAllEngineers()
         {
-            var bins = Histogram.Parse(Data).Bins(null, null);
+            var h = Histogram.Parse(Data);
+            Assert.True(h.Shares);
+            var bins = h.Bins(null, null);
             Assert.Equal(new long[] { 400, 600, 800, 1000 }, bins.Select(b => b.Low));
             Assert.Equal(599, bins[0].High);
+            const double total = 1900 + 2577 + 7898 + 3511;
+            Assert.Equal((int)System.Math.Round(100 * 7898 / total), bins[2].Percent);
+            Assert.Equal((int)System.Math.Round(100 * 1900 / total), bins[0].Percent);
+        }
+
+        [Fact]
+        public void NonZeroBaselineFallsBackToTheTallestBar()
+        {
+            // yMin 1000: drawn heights are count − 1000, no longer proportional to counts.
+            var h = Histogram.Parse("0 5000 200 1000 7898 1316.33 0 0 1900 2577 7898 3511");
+            Assert.False(h.Shares);
+            var bins = h.Bins(null, null);
             Assert.Equal(100, bins[2].Percent);
-            Assert.Equal((int)System.Math.Round(100.0 * 1900 / 7898), bins[0].Percent);
+            Assert.Equal((int)System.Math.Round(100.0 * 900 / 6898), bins[0].Percent);
         }
 
         [Fact]

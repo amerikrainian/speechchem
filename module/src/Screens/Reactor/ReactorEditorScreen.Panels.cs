@@ -222,7 +222,11 @@ namespace SpeechChem.Screens.Reactor
 
         /// <summary>Enter on a panel row: its molecule in the mini-grid viewer (a chooser first when
         /// the panel lists several). Inputs pass their zone's landing offset.</summary>
-        private void OpenMolecules(Annotation a, string key, Vector2i? landing = null)
+        private void OpenMolecules(Annotation a, string key, Vector2i? landing = null) => OpenMolecules(this, a, key, landing);
+
+        /// <summary>Open an annotation's molecules on <paramref name="owner"/>: one straight into the
+        /// viewer, several through a chooser first (shared with the pipeline's Molecules stop).</summary>
+        internal static void OpenMolecules(Screen owner, Annotation a, string key, Vector2i? landing = null)
         {
             var molecules = new List<Molecule>();
             if (a != null)
@@ -231,7 +235,7 @@ namespace SpeechChem.Screens.Reactor
             if (molecules.Count == 0) return;
             if (molecules.Count == 1)
             {
-                PushChild(new MoleculeViewerScreen(key + ".view", molecules[0], landing));
+                owner.PushChild(new MoleculeViewerScreen(key + ".view", molecules[0], landing));
                 return;
             }
             var items = new List<ActionListScreen.Item>();
@@ -241,10 +245,10 @@ namespace SpeechChem.Screens.Reactor
                 items.Add(new ActionListScreen.Item
                 {
                     Label = () => MoleculeText.NameAndFormula(molecule),
-                    Run = () => PushChild(new MoleculeViewerScreen(key + ".view", molecule, landing)),
+                    Run = () => owner.PushChild(new MoleculeViewerScreen(key + ".view", molecule, landing)),
                 });
             }
-            PushChild(new ActionListScreen(key + ".choose", null, items));
+            owner.PushChild(new ActionListScreen(key + ".choose", null, items));
         }
 
         private static string InputLine(int index)
@@ -304,7 +308,7 @@ namespace SpeechChem.Screens.Reactor
 
         /// <summary>What a panel annotation shows: input molecules with their percentages, an
         /// output's molecule with "produced of required", or a reactor output note's molecules.</summary>
-        private static string AnnotationText(Annotation a)
+        internal static string AnnotationText(Annotation a)
         {
             if (a is InputAnnotation input)
             {

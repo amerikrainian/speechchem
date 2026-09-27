@@ -13,7 +13,8 @@ namespace SpeechChem.Screens.Common
     /// and a one-shot readout (the P key). Values are the game's: GoalTracker.score_0 (int_0
     /// cycles, int_1 reactors, int_2 symbols — refreshed every frame by the pipeline editor),
     /// GoalTracker.smethod_1() for the ring (produced over required), Class258 for the run state.
-    /// Labels are the panel's own ("Current Progress", "Cycles", "Symbols", "Reactors").
+    /// Labels are the panel's own ("Current Progress" — "Control Center" in defense-style levels —
+    /// "Cycles", "Symbols", "Reactors").
     /// </summary>
     internal static class ProgressSection
     {
@@ -31,7 +32,7 @@ namespace SpeechChem.Screens.Common
                 ControlType = ControlTypes.Text,
                 Announcements = new[]
                 {
-                    new NodeAnnouncement(() => GameText.T("Current Progress"), kind: AnnouncementKinds.Label),
+                    new NodeAnnouncement(ProgressLabel, kind: AnnouncementKinds.Label),
                     new NodeAnnouncement(() => Loc.T("run.percent", new { percent = ProgressPercent() }), live: true, kind: AnnouncementKinds.Value),
                 },
             });
@@ -69,11 +70,38 @@ namespace SpeechChem.Screens.Common
         }
 
         public static string Progress()
-            => Loc.T("run.progress", new { label = GameText.T("Current Progress"), percent = ProgressPercent() });
+            => Loc.T("run.progress", new { label = ProgressLabel(), percent = ProgressPercent() });
 
+        /// <summary>The panel's title, as Class709.vmethod_2 picks it: "Current Progress", or in
+        /// defense-style levels (GoalTracker.enum93_0 == 2, the sandbox included) "Control Center"
+        /// ("The Prometheus" in End of the Line, Class150).</summary>
+        private static string ProgressLabel()
+        {
+            try
+            {
+                if ((int)GoalTracker.enum93_0 == 2 && GoalTracker.string_0 != typeof(Class148).smethod_0())
+                    return GameText.T(GoalTracker.string_0 == typeof(Class150).smethod_0() ? "The Prometheus" : "Control Center");
+            }
+            catch { }
+            return GameText.T("Current Progress");
+        }
+
+        /// <summary>The panel's figure, as Class709.vmethod_2 computes it: the Execution level's own
+        /// measure (Class148.method_9), GoalTracker.int_1 percent in defense-style levels, else the
+        /// output progress (GoalTracker.smethod_1).</summary>
         private static int ProgressPercent()
         {
-            try { return (int)Math.Round(GoalTracker.smethod_1() * 100f); }
+            try
+            {
+                float f = GoalTracker.smethod_1();
+                if (GoalTracker.string_0 == typeof(Class148).smethod_0())
+                {
+                    var execution = Class53.smethod_5<Class148>();
+                    if (execution != null) f = execution.method_9();
+                }
+                else if ((int)GoalTracker.enum93_0 == 2) f = GoalTracker.int_1 / 100f;
+                return (int)Math.Round(f * 100f);
+            }
             catch { return 0; }
         }
 

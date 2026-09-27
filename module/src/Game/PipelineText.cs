@@ -70,6 +70,14 @@ namespace SpeechChem.Game
             return string.IsNullOrEmpty(name) ? Loc.T("pipeline.component") : name;
         }
 
+        /// <summary>A component's type name without its number ("Assembly Reactor").</summary>
+        public static string TypeName(Draggable d)
+        {
+            string name = d?.string_1?.Trim();
+            if (!string.IsNullOrEmpty(name)) return name;
+            return Loc.T(d is ReactorDraggable ? "pipeline.reactor" : "pipeline.component");
+        }
+
         public static string Cell(Vector2i c) => Loc.T("reactor.cell", new { x = c.int_0 + 1, y = c.int_1 + 1 });
     }
 }

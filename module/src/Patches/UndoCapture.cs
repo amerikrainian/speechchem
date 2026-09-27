@@ -18,8 +18,14 @@ namespace SpeechChem.Patches
     /// appeared ("red grab drop at 3, 2"), what went ("removed red rotate clockwise at 10, 8"),
     /// what moved; a cell whose occupant changed reads as its new occupant. No "Undo:" prefix —
     /// the user knows which key they pressed. At the end of the history (the toolbar's own
-    /// button disabled) it says "Nothing to undo" / "Nothing to redo". Reactor only: with no
-    /// reactor editor open (the pipeline) it stays silent.
+    /// button disabled) it says "Nothing to undo" / "Nothing to redo".
+    ///
+    /// On the PIPELINE (no reactor editor open) the same hooks diff the pipeline instead: its
+    /// components by type and top-left cell ("Assembly Reactor at 12, 14", "removed ...", "...
+    /// moved from ... to ...") and each output pipe's end, measured from its owner so a moved
+    /// component doesn't also report its pipes ("Storage Tank output pipe, end 11, 14"). Undoing a
+    /// component change reloads the whole level (method_52 / method_53) synchronously, so the
+    /// postfix reads the new pipeline.
     /// </summary>
     internal static class UndoCapture
     {
@@ -32,7 +38,16 @@ namespace SpeechChem.Patches
         private sealed class Before
         {
             public List<Entry> Members;
+            public PipelineState Pipeline;
             public bool Available;
+        }
+
+        /// <summary>The pipeline's components and pipe ends, keyed so that states compare across
+        /// the level reload an undo may cause.</summary>
+        private sealed class PipelineState
+        {
+            public List<Entry> Components = new List<Entry>();                          // Label = type name
+            public Dictionary<string, Entry> PipeEnds = new Dictionary<string, Entry>(); // Layer = the end relative to its owner, packed
         }
 
         private const int MaxNamed = 3;
@@ -61,7 +76,8 @@ namespace SpeechChem.Patches
             try
             {
                 var members = Members();
-                if (members == null) return null;
+                var pipeline = members == null ? Pipeline() : null;
+                if (members == null && pipeline == null) return null;
                 bool available = true;
                 try
                 {
@@ -70,7 +86,7 @@ namespace SpeechChem.Patches
                     if (button != null) available = button.method_7();
                 }
                 catch { }
-                return new Before { Members = members, Available = available };
+                return new Before { Members = members, Pipeline = pipeline, Available = available };
             }
             catch { return null; }
         }
@@ -85,9 +101,19 @@ namespace SpeechChem.Patches
                     Speech.Tts.Speak(Loc.T(undo ? "undo.none" : "redo.none"), interrupt: true);
                     return;
                 }
-                var after = Members();
-                if (after == null) return;
-                string text = Describe(before.Members, after);
+                string text;
+                if (before.Members != null)
+                {
+                    var after = Members();
+                    if (after == null) return;
+                    text = Describe(before.Members, after);
+                }
+                else
+                {
+                    var after = Pipeline();
+                    if (after == null) return;
+                    text = DescribePipeline(before.Pipeline, after);
+                }
                 if (text != null) Speech.Tts.Speak(text, interrupt: true);
             }
             catch (Exception ex) { Log.Error("[undo] report failed", ex); }
@@ -110,6 +136,59 @@ namespace SpeechChem.Patches
                 list.Add(new Entry { X = kv.Value.vector2i_0.int_0, Y = kv.Value.vector2i_0.int_1, Layer = layer, Label = label });
             }
             return list;
+        }
+
+        /// <summary>The pipeline's state when it is the open editor (no reactor on top), else null.</summary>
+        private static PipelineState Pipeline()
+        {
+            if (Class53.smethod_5<Class77>() != null) return null;
+            var p = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+            if (p == null) return null;
+            var state = new PipelineState();
+            foreach (var kv in PipelineText.Components(p))
+            {
+                var d = kv.Key;
+                string type = PipelineText.TypeName(d);
+                state.Components.Add(new Entry { X = kv.Value.int_0, Y = kv.Value.int_1, Label = type });
+                int i = 0;
+                foreach (var o in d.class485_1.Values)
+                {
+                    int index = i++;
+                    var pipe = o.pipeDraggable_0;
+                    if (pipe == null || pipe.linkedList_0.Count == 0) continue;
+                    var rel = pipe.linkedList_0.Last.Value;
+                    string label = type + " " + Screens.Pipeline.PipelineEditorScreen.OutputName(d, index);
+                    string key = label + "@" + kv.Value.int_0 + "," + kv.Value.int_1;
+                    state.PipeEnds[key] = new Entry { X = rel.int_0 + kv.Value.int_0, Y = rel.int_1 + kv.Value.int_1, Layer = rel.int_0 * 1000 + rel.int_1, Label = label };
+                }
+            }
+            return state;
+        }
+
+        private static string DescribePipeline(PipelineState before, PipelineState after)
+        {
+            if (before == null || after == null) return null;
+            var phrases = new List<string>();
+            string components = Describe(before.Components, after.Components);
+            if (components != null) phrases.Add(components);
+            // Pipe ends, relative to their owner. A moved owner changes the key (its cell), so a
+            // missing key is matched by label against an entry that disappeared.
+            foreach (var kv in after.PipeEnds)
+            {
+                Entry old = default(Entry);
+                if (!before.PipeEnds.TryGetValue(kv.Key, out old))
+                {
+                    bool found = false;
+                    foreach (var b in before.PipeEnds)
+                        if (b.Value.Label == kv.Value.Label && !after.PipeEnds.ContainsKey(b.Key)) { old = b.Value; found = true; break; }
+                    if (!found) continue; // a new component's stub
+                }
+                if (old.Layer == kv.Value.Layer) continue;
+                phrases.Add(Loc.T("undo.pipe", new { pipe = kv.Value.Label, cell = Cell(kv.Value) }));
+            }
+            if (phrases.Count == 0) return null;
+            if (phrases.Count <= MaxNamed) return string.Join("; ", phrases.ToArray());
+            return Loc.T("undo.many", new { n = phrases.Count, list = string.Join("; ", phrases.GetRange(0, MaxNamed - 1).ToArray()) });
         }
 
         private static string Colour(int layer)

@@ -190,6 +190,7 @@
   "undo.removed": "removed {what} at {cell}",
   "undo.moved": "{what} moved from {from} to {to}",
   "undo.many": "{n} changes: {list}",
+  "undo.pipe": "{pipe} pipe, end {cell}",
   "undo.none": "Nothing to undo",
   "redo.none": "Nothing to redo",
   "run.summary": "{state}. {cyclesLabel} {cycles}, {symbolsLabel} {symbols}, {reactorsLabel} {reactors}. {progress}.",

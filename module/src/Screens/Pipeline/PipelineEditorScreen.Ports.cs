@@ -13,7 +13,7 @@ namespace SpeechChem.Screens.Pipeline
         // own zone names (inputs α β top to bottom, outputs ψ ω); others count them. An input says
         // where it is fed from; an output where its pipe leads, or where the pipe's open end is. ----
 
-        private static void BuildPorts(GraphBuilder b, Draggable d)
+        private void BuildPorts(GraphBuilder b, Draggable d)
         {
             int i = 0;
             foreach (var kv in d.class485_0)
@@ -31,9 +31,10 @@ namespace SpeechChem.Screens.Pipeline
             }
         }
 
-        private static NodeVtable Cell(System.Func<string> text)
+        private NodeVtable Cell(System.Func<string> text)
         {
             var vt = ProfileUi.Text(text);
+            vt.OnSecondary = OpenMenu;
             vt.SpeaksOwnPosition = true; // a cell of the component's row, not a list item
             return vt;
         }

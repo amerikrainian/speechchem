@@ -128,6 +128,8 @@
   "pipeline.edit.blockedby": "{what} in the way",
   "pipeline.edit.offmap": "off the map",
   "pipeline.quota.over": "reactor quota exceeded",
+  "pipeline.edit.fixed": "{what} is fixed in place.",
+  "pipeline.edit.reset": "{what} pipes reset",
   "instr.control": "control {letter} {dir}",
   "instr.fuse": "fuse",
   "instr.fission": "fission",

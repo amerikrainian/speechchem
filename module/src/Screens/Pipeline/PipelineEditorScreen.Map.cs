@@ -41,6 +41,7 @@ namespace SpeechChem.Screens.Pipeline
                         SpeaksOwnPosition = true,
                         OnSelect = () => { _cursorX = cx; _cursorY = cy; },
                         OnActivate = () => ActivateMapCell(cx, cy),
+                        OnSecondary = OpenMenu,
                         OnJumpEdge = first => JumpMapEdge(cy, first),
                     });
                 }

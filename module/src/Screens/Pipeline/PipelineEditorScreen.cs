@@ -56,6 +56,9 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.cat.next", () => StepCategory(1));
             yield return new ElementAction("screen.reactor.item.prev", () => StepItem(-1));
             yield return new ElementAction("screen.reactor.item.next", () => StepItem(1));
+            yield return new ElementAction("screen.reactor.cut", Cut);
+            yield return new ElementAction("screen.reactor.paste", Paste);
+            yield return new ElementAction("screen.reactor.delete", () => Delete(FocusedComponent()));
         }
 
         public override void Build(GraphBuilder b)
@@ -96,6 +99,7 @@ namespace SpeechChem.Screens.Pipeline
             _cursorX = _cursorY = 0;
             _category = _item = -1;
             _armed = null;
+            _cut = null;
         }
 
         public override void OnPop()
@@ -127,6 +131,7 @@ namespace SpeechChem.Screens.Pipeline
                     SpeaksOwnPosition = true,
                 };
                 if (d is ReactorDraggable rd) vt.OnActivate = () => OpenReactor(rd);
+                vt.OnSecondary = OpenMenu;
                 // A component with ports is a ROW: Right walks its inputs, then its outputs.
                 bool ports = d.class485_0.Count > 0 || d.class485_1.Count > 0;
                 if (ports) b.StartRow();

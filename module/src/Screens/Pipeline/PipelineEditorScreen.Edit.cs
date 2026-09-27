@@ -118,6 +118,128 @@ namespace SpeechChem.Screens.Pipeline
             }
         }
 
+        // ---- moving (user-approved: cut / paste like the reactor's hardware): Ctrl+X on a component
+        // (its list entry, a port cell or any of its map cells) remembers it — it stays put until
+        // the paste — and Ctrl+V on a map cell drops it with its top-left corner there, through the
+        // game's own move (Pipeline.method_13 with the component selected, dragged from its origin
+        // to the cell). Pipes move with it. A refused drop keeps it on the clipboard. ----
+
+        private Draggable _cut;
+
+        /// <summary>The component under focus: a Components entry, one of its port cells, or a map
+        /// cell it occupies (pipe cells count as their owner's).</summary>
+        private Draggable FocusedComponent()
+        {
+            var p = Model;
+            if (p == null) return null;
+            if (MapStop.Equals(Navigation.FocusedStopKey))
+            {
+                var d = p.method_7(new Vector2i(_cursorX, _cursorY));
+                return d is Class612 ? null : d;
+            }
+            string key = Navigation.FocusedNodeId?.StructuralKey as string;
+            if (key == null) return null;
+            foreach (var kv in PipelineText.Components(p))
+            {
+                string id = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(kv.Key).ToString();
+                if (key == "pipeline.comp." + id || key.StartsWith("pipeline.port." + id + ".", System.StringComparison.Ordinal))
+                    return kv.Key;
+            }
+            return null;
+        }
+
+        private void Cut()
+        {
+            var p = Model;
+            var d = FocusedComponent();
+            if (p == null || d == null) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (!CanEdit()) return;
+            if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
+            _cut = d;
+            Speech.Tts.Speak(Loc.T("reactor.edit.cut", new { what = PipelineText.Name(p, d) }), interrupt: true);
+        }
+
+        private void Paste()
+        {
+            var p = Model;
+            if (p == null || !MapStop.Equals(Navigation.FocusedStopKey)) return;
+            if (_cut == null || !p.method_9(_cut).HasValue) { _cut = null; Speech.Tts.Speak(Loc.T("reactor.edit.clipempty"), interrupt: true); return; }
+            if (!CanEdit()) return;
+            var item = _cut;
+            var at = new Vector2i(_cursorX, _cursorY);
+            try
+            {
+                bool ok;
+                p.hashSet_0.Clear();
+                p.hashSet_0.Add(item);
+                p.vector2i_4 = p.method_9(item).Value;
+                p.method_1((Enum18)2);
+                using (Patches.ModifierMask.NoCtrl())
+                {
+                    p.vector2i_3 = at;
+                    ok = p.method_13();
+                }
+                string why = ok ? null : Refusal(p);
+                p.method_23();
+                if (!ok)
+                {
+                    Speech.Tts.Speak(Loc.T("pipeline.edit.nofit", new { what = PipelineText.Name(p, item), why }), interrupt: true);
+                    return;
+                }
+                _cut = null;
+                Speech.Tts.Speak(Loc.T("reactor.edit.at", new { what = PipelineText.Name(p, item), cell = PipelineText.Cell(at) }), interrupt: true);
+            }
+            catch (System.Exception ex) { Log.Error("[pipeline] move failed", ex); }
+        }
+
+        /// <summary>Delete (the key, or the menu): the game's DraggableMenu "Delete" — remove it,
+        /// recompute the connections, record the undo step. Fixed components can't be deleted.</summary>
+        private void Delete(Draggable d)
+        {
+            var p = Model;
+            if (p == null || d == null) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (!CanEdit()) return;
+            if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
+            string name = PipelineText.Name(p, d);
+            try
+            {
+                p.method_10(d, null);
+                p.method_15();
+                Locals.smethod_0().smethod_0().method_66(new[] { d });
+                if (ReferenceEquals(_cut, d)) _cut = null;
+                Speech.Tts.Speak(Loc.T("reactor.edit.deleted", new { what = name }), interrupt: true);
+            }
+            catch (System.Exception ex) { Log.Error("[pipeline] delete failed", ex); }
+        }
+
+        /// <summary>Backspace: the game's right-click menu (Class82 / DraggableMenu) as a list —
+        /// "Reset Pipes" (a component with outputs and no locked pipe: every pipe back to its stub)
+        /// and "Delete" (unlocked components). The output notes and "Save to Toolbox" open game
+        /// screens not modeled yet, so they are left out for now.</summary>
+        private void OpenMenu()
+        {
+            var p = Model;
+            var d = FocusedComponent();
+            if (p == null || d == null || !CanEdit()) return;
+            var items = new List<ActionListScreen.Item>();
+            bool lockedPipe = false;
+            foreach (var o in d.class485_1.Values) if (o.pipeDraggable_0 != null && o.pipeDraggable_0.bool_0) lockedPipe = true;
+            if (d.class485_1.Count > 0 && !lockedPipe)
+                items.Add(new ActionListScreen.Item
+                {
+                    Label = () => GameText.T("Reset Pipes"),
+                    Run = () =>
+                    {
+                        d.method_6();
+                        Speech.Tts.Speak(Loc.T("pipeline.edit.reset", new { what = PipelineText.Name(p, d) }), interrupt: true);
+                    },
+                });
+            if (!d.bool_0)
+                items.Add(new ActionListScreen.Item { Label = () => GameText.T("Delete"), Run = () => Delete(d) });
+            if (items.Count == 0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
+            PushChild(new ActionListScreen("pipeline.menu", PipelineText.Name(p, d), items));
+        }
+
         /// <summary>Why the last drop was refused: the components it would overlap (Pipeline.hashSet_2,
         /// filled by method_12), terrain as "blocked"; nothing overlapped = off the map.</summary>
         private static string Refusal(SpaceChem.Pipeline.Pipeline p)

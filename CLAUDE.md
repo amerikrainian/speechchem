@@ -309,11 +309,17 @@ the duplicate-id bug wrote ~2500 identical errors in a minute before this.
 `OptionsScreen` over `Class74` ("Settings", a TitleScreenEditor over the main menu): one vertical
 list, no counts (user layout), drawn order — Fullscreen / Keep Aspect Ratio (toggles: `Class475`
 `method_7`/`method_8`, Enum106 0 = on, `bool_1` = enabled; press = flip + click sound), Language
-(combo box over the cycling button: Enter = the click `method_21`; Left/Right cycle either way —
-backward mirrors method_21 onto `int_0`/`list_0` and relabels via `Class203.smethod_6`; names from
-`Class74.smethod_11`), Music / Sound volume (sliders: `Class478` `method_8`/`method_9` 0–1, 5% /
+(combo box over the cycling button — see COMBO BOX below; names from `Class74.smethod_11`, choices
+in the button's cycle order `list_0`), Music / Sound volume (sliders: `Class478` `method_8`/`method_9` 0–1, 5% /
 25% snapped; a Sound change runs the slider's release action = the sample sound), Show Bonder
-Priority (toggle), Save Changes (`method_19`), Cancel (`method_20`). Nothing applies before Save; the
+Priority (toggle), Save Changes (`method_19`), Cancel (`method_20`).
+COMBO BOX (user spec, 2026-09-27 — applies to every combo box): Enter opens the choice list with
+focus on the box's current choice; Up/Down move; Enter commits and closes; Escape closes without
+change; Left/Right on the box do nothing. Implemented as `Screens/ChoiceListScreen` — a reusable
+CHILD sub-screen (Screen.PushChild; ModalCapturesEscape keeps Escape from the game; Back action =
+close). Language commits the way the button's clicks would leave it (`int_0` + `Class203.smethod_6`
+relabel). Returning from a child re-reads the focused control without re-speaking the screen name
+(ScreenManager.SyncFocus remembers the child's parent). Nothing applies before Save; the
 dialog previews volumes live itself (`vmethod_6`). Escape native (Cancel); the dialog's Enter (Save)
 is suppressed while modeled. Verified: every value reads as drawn (screenshot), Cancel discards,
 Save with no change rewrites config.ini identically.

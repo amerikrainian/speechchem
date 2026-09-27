@@ -26,6 +26,7 @@ namespace SpeechChem.Dev
     ///   profiles           the profile set as the picker enumerates it (* = current)
     ///   rawkey &lt;scancode&gt;  push a raw SDL key press to the GAME (bypasses the mod's own input)
     ///   switchprofile      press the main menu's Switch Profile (opens the profile picker)
+    ///   tolevelselect      leave the open level through the game's own return-to-level-select
     /// </summary>
     internal static class Probe
     {
@@ -41,6 +42,12 @@ namespace SpeechChem.Dev
                 case "type": return SdlNative.PushText(argument) ? "typed: " + argument + "\n" : "[type refused]\n";
                 case "profiles": return Profiles();
                 case "rawkey": return RawKey(argument);
+                case "tolevelselect":
+                    // The game's own "return to level select" (Class53.smethod_8: pops the level with
+                    // its transition — what the Story/Training screen's paths use).
+                    if (Class53.smethod_5<Class83>() == null) return "[no level on the stack]\n";
+                    Class53.smethod_8(true, false, false);
+                    return "returned to level select\n";
                 case "switchprofile":
                 {
                     // The main menu's "Switch Profile" button handler (the picker only shows at boot

@@ -164,10 +164,19 @@ namespace SpeechChem.Screens
             var cur = Current;
             if (ReferenceEquals(cur, _focused)) return;
             _focused?.OnUnfocus();
+            // Focus coming BACK from a closed child (a combo box's list) is not an arrival: the parent
+            // keeps its place and the navigator re-reads the focused control; re-speaking the screen
+            // name there is noise. (The child's ParentScreen is already cleared by RemoveChild, so the
+            // relation is remembered when the child gains focus.)
+            bool returningFromChild = cur != null && ReferenceEquals(cur, _focusedParent);
             _focused = cur;
-            Safe(() => cur?.OnFocus(), cur, "OnFocus"); // speaks the screen name
+            _focusedParent = cur?.ParentScreen;
+            if (!returningFromChild)
+                Safe(() => cur?.OnFocus(), cur, "OnFocus"); // speaks the screen name
             Navigation.Attach(cur);
         }
+
+        private static Screen _focusedParent; // the parent of the focused screen when it is a child
 
         private static void Safe(Action a, Screen s, string hook)
         {
@@ -201,6 +210,7 @@ namespace SpeechChem.Screens
             _registered.Clear();
             _stack = new List<Screen>();
             _focused = null;
+            _focusedParent = null;
             _lastGameScreen = null;
             GameTopScreenName = GameState.TopScreenName;
             GameTopCuratedLabel = DefaultCuratedLabel;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SpeechChem.Game;
 using SpeechChem.Localization;
 using SpeechChem.UI;
@@ -13,8 +14,10 @@ namespace SpeechChem.Screens
     ///   Fullscreen, Keep Aspect Ratio — toggles (Class475: method_7 = state, Enum106 0 = on; a press
     ///       flips it with the click sound, as the checkbox click does).
     ///   Language — the button that CYCLES languages on each click (method_21: English, then the
-    ///       table codes from Class239.smethod_0(), shown by the game's own native names). A combo box:
-    ///       Enter cycles forward like the click; Left/Right cycle either way.
+    ///       table codes from Class239.smethod_0(), shown by the game's own native names). A combo box
+    ///       (user spec): Enter opens the choice list (ChoiceListScreen) on the current language;
+    ///       Up/Down, Enter commits (the dialog's own index + button relabel, what method_21 sets),
+    ///       Escape closes the list. Left/Right on the box do nothing.
     ///   Music volume, Sound volume — sliders (Class478: method_8/method_9, 0–1): Left/Right 5%,
     ///       PageUp/PageDown 25%. The dialog applies both volumes live every frame (vmethod_6); a Sound
     ///       change plays the game's sample, as releasing the mouse on that slider does.
@@ -44,7 +47,7 @@ namespace SpeechChem.Screens
 
             Toggle(b, "options.fullscreen", "Fullscreen", () => Dialog?.class475_0);
             Toggle(b, "options.aspect", "Keep Aspect Ratio", () => Dialog?.class475_1);
-            Language(b);
+            Language(b, this);
             Slider(b, "options.music", "Music volume", () => Dialog?.class478_0, playSample: false);
             Slider(b, "options.sound", "Sound volume", () => Dialog?.class478_1, playSample: true);
             Toggle(b, "options.priority", "Show Bonder Priority", () => Dialog?.class475_2);
@@ -86,7 +89,7 @@ namespace SpeechChem.Screens
 
         // ---- language ----
 
-        private static void Language(GraphBuilder b)
+        private static void Language(GraphBuilder b, Screen owner)
         {
             Func<string> current = () =>
             {
@@ -102,31 +105,38 @@ namespace SpeechChem.Screens
                     new NodeAnnouncement(() => GameText.T("Language"), kind: AnnouncementKinds.Label),
                     new NodeAnnouncement(current, kind: AnnouncementKinds.Value),
                 },
-                StateText = current,
-                OnActivate = () => CycleLanguage(1),
-                OnAdjust = (sign, large) => CycleLanguage(sign),
+                OnActivate = () =>
+                {
+                    var d = Dialog;
+                    if (d == null || d.list_0 == null || d.list_0.Count == 0) return;
+                    owner.PushChild(new ChoiceListScreen("options.language.list", LanguageNames, d.int_0, CommitLanguage));
+                },
             }, "options.language");
         }
 
-        /// <summary>Forward = exactly the button's click (method_21). Backward is the same step the
-        /// other way, relabelling the button the way method_21 does.</summary>
-        private static void CycleLanguage(int direction)
+        /// <summary>The choices in the button's cycle order, by the game's own native names.</summary>
+        private static IReadOnlyList<string> LanguageNames()
         {
             var d = Dialog;
-            if (d == null || d.list_0 == null || d.list_0.Count == 0) return;
+            var names = new List<string>();
+            if (d?.list_0 == null) return names;
+            foreach (var code in d.list_0) names.Add(Class74.smethod_11(code));
+            return names;
+        }
+
+        /// <summary>What clicking the button until it shows this language leaves behind: the dialog's
+        /// index (read by Save) and the relabelled button (method_21's Class203.smethod_6).</summary>
+        private static void CommitLanguage(int index)
+        {
+            var d = Dialog;
+            if (d == null || d.list_0 == null || index < 0 || index >= d.list_0.Count) return;
             try
             {
                 Class428.class14_4.vmethod_0();
-                if (direction >= 0)
-                {
-                    d.method_21();
-                    return;
-                }
-                d.int_0--;
-                if (d.int_0 < 0) d.int_0 = d.list_0.Count - 1;
-                Class203.smethod_6(d.gclass15_0, Class74.smethod_11(d.list_0[d.int_0]));
+                d.int_0 = index;
+                Class203.smethod_6(d.gclass15_0, Class74.smethod_11(d.list_0[index]));
             }
-            catch (Exception ex) { Log.Error("[options] language cycle failed", ex); }
+            catch (Exception ex) { Log.Error("[options] language commit failed", ex); }
         }
 
         // ---- sliders ----

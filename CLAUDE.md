@@ -393,7 +393,9 @@ any heading change "blue: heading up" — an arrow the waldo already follows log
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,
-run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed. The log is
+run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed (run state
+changes always, except the "Stopped" of leaving the level: Class53.smethod_8 / smethod_9 stop the
+run first — Continue after a completion, the exit prompt's Yes — user rule). The log is
 cleared when a run starts from stopped. GroupedLog (ported from Echopunks) keeps the whole run under
 a 10M-entry insurance cap; WindowedLogView is the reusable Tab stop: one region per cycle, a window of
 51 groups / 1200 rows re-centred on focus every rebuild, tail-follow when focus is elsewhere, Home/End

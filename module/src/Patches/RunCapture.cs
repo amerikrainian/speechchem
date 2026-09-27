@@ -63,6 +63,10 @@ namespace SpeechChem.Patches
                     prefix: new HarmonyMethod(self, nameof(BeforeComplete)), postfix: new HarmonyMethod(self, nameof(AfterComplete)));
                 harmony.Patch(Expr.MethodOf(() => Class258.smethod_17(default(Enum16))),
                     prefix: new HarmonyMethod(self, nameof(BeforeState)), postfix: new HarmonyMethod(self, nameof(AfterState)));
+                harmony.Patch(Expr.MethodOf(() => Class53.smethod_8(false, false, false)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeLeave)), finalizer: new HarmonyMethod(self, nameof(AfterLeave)));
+                harmony.Patch(Expr.MethodOf(() => Class53.smethod_9()),
+                    prefix: new HarmonyMethod(self, nameof(BeforeLeave)), finalizer: new HarmonyMethod(self, nameof(AfterLeave)));
                 harmony.Patch(Expr.MethodOf(() => Class258.smethod_15(default(SimulatorSpeed))),
                     prefix: new HarmonyMethod(self, nameof(BeforeSpeed)), postfix: new HarmonyMethod(self, nameof(AfterSpeed)));
                 SpeechChem.Log.Info("[patch] run capture armed");
@@ -348,9 +352,24 @@ namespace SpeechChem.Patches
                     Blocked.Clear();
                 }
                 Log.Add(Cycle, Screens.Common.ProgressSection.RunState());
-                Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());
+                if (_leaving == 0) Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());
             }
             catch { }
+        }
+
+        // ---- leaving the level: Class53.smethod_8 (back to level select — Continue after a
+        // completion, the exit prompt's Yes) and smethod_9 stop the run first; that "Stopped" is
+        // logged but not spoken, since the level is going away (user rule). A finalizer, so a
+        // throwing exit can't leave the flag stuck. ----
+
+        private static int _leaving;
+
+        private static void BeforeLeave() => _leaving++;
+
+        private static Exception AfterLeave(Exception __exception)
+        {
+            if (_leaving > 0) _leaving--;
+            return __exception;
         }
 
         private static void BeforeSpeed(out KeyValuePair<int, SimulatorSpeed> __state)

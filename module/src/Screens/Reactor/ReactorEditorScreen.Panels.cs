@@ -129,7 +129,7 @@ namespace SpeechChem.Screens.Reactor
             var l = Layers;
             if (l == null) return;
             l.method_10();
-            Speech.Tts.Speak(Loc.T(RedActive ? "reactor.layer.redactive" : "reactor.layer.blueactive"), interrupt: true);
+            Speech.Tts.Speak(Loc.T(RedActive ? "reactor.red" : "reactor.blue"), interrupt: true); // just the colour (user rule)
         }
 
         private void LayerToggle(GraphBuilder b, string kind, bool red)

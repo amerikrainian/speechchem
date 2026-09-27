@@ -54,8 +54,6 @@
   "bond.triple": "triple",
   "reactor.armed": "armed",
   "reactor.armed.instr": "{instruction} armed",
-  "reactor.layer.redactive": "red layer active",
-  "reactor.layer.blueactive": "blue layer active",
   "reactor.mol.input": "{molecule}, {percent} percent",
   "reactor.mol.output": "{molecule}, {done} of {required}",
   "reactor.mol.none": "none",

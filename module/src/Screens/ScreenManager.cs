@@ -26,6 +26,16 @@ namespace SpeechChem.Screens
         /// <summary>Test seam / game boundary: the game's top screen type name.</summary>
         internal static Func<string> GameTopScreenName = GameState.TopScreenName;
 
+        /// <summary>Test seam / game boundary: the curated label for the top screen's DEOB name, for
+        /// renamed types whose shipping name must never be spoken (null = stay silent).</summary>
+        internal static Func<string> GameTopCuratedLabel = DefaultCuratedLabel;
+
+        private static string DefaultCuratedLabel()
+        {
+            var top = GameState.TopScreen();
+            return top == null ? null : UI.ScreenNames.ForDeob(GameNames.DeobTypeName(top.GetType()));
+        }
+
         // The focused screen = the deepest active child of the top outer screen.
         public static Screen Current => _stack.Count > 0 ? _stack[_stack.Count - 1].DeepestActiveScreen() : null;
         public static IReadOnlyList<Screen> Stack => _stack;
@@ -69,8 +79,16 @@ namespace SpeechChem.Screens
             _lastGameScreen = top;
             if (top == null) return;
             Log.Info("[screen] -> " + LogName(top) + (Current != null ? " (modeled: " + Current.Key + ")" : ""));
-            if (Current == null && !UI.ScreenNames.IsObfuscated(top))
+            if (Current != null) return;
+            if (!UI.ScreenNames.IsObfuscated(top))
                 Speech.Tts.Speak(UI.ScreenNames.Friendly(top));
+            else
+            {
+                // A renamed type: speak only a CURATED label for its deob name (never "Class74").
+                string curated = null;
+                try { curated = GameTopCuratedLabel(); } catch { }
+                if (!string.IsNullOrEmpty(curated)) Speech.Tts.Speak(curated);
+            }
         }
 
         // Logs name the game's screen by its DEOB name (the decompile's), not the shipping gibberish;
@@ -145,6 +163,8 @@ namespace SpeechChem.Screens
         public static void Initialize()
         {
             if (_registered.Count > 0) return;
+            Register(new MainMenuScreen());
+            Register(new NetDialogScreen());
             Register(new ProfilePickerScreen());
             Register(new NewProfileScreen());
             Register(new DeleteProfileScreen());
@@ -163,6 +183,7 @@ namespace SpeechChem.Screens
             _focused = null;
             _lastGameScreen = null;
             GameTopScreenName = GameState.TopScreenName;
+            GameTopCuratedLabel = DefaultCuratedLabel;
             Navigation.Attach(null);
         }
     }

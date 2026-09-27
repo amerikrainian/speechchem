@@ -29,10 +29,27 @@ namespace SpeechChem
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SpeechChem");
                 Directory.CreateDirectory(dir);
                 _path = System.IO.Path.Combine(dir, "speechchem.log");
+                // A second launch while the game runs (its default domain gets here first, then the
+                // game's single-instance mutex makes it exit) must not wipe the running game's log.
+                if (fresh && GameAlreadyRunning()) fresh = false;
                 if (fresh || !File.Exists(_path))
                     File.WriteAllText(_path, "SpeechChem log — " + DateTime.Now.ToString("s") + Environment.NewLine);
             }
             catch { _path = null; }
+        }
+
+        // SpaceChem.Program.Main takes a named mutex "SpaceChem" for the life of the game.
+        private static bool GameAlreadyRunning()
+        {
+            try
+            {
+                System.Threading.Mutex m;
+                if (!System.Threading.Mutex.TryOpenExisting("SpaceChem", out m)) return false;
+                m.Dispose();
+                return true;
+            }
+            catch (UnauthorizedAccessException) { return true; }
+            catch { return false; }
         }
 
         public static void Info(string message) => Write("INFO ", message);

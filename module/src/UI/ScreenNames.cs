@@ -19,6 +19,24 @@ namespace SpeechChem.UI
             return Localization.LocalizationManager.GetOrDefault("ui", "screen." + typeName, FallbackLabel(typeName));
         }
 
+        // Renamed (obfuscated) screens that carry a name worth speaking, by DEOB type name. The game's
+        // own title wins where it has one; mod transcriptions of art otherwise.
+        private static readonly System.Collections.Generic.Dictionary<string, Func<string>> DeobLabels =
+            new System.Collections.Generic.Dictionary<string, Func<string>>(StringComparer.Ordinal)
+            {
+                { "Class74", () => Game.GameText.T("Settings") },            // Options (its drawn title)
+                { "Class67", () => Localization.Loc.T("mainmenu.tf2") },     // the TF2 icon's levels
+                { "Class70", () => Localization.Loc.T("mainmenu.corvi") },   // the 63 Corvi DLC levels
+            };
+
+        /// <summary>The curated label for a renamed screen's deob type name, or null (stay silent —
+        /// a deob name like "Class74" is never spoken).</summary>
+        public static string ForDeob(string deobName)
+        {
+            if (deobName == null) return null;
+            return DeobLabels.TryGetValue(deobName, out var label) ? label() : null;
+        }
+
         /// <summary>The label for a screen with no locale entry: strip the Editor/Screen suffix
         /// (SpaceChem calls its screens "editors": MainMenuEditor, LevelSelectEditor), de-camel.</summary>
         internal static string FallbackLabel(string typeName)

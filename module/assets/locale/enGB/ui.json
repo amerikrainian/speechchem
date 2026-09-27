@@ -5,7 +5,7 @@
   "screen.MainMenuEditor": "Main menu",
   "screen.LevelSelectEditor": "Level select",
   "screen.PipelineEditor": "Pipeline",
-  "screen.ChallengeEditor": "Challenge",
+  "screen.ChallengeEditor": "Challenges",
   "screen.MessageBoxEditor": "Message",
   "screen.RecordingEditor": "Recording",
   "screen.DefenseLevelEditor": "Defense level",
@@ -16,6 +16,10 @@
   "screen.StoryTrainingPerformanceEditor": "Training performance",
 
   "profiles.delete": "Delete",
+
+  "mainmenu.researchnet": "ResearchNet, Sign On",
+  "mainmenu.corvi": "63 Corvi",
+  "mainmenu.tf2": "Team Fortress 2",
 
   "role.button": "button",
   "role.toggle": "toggle",

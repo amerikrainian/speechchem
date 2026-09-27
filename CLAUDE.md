@@ -130,7 +130,8 @@ Verified live: Prism picks NVDA in-process. `PrismNative` MUST declare
 
 ## 6. Logs
 `%LOCALAPPDATA%\SpeechChem\speechchem.log` — truncated once per PROCESS (default domain), appended
-by each SANDBOX generation. Game screens are logged by DEOB name.
+by each SANDBOX generation. A second launch while the game runs (the game's "SpaceChem" mutex exists)
+appends instead of truncating — it used to wipe the running game's log before exiting. Game screens are logged by DEOB name.
 
 ## 7. Dev loop (DEBUG builds)
 The dev server starts with EVERY launch of a Debug build (a plain Steam launch included —
@@ -226,7 +227,38 @@ native. Buttons replicate the GClass15 press (click sound + handler).
   ours would hit "already exists"); Backspace passes both seams while a TextEntry node is focused.
   Verified with `rawkey`: raw Enter blocked, raw Backspace deletes a character.
 
-## 11. Hard rules (inherited from Echopunks — same reasons)
+## 11. Main menu (`module/src/Screens/MainMenuScreens.cs`) — verified live 2026-09-27
+`MainMenuScreen` over `SpaceChem.MainMenuEditor` (root screen; Settled-gated; KeepStateOnPop so a
+return lands on the button you left through). Three Tab stops:
+- **Menu** (initial): Start Game (`method_24` → LevelSelectEditor), Challenges (`method_26`), Switch
+  Profile (`method_25`), Options (`method_27` → `Class74` "Settings"), Credits (`method_28` → the
+  credits gate), Quit (`Class280.class185_0.vmethod_0()`, instant exit) — "n of 6".
+- **News**: header / date / body as uncounted text rows. Captured in `Patches/TitleTextCapture`
+  around `MainMenuEditor.method_19` (body = first `ExtendedFont.method_9` string, date/header = the
+  last two `Scene.smethod_4` strings) — the date and body are English literals in game code, in no
+  loc table. A module generation newer than the menu's build re-runs `method_19` to recapture (it
+  only rebuilds the news scene). The pane's `<`/`>` (disabled, empty handlers) and the hidden More
+  Information button are not nodes.
+- **Extras** (TitleScreenEditor art hotspots, main menu only; lettered art → mod labels):
+  "ResearchNet, Sign On" (`method_12`: journal, or `Class61` ACCESS DENIED before unlock),
+  "63 Corvi" (`method_14` → `Class70`; shown when `Class280.bool_5 || Class47.smethod_10()` — DLC
+  92803 owned), "Team Fortress 2" (`method_13` → `Class67`; `Class448.bool_0` is constant true) —
+  counted among themselves; then the uncounted profile plate "name, rank".
+Escape is native: on the main menu it QUITS THE GAME (`MainMenuEditor.imethod_0`).
+
+`NetDialogScreen` over any `Class60` (ResearchNet-styled notice: `string_0` title, `string_1` text,
+buttons via `method_15(label, action)`, captured by TitleTextCapture): arrival speaks title + text,
+buttons as an uncounted vertical list, focus on the first. Escape there runs the dialog's
+`Class56.action_0`, which ACCESS DENIED never sets — Escape does nothing in the game too; Back is the
+exit. HOT-RELOAD CAVEAT: capture tables are per module generation, so a dialog built under an older
+generation shows no buttons after `/reload` (probe `pop` it); never an issue in normal play.
+
+Unmodeled screens with RENAMED types announce only through a curated deob-name table
+(`ScreenNames.ForDeob`): `Class74` → the game's "Settings", `Class67` → "Team Fortress 2",
+`Class70` → "63 Corvi". Everything else obfuscated stays silent (never "Class74"). Destinations
+verified announcing and returning on Escape: Level select, Challenges, Settings, Team Fortress 2.
+
+## 12. Hard rules (inherited from Echopunks — same reasons)
 - Never commit or ship game code or anything derived from the game's binaries (`game/` stays
   gitignored); the shipped namemap carries name pairs only.
 - Never crash the game: every hook body catches everything; Bootstrap swallows everything.
@@ -242,14 +274,14 @@ native. Buttons replicate the GClass15 press (click sound + handler).
 - Keep `module/src/UI/Graph` BCL-pure.
 - Never apply a game Harmony patch before init (first-tick arming).
 
-## 12. Roadmap
+## 13. Roadmap
 1. (done) Injection under CLR 4 in the SANDBOX domain, typed access with publicize +
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. (done) Profile flow (§10). Next: the main menu (`MainMenuEditor`: news pane with < > paging,
-   More Information, Start Game, Challenges, Switch Profile, Options, Credits, Quit).
-   A generic reader for `Class54` widget trees may pay off here.
+4. (done) Profile flow (§10), main menu (§11). Next candidates: Options (`Class74` "Settings":
+   Fullscreen / Keep Aspect Ratio / Show Bonder Priority toggles, Language, music/sound sliders, Save
+   Changes / Cancel), Level select, Challenges.
 5. Level select, research/production level editors (reactor grid + instructions, pipeline).
 6. Port the Rust installer from Echopunks (`installer/`: game detection by `SpaceChem.exe`, the config
    REPLACEMENT must be backed up and restored on uninstall).

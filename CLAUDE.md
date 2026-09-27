@@ -400,6 +400,9 @@ VARIANTS VERIFIED LIVE (2026-09-27): standard layout 0 (campaign research), the 
 (QT-1: tunnels, junction), the LARGE OUTPUT layout 3 (Class78, custom `has-large-output`: ψ is
 columns 7-10 on all 8 rows, no ω line, the tall output opens in the viewer). NOT verified: assembly
 (2) / disassembly (1) — production only — and the laser reactor (4) — defense only.
+LASER REACTOR (Class80, from the decompile, UNTESTED): its draggable has a third input port, the
+discharge gas (Xe); the panel draws only the first two, so the Molecules stop lists only α and β
+there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is not read yet.
 - GRID: a cell reads bare "x, y" (1-based) FIRST, the zone on the first readout or when crossed, then
   contents (red/blue instruction + arrow labels from `Game/ReactorText`, hardware feature, waldos and
   atoms with bonds while running), "highlighted" (tutorial target), "selected". Empty cell =

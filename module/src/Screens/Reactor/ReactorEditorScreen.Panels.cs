@@ -175,9 +175,15 @@ namespace SpeechChem.Screens.Reactor
             var rd = editor.reactorDraggable_0;
             if (rd == null) return;
             b.BeginStop(MoleculesStop);
+            int drawn = 0;
             foreach (var kv in rd.class485_0)
             {
                 int index = kv.Key;
+                // The laser reactor (Class636 draggable, Class80 editor) has a third input, the
+                // discharge gas (Xe) that fires it; its panel (Class80.vmethod_7) draws only the
+                // first two ports, α and β — so do we. From the decompile; UNTESTED live.
+                if (editor is Class80 && drawn >= 2) break;
+                drawn++;
                 var vt = ProfileUi.Text(true, () => InputLine(index));
                 vt.OnActivate = () => OpenMolecules(PanelAnnotation(true, index), "reactor.mol.in." + index, InputLanding(index));
                 b.AddItem(ControlId.Structural("reactor.mol.in." + index), vt);

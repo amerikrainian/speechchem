@@ -208,7 +208,7 @@ namespace SpeechChem.Screens
         /// (dictionary_5) is not the campaign order (the first level came fifth on Sernimir II). So:
         /// a topological sort over the in-planet prerequisites, ties broken by map position (top to
         /// bottom, then left to right) — a level is always listed after the levels it needs.</summary>
-        private static List<Type> LevelsOn(Enum147 planet)
+        internal static List<Type> LevelsOn(Enum147 planet)
         {
             var onPlanet = new List<Type>();
             foreach (var t in LevelsDb.dictionary_5.Values)

@@ -313,6 +313,17 @@ shown level id, hover = `method_14(type)`; re-pointed every render like SyncPane
 `LevelSelectScreen.ScoreRow(id, metric)`), Back (`method_17`). Enter = `method_16` (opens the level, no
 story intro). KeepStateOnPop only while covered by a level (the reactor's rule); leaving starts over.
 
+`CorviScreen` over `Class70` (63 Corvi, the quantum DLC) — verified live 2026-09-27: the level
+select for planet `(Enum147)10` (`LevelSelectScreen.LevelsOn` / `Kind` / `ScoreRow` shared) plus the
+"Transcripts - 63 Corvi Mission" pane, which is part of the screen, not a popup. Stops: Levels
+(hover `method_16` sets `type_0`, click `method_15` = level + intro; lock = Class306's rule, also
+honouring the unlock-all flags `LevelSelectEditor.bool_2/bool_3`), Scores (`type_0`, re-pointed
+every render), Transcripts (a tab strip over the unlocked entries `method_23(1..8)`, labels =
+`Class177` "QuantumDLC{n}" titles, drawn truncated; select = `method_21(n)`, shown = `int_0`),
+Transcript (pane title + `StoryInfoScreen.CleanStory` of the body), Return to Menu (`method_14`).
+KeepStateOnPop only while covered. UNTESTED live: switching transcripts (one unlocked on the test
+profile) and solved scores.
+
 ## 13. Challenges (`module/src/Screens/ChallengeScreens.cs`) — verified live 2026-09-27
 `ChallengesScreen` over `SpaceChem.ChallengeEditor`: the screen name is the drawn title
 ("Challenges", comment "ENGLISH ALPHABET ONLY"); stop 1 = every visible challenge as one list in the
@@ -508,7 +519,7 @@ dismiss with `pop` — Continue would leave the level).
    IgnoresAccessChecksTo, x86 Prism, dev server + probe, hot reload.
 2. (done) Graph UI, navigator, input substrate and their test suites ported.
 3. (done) Click-anywhere gates.
-4. (done) Profile flow (§10), main menu (§11), level select + Australium sites (§12), challenges (§13), options (§14),
+4. (done) Profile flow (§10), main menu (§11), level select + Australium sites + 63 Corvi (§12), challenges (§13), options (§14),
    in-level dialogs (§15), reactor editor (§16) + run log (§17), periodic table (§18), Story / Training
    / Performance (§19).
 5. Next (agreed order): the pipeline editor, defense levels, the ResearchNet builders.

@@ -196,6 +196,7 @@ namespace SpeechChem.Screens
             Register(new LevelSelectScreen());
             Register(new ChallengesScreen());
             Register(new AustraliumScreen());
+            Register(new CorviScreen());
             Register(new OptionsScreen());
             Register(new ProfilePickerScreen());
             Register(new NewProfileScreen());

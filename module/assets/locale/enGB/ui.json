@@ -130,7 +130,6 @@
   "reactor.edit.start": "Start markers can only be moved.",
   "reactor.edit.nothing": "Nothing there.",
   "reactor.edit.placed": "{placed}",
-  "reactor.edit.replaced": "{placed}, replaced {replaced}",
   "reactor.edit.deleted": "Deleted {what}",
   "reactor.edit.cut": "Cut {n}",
   "reactor.edit.copied": "Copied {n}",

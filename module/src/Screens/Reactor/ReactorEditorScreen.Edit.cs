@@ -123,7 +123,6 @@ namespace SpeechChem.Screens.Reactor
             }
             var clone = slot.struct116_0.method_0().vmethod_2(r) as Instruction;
             if (clone == null) return true;
-            string replaced = existing != null ? ReactorText.Label(existing) : null;
             using (UndoStep())
             {
                 if (existing != null)
@@ -134,10 +133,9 @@ namespace SpeechChem.Screens.Reactor
                 r.method_18(new ReactorBin(cell, (Enum114)layer), clone);
             }
             Class428.class14_11.vmethod_0(); // the drop sound (Reactor.method_11 leaving the drag state)
+            // Just the new instruction, replacement or not (user rule).
             string placed = ColourWord(layer) + " " + ReactorText.Label(clone);
-            Speech.Tts.Speak(replaced != null
-                ? Loc.T("reactor.edit.replaced", new { placed, replaced })
-                : Loc.T("reactor.edit.placed", new { placed }), interrupt: true);
+            Speech.Tts.Speak(Loc.T("reactor.edit.placed", new { placed }), interrupt: true);
             return true;
         }
 

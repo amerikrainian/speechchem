@@ -212,7 +212,7 @@
   "run.log": "Run log",
   "run.cycle": "Cycle {n}",
   "run.waiting": "{what}, waiting",
-  "run.took": "{what}, took {molecule}",
+  "run.input": "{what}, {molecule} at {cell}",
   "run.grabbed": "grabbed {molecule}",
   "run.dropped": "dropped {molecule}",
   "run.holding": "already holding {molecule}",

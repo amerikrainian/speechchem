@@ -243,7 +243,12 @@ namespace SpeechChem.Patches
                 if (w.bool_0 && w.bool_2)
                     return before.Waiting ? null : Loc.T("run.waiting", new { what = label });
                 if (r.class201_0.Count > before.Molecules)
-                    return Loc.T("run.took", new { what = label, molecule = MoleculeText.NameAndFormula(r.class201_0[r.class201_0.Count - 1].molecule_0) });
+                {
+                    // The input drops the molecule into its zone; no waldo touches it. Where it
+                    // landed = its first atom in reading order.
+                    var arrived = r.class201_0[r.class201_0.Count - 1];
+                    return Loc.T("run.input", new { what = label, molecule = MoleculeText.NameAndFormula(arrived.molecule_0), cell = CellText(FirstCell(arrived)) });
+                }
                 return label;
             }
             if (i is OutputInstruction)
@@ -398,6 +403,20 @@ namespace SpeechChem.Patches
                         new { atom = from.Atom, cell = CellText(ends[1 - k].Cell) }));
                 }
             return moves.Count > 0 ? Loc.T("run.swap", new { moves = string.Join("; ", moves.ToArray()) }) : Loc.T("run.swap.none");
+        }
+
+        /// <summary>A molecule's first atom cell in reading order (top row first, then left).</summary>
+        private static Vector2i FirstCell(MoleculeSheet sheet)
+        {
+            Vector2i best = default(Vector2i);
+            bool any = false;
+            foreach (var kv in sheet.method_14())
+                if (!any || kv.Key.int_1 < best.int_1 || (kv.Key.int_1 == best.int_1 && kv.Key.int_0 < best.int_0))
+                {
+                    best = kv.Key;
+                    any = true;
+                }
+            return best;
         }
 
         private static string CellText(Vector2i c) => Loc.T("reactor.cell", new { x = c.int_0 + 1, y = c.int_1 + 1 });

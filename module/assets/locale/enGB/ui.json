@@ -49,8 +49,6 @@
   "reactor.cat.outputs": "Outputs",
   "reactor.cat.hardware": "Hardware",
   "reactor.cat.waldos": "Waldos",
-  "reactor.cat.red": "Red program",
-  "reactor.cat.blue": "Blue program",
   "reactor.trace.red": "red waldo path",
   "reactor.trace.blue": "blue waldo path",
   "reactor.trace.nostart": "{waldo}: no start",

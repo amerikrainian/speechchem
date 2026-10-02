@@ -42,8 +42,6 @@ namespace SpeechChem.Screens.Reactor
             new Category { Name = "reactor.cat.outputs", Items = (r, e) => ZoneItems(r, input: false) },
             new Category { Name = "reactor.cat.hardware", Items = (r, e) => FeatureItems(r) },
             new Category { Name = "reactor.cat.waldos", Items = (r, e) => WaldoItems() },
-            new Category { Name = "reactor.cat.red", Items = (r, e) => ProgramItems(r, red: true) },
-            new Category { Name = "reactor.cat.blue", Items = (r, e) => ProgramItems(r, red: false) },
         });
 
         private void StepCategory(int delta)
@@ -136,18 +134,6 @@ namespace SpeechChem.Screens.Reactor
                     items.Add(new CategoryItem { Run = () => SpeakWaldo(isRed, jump: true) });
                 }
             }
-            return items;
-        }
-
-        private static List<CategoryItem> ProgramItems(ReactorModel r, bool red)
-        {
-            var items = new List<CategoryItem>();
-            int layer = red ? ReactorText.Red : ReactorText.Blue, arrow = red ? ReactorText.RedArrow : ReactorText.BlueArrow;
-            Vector2i size = r.method_1();
-            for (int y = 0; y < size.int_1; y++)
-                for (int x = 0; x < size.int_0; x++)
-                    if (InstructionAt(r, x, y, layer) != null || InstructionAt(r, x, y, arrow) != null)
-                        items.Add(new CategoryItem { X = x, Y = y });
             return items;
         }
     }

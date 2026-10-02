@@ -496,7 +496,14 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   (user: silence read as broken); Escape returns to the cell. A port piped to or from ANOTHER
   REACTOR with no note shows no molecule in the game either, so its line names the connection,
   as the pipeline does: "psi output: to Standard Reactor 1 beta input", "beta input: from Standard
-  Reactor 2 psi output" (user request; verified live).
+  Reactor 2 psi output" (user request; verified live). PASSING RULE (decompile): an output takes
+  every unheld molecule wholly in its zone, positions relative to the zone's top-left
+  (Class77.vmethod_5 → MoleculeSheet.method_8), unrotated; an input places them at the same
+  relative positions in its zone. A reactor-fed input shows the molecule WAITING at its pipe's end
+  during a run (the pipe's last slot, what the next "in" takes — ReactorDraggable.method_17; the
+  game draws it in the pipe): "beta input: from …, waiting: Carbon Monoxide, CO"; Enter / M open it
+  in landing mode. The landing cell is NOT predicted on output zones (user agreed: a hint the game
+  never shows). Verified live.
 - COVERED BY ANOTHER GAME SCREEN (dialog, periodic table, Story & Info): the editor stays in the chain,
   so OnPop keeps cursor, trackers and focus (KeepStateOnPop while covered) — closing returns to the
   exact node (e.g. the toolbar button). Leaving the reactor starts over.

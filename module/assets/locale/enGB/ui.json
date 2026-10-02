@@ -67,6 +67,7 @@
   "reactor.mol.none": "none",
   "reactor.mol.to": "to {to}",
   "reactor.mol.from": "from {from}",
+  "reactor.mol.waiting": "waiting: {molecule}",
   "tutorial.instruction": "Instruction: {instruction}.",
   "tutorial.shown": "Hardware: {what}.",
   "tutorial.key": "key {key}",

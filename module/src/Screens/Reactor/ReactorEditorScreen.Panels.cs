@@ -185,7 +185,7 @@ namespace SpeechChem.Screens.Reactor
                 if (editor is Class80 && drawn >= 2) break;
                 drawn++;
                 var vt = ProfileUi.Text(true, () => InputLine(index));
-                vt.OnActivate = () => OpenMolecules(PanelAnnotation(true, index), "reactor.mol.in." + index, InputLanding(index));
+                vt.OnActivate = () => OpenInput(index);
                 b.AddItem(ControlId.Structural("reactor.mol.in." + index), vt);
             }
             foreach (var kv in rd.class485_1)
@@ -262,7 +262,11 @@ namespace SpeechChem.Screens.Reactor
             // Fed by another reactor with no note on that output: nothing to show, so say where it
             // comes from, as the pipeline does (user request).
             if (upstream is ReactorDraggable && !AnyMolecule(annotation))
-                return zone + ": " + Loc.T("reactor.mol.from", new { from = PipelineText.Name(rd.pipeline_0, upstream) + " " + SourceOutput(upstream, port.pipeDraggable_0) });
+            {
+                string line = zone + ": " + Loc.T("reactor.mol.from", new { from = PipelineText.Name(rd.pipeline_0, upstream) + " " + SourceOutput(upstream, port.pipeDraggable_0) });
+                var waiting = WaitingMolecule(index);
+                return waiting == null ? line : line + ", " + Loc.T("reactor.mol.waiting", new { molecule = MoleculeText.NameAndFormula(waiting) });
+            }
             return zone + ": " + AnnotationText(annotation);
         }
 
@@ -304,9 +308,7 @@ namespace SpeechChem.Screens.Reactor
             if (input)
             {
                 if (!rd.class485_0.ContainsKey(index)) return;
-                var a = PanelAnnotation(true, index);
-                if (!AnyMolecule(a)) { Speech.Tts.Speak(InputLine(index), interrupt: true); return; }
-                OpenMolecules(a, "reactor.mol.in." + index, InputLanding(index));
+                OpenInput(index);
             }
             else
             {
@@ -323,6 +325,37 @@ namespace SpeechChem.Screens.Reactor
             foreach (var m in a.vmethod_6())
                 if (m != null && !m.method_6()) return true;
             return false;
+        }
+
+        /// <summary>Enter on an input's Molecules line, or M on its zone: the panel's molecules in
+        /// landing mode; for an input fed by another reactor (no panel of its own), the molecule
+        /// waiting at its pipe's end — the one the next "in" takes (ReactorDraggable.method_17:
+        /// the pipe's last slot), drawn in the pipe during a run; else the line itself.</summary>
+        private void OpenInput(int index)
+        {
+            var a = PanelAnnotation(true, index);
+            if (AnyMolecule(a)) { OpenMolecules(a, "reactor.mol.in." + index, InputLanding(index)); return; }
+            var waiting = WaitingMolecule(index);
+            if (waiting != null) { PushChild(new MoleculeViewerScreen("reactor.mol.in." + index + ".view", waiting, InputLanding(index))); return; }
+            Speech.Tts.Speak(InputLine(index), interrupt: true);
+        }
+
+        /// <summary>The molecule at the end of input <paramref name="index"/>'s pipe when another
+        /// reactor feeds it, or null (none waiting, or not fed by a reactor).</summary>
+        private static Molecule WaitingMolecule(int index)
+        {
+            try
+            {
+                var rd = Editor?.reactorDraggable_0;
+                if (rd == null || !rd.class485_0.ContainsKey(index)) return null;
+                var port = rd.class485_0[index];
+                if (!(port.vmethod_0() is ReactorDraggable)) return null;
+                var slots = port.pipeDraggable_0?.linkedList_1;
+                if (slots == null || slots.Count == 0) return null;
+                var m = slots.Last.Value.molecule_0;
+                return m == null || m.method_6() ? null : m;
+            }
+            catch { return null; }
         }
 
         private static string OutputLine(int index)

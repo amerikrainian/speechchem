@@ -11,7 +11,9 @@ namespace SpeechChem.Game
     /// A component's name is the game's own (Draggable.string_1: "Assembly Reactor", "Recycler",
     /// "Storage Tank"); reactors are numbered in READING ORDER (top to bottom, then left to right, by
     /// their top-left cell) when a pipeline holds more than one — user-approved 2026-09-27, so the
-    /// run log's "reactor 2" and the list's "Assembly Reactor 2" always agree.
+    /// run log's "reactor 2" and the list's "Assembly Reactor 2" always agree. Every other
+    /// component is numbered the same way among those sharing its name ("Cargo Freighter 2"; user
+    /// rule 2026-10-01: two freighters were otherwise indistinguishable), everywhere it is named.
     /// </summary>
     internal static class PipelineText
     {
@@ -67,7 +69,23 @@ namespace SpeechChem.Game
                 int n = ReactorNumber(p, rd);
                 return n > 0 ? name + " " + n : name;
             }
-            return string.IsNullOrEmpty(name) ? Loc.T("pipeline.component") : name;
+            if (string.IsNullOrEmpty(name)) return Loc.T("pipeline.component");
+            int k = SameNameNumber(p, d, name);
+            return k > 0 ? name + " " + k : name;
+        }
+
+        /// <summary>A non-reactor's number among the components named like it (1-based, reading
+        /// order), or 0 when it is the only one.</summary>
+        private static int SameNameNumber(Pipeline p, Draggable d, string name)
+        {
+            int count = 0, index = 0;
+            foreach (var kv in Components(p))
+            {
+                if (kv.Key is ReactorDraggable || kv.Key.string_1?.Trim() != name) continue;
+                count++;
+                if (ReferenceEquals(kv.Key, d)) index = count;
+            }
+            return count < 2 ? 0 : index;
         }
 
         /// <summary>A component's type name without its number ("Assembly Reactor").</summary>

@@ -559,11 +559,18 @@ namespace SpeechChem.Patches
                 {
                     int before;
                     if (kv.Value == null || !__state.TryGetValue(kv.Key, out before) || kv.Value.int_0 <= before) continue;
-                    string name = string.IsNullOrEmpty(__instance.string_1?.Trim()) ? Loc.T("run.output") : __instance.string_1.Trim();
+                    string name = OutputLabel(__instance);
                     Add(Loc.T("run.produced", new { output = name, molecule = MoleculeText.NameAndFormula(kv.Key), done = kv.Value.int_0, required = kv.Value.int_1 }), speak: true);
                 }
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] output capture", ex); }
+        }
+
+        /// <summary>An output building as the pipeline names it ("Cargo Freighter 2").</summary>
+        private static string OutputLabel(Draggable d)
+        {
+            if (string.IsNullOrEmpty(d?.string_1?.Trim())) return Loc.T("run.output");
+            return PipelineText.Name(d.pipeline_0, d);
         }
 
         // ---- failures and completion (the dialogs speak themselves; the log keeps a line) ----
@@ -590,7 +597,7 @@ namespace SpeechChem.Patches
         {
             try
             {
-                string target = string.IsNullOrEmpty(__instance?.string_1?.Trim()) ? Loc.T("run.output") : __instance.string_1.Trim();
+                string target = OutputLabel(__instance);
                 Add(GameText.T("An invalid molecule was passed to") + " " + target + ": " + MoleculeText.NameAndFormula(__0), speak: false);
             }
             catch { }

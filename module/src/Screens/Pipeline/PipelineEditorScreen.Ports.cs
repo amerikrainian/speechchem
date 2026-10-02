@@ -32,7 +32,7 @@ namespace SpeechChem.Screens.Pipeline
                 int index = i++;
                 var output = kv.Value;
                 var cell = Cell(() => OutputLine(Model, d, output, index));
-                cell.OnActivate = () => StartDraw(output.pipeDraggable_0); // Enter draws this output's pipe
+                cell.OnActivate = () => JumpToOutput(d, output); // Enter: the pipe's end on the map (Enter there draws)
                 b.AddItem(PortId(d, true, index), cell);
                 AddPanel(b, d, true, index, output.method_0());
             }
@@ -43,6 +43,21 @@ namespace SpeechChem.Screens.Pipeline
             var origin = Model?.method_9(d);
             if (!origin.HasValue) return;
             var at = origin.Value + input.vector2i_0;
+            FocusMapCell(at.int_0, at.int_1);
+        }
+
+        private void JumpToOutput(Draggable d, PipelineOutput output)
+        {
+            var pipe = output.pipeDraggable_0;
+            if (pipe != null && pipe.linkedList_0.Count > 0)
+            {
+                var end = EndCell(pipe);
+                FocusMapCell(end.int_0, end.int_1);
+                return;
+            }
+            var origin = Model?.method_9(d);
+            if (!origin.HasValue) return;
+            var at = origin.Value + output.vector2i_0;
             FocusMapCell(at.int_0, at.int_1);
         }
 

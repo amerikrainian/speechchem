@@ -29,7 +29,8 @@ namespace SpeechChem.Screens.Pipeline
         private Vector2i? _drawRefocus;     // a refused step: put the cursor back on the end, silently
         private bool _drawFocusPending;     // the focus move onto the map lands a frame after StartDraw
 
-        public override bool ModalCapturesEscape => _drawPipe != null || _armed != null; // Escape ends drawing / unarms
+        // Escape ends drawing / unarms / stops a run (Common/RunEscape) before the game sees it.
+        public override bool ModalCapturesEscape => _drawPipe != null || _armed != null || Common.RunEscape.Active;
 
         /// <summary>The pipe's end cell on the map.</summary>
         private static Vector2i EndCell(PipeDraggable pipe) => pipe.linkedList_0.Last.Value + pipe.method_14();

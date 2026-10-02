@@ -502,6 +502,12 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   from the game until release; without it every such Escape opened the exit prompt. Test with a
   PostMessage WM_KEYDOWN/UP VK_ESCAPE to the game window — it reaches SDL's state like a real key
   (probe `key ui.back` never presses Escape, `rawkey` never updates the mod's snapshot).
+- ESCAPE STOPS A RUN FIRST (`Screens/Common/RunEscape`; user rule 2026-10-01), reactor and
+  pipeline alike: while a run exists (running or paused) Escape stops it (Class258.smethod_17(0),
+  the game's own research-reactor Escape) and the game never sees that press (ModalCapturesEscape);
+  stopped, Escape is the game's (exit prompt; a production reactor returns to the pipeline — the
+  game left a production reactor and opened the pipeline's exit prompt mid-run). Mod modals (lists,
+  drawing, an armed shelf item) still take Escape first. Verified live with real Escapes.
 - TEST HYGIENE: tests place instructions in the user's live save; always delete them and sweep all 80
   cells afterwards (Pancakes baseline: red START at 5, 2 and blue START at 5, 7, both facing left). Never
   let a test program complete a level: park the waldo against a wall instead of looping.

@@ -66,6 +66,7 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
             yield return new ElementAction("screen.reactor.molecule", OpenZoneMolecules);
             yield return new ElementAction("screen.reactor.step", Patches.StepControl.Step);
+            if (Common.RunEscape.Active) yield return new ElementAction(ActionIds.Back, Common.RunEscape.Stop);
             yield return new ElementAction("screen.reactor.skip.left", () => SkipSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipSideways(1));
             foreach (var a in EditActions()) yield return a;
@@ -141,6 +142,9 @@ namespace SpeechChem.Screens.Reactor
         private bool _covered;
 
         public override bool KeepStateOnPop => _covered;
+
+        /// <summary>Escape stops a run first, in every reactor (Common/RunEscape).</summary>
+        public override bool ModalCapturesEscape => Common.RunEscape.Active;
 
         /// <summary>The covering screen can lead out of the level instead (the completion screen's
         /// Continue): the kept focus belongs to a reactor that is gone, so a different one starts

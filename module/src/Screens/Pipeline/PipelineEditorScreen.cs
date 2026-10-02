@@ -60,6 +60,7 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.paste", Paste);
             yield return new ElementAction("screen.reactor.delete", () => Delete(FocusedComponent()));
             yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
+            yield return new ElementAction("screen.reactor.molecule", OpenFocusedMolecules); // M on a port cell
             yield return new ElementAction("screen.reactor.step", Patches.StepControl.Step); // 0, as in the reactor
             yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipMapSideways(1));
@@ -135,42 +136,80 @@ namespace SpeechChem.Screens.Pipeline
             _pipeline = null;
         }
 
-        // ---- components: every named component in reading order ----
+        // ---- components: a TABLE (user design, 2026-10-02, the Echopunks ColumnGrid): one row per
+        // named component in reading order; columns Component, then one per input and one per
+        // output, as many as the component with the most has. A component without that port reads
+        // "N/A". The column header is spoken when focus crosses into a column, never while it stays
+        // there. Up/Down walk a column (the same port of the next component), Left/Right cross. ----
 
         private void BuildComponents(GraphBuilder b, SpaceChem.Pipeline.Pipeline pipeline)
         {
             b.BeginStop(ComponentsStop);
+            _panels.Clear();
             var components = PipelineText.Components(pipeline);
-            for (int i = 0; i < components.Count; i++)
+            int inputs = 0, outputs = 0;
+            foreach (var kv in components)
             {
-                var d = components[i].Key;
-                int index = i + 1, count = components.Count;
-                var vt = new NodeVtable
-                {
-                    ControlType = d is ReactorDraggable ? ControlTypes.Button : ControlTypes.Text,
-                    Announcements = new[]
-                    {
-                        new NodeAnnouncement(() => ComponentLabel(Model, d), kind: AnnouncementKinds.Label),
-                        new NodeAnnouncement(() => Loc.T("nav.position", new { index, count }), kind: AnnouncementKinds.Position),
-                    },
-                    SpeaksOwnPosition = true,
-                };
-                // Enter: a reactor opens (the double-click); any other building jumps to its
-                // top-left cell on the map.
-                if (d is ReactorDraggable rd) vt.OnActivate = () => OpenReactor(rd);
-                else vt.OnActivate = () => JumpToComponent(d);
-                vt.OnSecondary = OpenMenu;
-                // A component with ports is a ROW: Right walks its inputs, then its outputs.
-                bool ports = d.class485_0.Count > 0 || d.class485_1.Count > 0;
-                if (ports) b.StartRow();
-                b.AddItem(ComponentId(d), vt);
-                if (ports)
-                {
-                    BuildPorts(b, d);
-                    b.EndRow();
-                }
+                inputs = System.Math.Max(inputs, kv.Key.class485_0.Count);
+                outputs = System.Math.Max(outputs, kv.Key.class485_1.Count);
             }
+            var names = new ColumnGrid.Column { Header = Loc.T("pipeline.col.component"), ContextId = ControlId.Structural("pipeline.col.comp") };
+            var ins = new ColumnGrid.Column[inputs];
+            for (int i = 0; i < inputs; i++)
+                ins[i] = new ColumnGrid.Column
+                {
+                    Header = inputs > 1 ? Loc.T("pipeline.input.n", new { n = i + 1 }) : Loc.T("pipeline.input"),
+                    ContextId = ControlId.Structural("pipeline.col.in." + i),
+                };
+            var outs = new ColumnGrid.Column[outputs];
+            for (int i = 0; i < outputs; i++)
+                outs[i] = new ColumnGrid.Column
+                {
+                    Header = outputs > 1 ? Loc.T("pipeline.output.n", new { n = i + 1 }) : Loc.T("pipeline.output"),
+                    ContextId = ControlId.Structural("pipeline.col.out." + i),
+                };
+
+            foreach (var kv in components)
+            {
+                var d = kv.Key;
+                names.Cells.Add(new ColumnGrid.Cell { Id = ComponentId(d), Vtable = ComponentCell(d) });
+                var dIns = new List<PipelineInput>();
+                foreach (var p in d.class485_0) dIns.Add(p.Value);
+                var dOuts = new List<PipelineOutput>();
+                foreach (var p in d.class485_1) dOuts.Add(p.Value);
+                for (int i = 0; i < inputs; i++)
+                    ins[i].Cells.Add(new ColumnGrid.Cell
+                    {
+                        Id = PortId(d, false, i),
+                        Vtable = i < dIns.Count ? InputCell(d, dIns[i], i) : NaCell(),
+                    });
+                for (int i = 0; i < outputs; i++)
+                    outs[i].Cells.Add(new ColumnGrid.Cell
+                    {
+                        Id = PortId(d, true, i),
+                        Vtable = i < dOuts.Count ? OutputCell(d, dOuts[i], i) : NaCell(),
+                    });
+            }
+
+            var columns = new List<ColumnGrid.Column> { names };
+            columns.AddRange(ins);
+            columns.AddRange(outs);
+            ColumnGrid.Edges edges;
+            ColumnGrid.Build(b, columns, out edges, Loc.T("role.table"), ControlId.Structural("pipeline.comp.table"));
         }
+
+        /// <summary>The Component column's cell: Enter opens a reactor (the double-click) or jumps
+        /// to any other building's top-left cell on the map.</summary>
+        private NodeVtable ComponentCell(Draggable d)
+        {
+            var vt = Cell(() => ComponentLabel(Model, d));
+            vt.ControlType = d is ReactorDraggable ? ControlTypes.Button : ControlTypes.Text;
+            if (d is ReactorDraggable rd) vt.OnActivate = () => OpenReactor(rd);
+            else vt.OnActivate = () => JumpToComponent(d);
+            return vt;
+        }
+
+        private NodeVtable NaCell() => Cell(() => Loc.T("text.na"));
 
         private void JumpToComponent(Draggable d)
         {

@@ -329,11 +329,12 @@ namespace SpeechChem.Screens
         }
 
         /// <summary>The three stats, in the TEXT stop right under the performance lines (user rule,
-        /// 2026-09-27: Down from the last line reaches the stats; Up from any caption returns there).
-        /// Each stat a column — its caption with the THIS / BEST numbers the game prints over its
-        /// markers, then the histogram's bars or the leaderboard's rows, whichever view the game
-        /// shows. Up/Down walk a column; Left/Right switch stats, landing on the caption so the stat
-        /// is named.</summary>
+        /// 2026-09-27: Down from the last line reaches the stats; Up from any stat's top returns
+        /// there), as a TABLE (user design, 2026-10-02, the Echopunks ColumnGrid): each stat a
+        /// column headed by its name, spoken when focus crosses into it and never while it stays —
+        /// first the THIS / BEST numbers the game prints over its markers, then the histogram's bars
+        /// or the leaderboard's rows, whichever view the game shows. Up/Down walk a column;
+        /// Left/Right cross to the same row of the next stat (clamped to a shorter one).</summary>
         private static void BuildMetrics(GraphBuilder b, Editor e, ControlId above)
         {
             string level = GoalTracker.string_0;
@@ -350,39 +351,37 @@ namespace SpeechChem.Screens
                 catch { }
             }
             string view = boards ? "b" : "h";
-            var columns = new List<List<ControlId>>();
+            var columns = new List<ColumnGrid.Column>();
             for (int k = 0; k < 3; k++)
             {
                 int? mine = Metric(e.struct116_2, k), best = Metric(e.struct116_3, k);
                 var lines = boards ? BoardLines(level, k, mine, best) : HistogramLines(k, mine, best, data?[k]);
-                var ids = new List<ControlId>();
+                var column = new ColumnGrid.Column { Header = MetricLabel(k), ContextId = ControlId.Structural("story.metric.col." + k) };
                 for (int i = 0; i < lines.Count; i++)
-                {
-                    string text = lines[i];
-                    var id = ControlId.Structural("story.metric." + view + "." + k + "." + i);
-                    b.AddNode(id, ProfileUi.Text(true, () => text));
-                    ids.Add(id);
-                }
-                columns.Add(ids);
+                    column.Cells.Add(new ColumnGrid.Cell
+                    {
+                        Id = ControlId.Structural("story.metric." + view + "." + k + "." + i),
+                        Vtable = ColumnGrid.TextCell(lines[i]),
+                    });
+                columns.Add(column);
             }
-            for (int k = 0; k < columns.Count; k++)
-            {
-                var col = columns[k];
-                for (int i = 0; i < col.Count; i++)
-                {
-                    if (i > 0) b.Connect(col[i], GraphDir.Up, col[i - 1]);
-                    if (i < col.Count - 1) b.Connect(col[i], GraphDir.Down, col[i + 1]);
-                    if (k > 0) b.Connect(col[i], GraphDir.Left, columns[k - 1][0]);
-                    if (k < columns.Count - 1) b.Connect(col[i], GraphDir.Right, columns[k + 1][0]);
-                }
-                if (above != null && col.Count > 0) b.Connect(col[0], GraphDir.Up, above);
-            }
-            if (above != null && columns.Count > 0 && columns[0].Count > 0) b.Connect(above, GraphDir.Down, columns[0][0]);
+            ColumnGrid.Edges edges;
+            if (!ColumnGrid.Build(b, columns, out edges, Loc.T("role.table"), ControlId.Structural("story.metric.table"))) return;
+            if (above == null) return;
+            foreach (var top in edges.Top) b.Connect(top, GraphDir.Up, above);
+            b.Connect(above, GraphDir.Down, edges.EnterTop);
+        }
+
+        /// <summary>A stat's first row: "THIS 45, BEST 40" (the column header names the stat).</summary>
+        private static string Caption(int? mine, int? best)
+        {
+            string scores = Scores(mine, best);
+            return string.IsNullOrEmpty(scores) ? Loc.T("text.na") : scores;
         }
 
         private static List<string> HistogramLines(int k, int? mine, int? best, string data)
         {
-            var lines = new List<string> { MetricLabel(k) + ": " + Scores(mine, best) };
+            var lines = new List<string> { Caption(mine, best) };
             var h = Histogram.Parse(data);
             if (h == null) { lines.Add(GameText.T("Data Unavailable")); return lines; }
             foreach (var bin in h.Bins(mine, best))
@@ -402,7 +401,7 @@ namespace SpeechChem.Screens
         /// and your best (added when missing), sorted ascending, an 11-row window around you.</summary>
         private static List<string> BoardLines(string level, int k, int? mine, int? best)
         {
-            var lines = new List<string> { MetricLabel(k) + ": " + Scores(mine, best) };
+            var lines = new List<string> { Caption(mine, best) };
             int? yours = mine != null && best != null ? Math.Min(mine.Value, best.Value) : mine ?? best;
             try
             {

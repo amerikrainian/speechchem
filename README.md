@@ -75,9 +75,13 @@ Output notes on reactors are not yet supported.
 
 Majority of keys are shared with reactor. Here's what we additionally add.
 
+The Components stop is a table: one row per component, then a column per input and output ("N/A"
+where a component has none). A column's name is spoken only when you cross into it.
+
 | Key | Where | Action |
 |---|---|---|
 | Enter | Map | Start drawing from a pipe end, open a reactor, or place the armed item |
+| M | Components, on a port | The port's molecule in the molecule viewer |
 | Escape | while armed | Cancel the armed item |
 | Ctrl+X | Components or Map | Cut the component |
 | Ctrl+V | Map | Move the cut component here |

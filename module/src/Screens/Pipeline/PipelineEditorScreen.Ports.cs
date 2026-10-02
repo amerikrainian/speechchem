@@ -9,33 +9,25 @@ namespace SpeechChem.Screens.Pipeline
     public sealed partial class PipelineEditorScreen
     {
         // ---- ports: a component's inputs (Draggable.class485_0, PipelineInput) and outputs
-        // (class485_1, PipelineOutput — each owns its pipe). A reactor's ports take the reactor's
-        // own zone names (inputs α β top to bottom, outputs ψ ω); others count them. An input says
-        // where it is fed from; an output where its pipe leads, or where the pipe's open end is.
-        // Each port is followed by its molecule panel, when it has one (Molecules.cs). ----
+        // (class485_1, PipelineOutput — each owns its pipe), the cells of the Components table. The
+        // column header names the port, so a cell says only where an input is fed from / where an
+        // output's pipe leads or ends; a reactor's cell adds its zone name (alpha / beta inputs,
+        // psi / omega outputs). The port's molecule panel follows (Molecules.cs). ----
 
-        private void BuildPorts(GraphBuilder b, Draggable d)
+        private NodeVtable InputCell(Draggable d, PipelineInput input, int index)
         {
-            int i = 0;
-            foreach (var kv in d.class485_0)
-            {
-                int index = i++;
-                var input = kv.Value;
-                var cell = Cell(() => InputLine(Model, d, input, index));
-                cell.OnActivate = () => JumpToInput(d, input); // Enter: the input's cell on the map
-                b.AddItem(PortId(d, false, index), cell);
-                AddPanel(b, d, false, index, input.method_0());
-            }
-            i = 0;
-            foreach (var kv in d.class485_1)
-            {
-                int index = i++;
-                var output = kv.Value;
-                var cell = Cell(() => OutputLine(Model, d, output, index));
-                cell.OnActivate = () => JumpToOutput(d, output); // Enter: the pipe's end on the map (Enter there draws)
-                b.AddItem(PortId(d, true, index), cell);
-                AddPanel(b, d, true, index, output.method_0());
-            }
+            var panel = Panel(d, false, index, input.method_0());
+            var vt = Cell(() => WithPanel(InputLine(Model, d, input, index, named: d is ReactorDraggable), panel));
+            vt.OnActivate = () => JumpToInput(d, input); // Enter: the input's cell on the map
+            return vt;
+        }
+
+        private NodeVtable OutputCell(Draggable d, PipelineOutput output, int index)
+        {
+            var panel = Panel(d, true, index, output.method_0());
+            var vt = Cell(() => WithPanel(OutputLine(Model, d, output, index, named: d is ReactorDraggable), panel));
+            vt.OnActivate = () => JumpToOutput(d, output); // Enter: the pipe's end on the map (Enter there draws)
+            return vt;
         }
 
         private void JumpToInput(Draggable d, PipelineInput input)
@@ -65,7 +57,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var vt = ProfileUi.Text(text);
             vt.OnSecondary = OpenMenu;
-            vt.SpeaksOwnPosition = true; // a cell of the component's row, not a list item
+            vt.SpeaksOwnPosition = true; // a table cell, never counted
             return vt;
         }
 
@@ -87,30 +79,39 @@ namespace SpeechChem.Screens.Pipeline
             return d.class485_1.Count > 1 ? Loc.T("pipeline.output.n", new { n = index + 1 }) : Loc.T("pipeline.output");
         }
 
-        /// <summary>"alpha input, from Storage Tank" / "input, 24, 8" — an unfed input names its
-        /// cell, the way an open output names its end (a pipe connects from the cell to its left,
-        /// PipeDraggable.method_24).</summary>
-        private static string InputLine(SpaceChem.Pipeline.Pipeline p, Draggable d, PipelineInput input, int index)
+        /// <summary>"from Storage Tank" / "24, 8" — an unfed input names its cell, the way an open
+        /// output names its end (a pipe connects from the cell to its left, PipeDraggable.method_24).
+        /// <paramref name="named"/> puts the port's name first ("alpha input, from Storage Tank").</summary>
+        private static string InputLine(SpaceChem.Pipeline.Pipeline p, Draggable d, PipelineInput input, int index, bool named)
         {
-            string name = InputName(d, index);
+            string body = null;
             var from = input.vmethod_0();
-            if (from != null) return Loc.T("pipeline.port.from", new { port = name, from = PipelineText.Name(p, from) });
-            var origin = p?.method_9(d);
-            if (!origin.HasValue) return name;
-            return Loc.T("pipeline.port.at", new { port = name, cell = PipelineText.Cell(origin.Value + input.vector2i_0) });
+            if (from != null) body = Loc.T("pipeline.from", new { from = PipelineText.Name(p, from) });
+            else
+            {
+                var origin = p?.method_9(d);
+                if (origin.HasValue) body = PipelineText.Cell(origin.Value + input.vector2i_0);
+            }
+            return Named(named ? InputName(d, index) : null, body);
         }
 
-        /// <summary>"psi output, to Recycler input 2" / "psi output, open end 18, 4".</summary>
-        private static string OutputLine(SpaceChem.Pipeline.Pipeline p, Draggable d, PipelineOutput output, int index)
+        /// <summary>"to Recycler input 2" / "open 18, 4"; <paramref name="named"/> as above.</summary>
+        private static string OutputLine(SpaceChem.Pipeline.Pipeline p, Draggable d, PipelineOutput output, int index, bool named)
         {
-            string name = OutputName(d, index);
+            string body = null;
             var to = output.vmethod_0();
-            if (to != null)
-                return Loc.T("pipeline.port.to", new { port = name, to = PipelineText.Name(p, to) + " " + TargetInput(to, output.pipeDraggable_0) });
             var pipe = output.pipeDraggable_0;
-            if (pipe == null || pipe.linkedList_0.Count == 0) return name;
-            var end = pipe.linkedList_0.Last.Value + pipe.method_14();
-            return Loc.T("pipeline.port.open", new { port = name, cell = PipelineText.Cell(end) });
+            if (to != null)
+                body = Loc.T("pipeline.to", new { to = PipelineText.Name(p, to) + " " + TargetInput(to, pipe) });
+            else if (pipe != null && pipe.linkedList_0.Count > 0)
+                body = Loc.T("pipeline.open", new { cell = PipelineText.Cell(pipe.linkedList_0.Last.Value + pipe.method_14()) });
+            return Named(named ? OutputName(d, index) : null, body);
+        }
+
+        private static string Named(string name, string body)
+        {
+            if (name == null) return body ?? Loc.T("reactor.mol.none");
+            return body == null ? name : name + ", " + body;
         }
 
         /// <summary>The input of <paramref name="target"/> a pipe feeds, by name.</summary>

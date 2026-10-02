@@ -545,10 +545,17 @@ Tab stops:
   lands on the next entry (the previous when last), not the map's last cell. During
   a run a reactor adds its waldos' WAITING text (Class188.method_2). Enter on a
   reactor = the double-click (vmethod_2); on any other component = jump to its top-left map cell;
-  on an input port = jump to its cell (an unfed input reads its cell: "input, 24, 8"). A component is a ROW: Right walks its ports — reactors use
-  the zone names (alpha / beta inputs, psi / omega outputs), others "input 2" / "output"; an input
-  "from X", an output "to Recycler input 2" or "open 4, 7". Enter on an output jumps to its pipe's end on the map (user rule 2026-10-01: a
-  jump, not drawing — Enter on the end there starts drawing).
+  on an input port = jump to its cell. THE STOP IS A TABLE (user design 2026-10-02, UI/ColumnGrid
+  ported from Echopunks): one row per component, columns "component", then "input 1..n" and
+  "output 1..n" (n = the most any component has; bare "input" / "output" when 1); a component
+  without that port reads "N/A". A column's header is spoken when focus CROSSES into it, never
+  while it stays (Up/Down = the same port of the next component; Left/Right = the same row of the
+  next column); "table" on entry; no "n of m". Port cells: "from X" / "24, 8" (unfed input's cell)
+  / "to Recycler input 2" / "open 4, 7"; a reactor's cell leads with its zone name ("alpha input,
+  from X") since the header is only "input 1". The port's molecule panel follows in the same cell
+  ("…, Hydrogen, H, 100 percent"); M on the cell opens it in the molecule viewer ("none" on a port
+  without one). Enter on an output jumps to its pipe's end on the map (user rule 2026-10-01: a
+  jump, not drawing — Enter on the end there starts drawing). Verified live 2026-10-02.
 - Map: every cell, coordinates first, then the occupant (component + port, "pipe, owner output",
   "end", "crossing Storage Tank 2 output" (no "pipe" word — user), the carried molecule during a run, "blocked" for terrain /
   decoration). [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
@@ -565,10 +572,9 @@ Tab stops:
   rules; ModalCapturesEscape keeps it from the game's exit prompt — verified with a real Escape).
   The drop reads held Ctrl as COPY: Patches/ModifierMask hides Ctrl.
 - Molecule panels are NOT a stop (user layout 2026-10-01): the game draws each port's annotation
-  beside its building, so each is a cell of the component's row right after its port (inputs'
-  percentages, outputs' done of required, reactor notes that exist; empty panels such as the
-  recycler's skipped); Enter = the molecule viewer (shared ReactorEditorScreen.OpenMolecules /
-  AnnotationText).
+  beside its building, so each is read in its port's table cell (inputs' percentages, outputs'
+  done of required, reactor notes that exist; empty panels such as the recycler's skipped); M =
+  the molecule viewer (shared ReactorEditorScreen.OpenMolecules / AnnotationText).
 - Status (shared ProgressSection + "Reactor Quota, 2 of 3", "exceeded"), Tools (shared), Run log.
 Editing: Ctrl+X on a component (entry, port cell or map cell) / Ctrl+V on a map cell moves it
 (hashSet_0 = {it}, vector2i_4 = origin, vector2i_3 = target, method_13 with Ctrl masked; refused
@@ -668,10 +674,11 @@ invoke the lambdas: each builds the whole Scene and forces GC.Collect), cleaned 
 ExtendedFont.method_5 while the entry's own factory (Class170.smethod_5..17) builds. The shown tab is
 tracked by postfixes on method_21/22/24 (inferred from the constructor rule after a hot reload).
 Stops: tabs (follow focus), entry (combo box over unlocked entries), text — on Performance the three
-stats sit IN the text stop under the lines, as columns (user rules: Down from the last line reaches
-the first caption, Up from any caption returns; Left/Right switch stats landing on the caption,
-Up/Down walk rows), buttons (uncounted, like the dialogs). Histograms read like Echopunks' panels and show nothing the game doesn't (user rule):
-caption with the THIS / BEST numbers, then one row per non-empty bucket "lo to hi: N%"
+stats sit IN the text stop under the lines, as a TABLE (UI/ColumnGrid, user design 2026-10-02: the
+stat name is the column header, spoken on crossing only; Down from the last line reaches the first
+stat's top, Up from any column's top returns; Left/Right = the same row of the next stat, clamped;
+Up/Down walk rows — verified live), buttons (uncounted, like the dialogs). Histograms read like Echopunks' panels and show nothing the game doesn't (user rule):
+the THIS / BEST numbers ("this run 150, best 140"), then one row per non-empty bucket "lo to hi: N%"
 (the bar's share of the chart's filled area = its share of players, since the step plot's heights
 are count − yMin and yMin is 0 in all 597 shipped histograms — user decision; "% of the tallest
 bar" fallback if yMin ≠ 0; "under 1%" for a drawn bar that rounds to 0), marker buckets tagged (marker x =

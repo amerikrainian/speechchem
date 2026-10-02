@@ -109,7 +109,7 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);
             Input.InputManager.Register("screen.reactor.molecule", "Molecule of this zone", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
             // Single-cycle step on 0, beside the game's speed keys 1-4 (the game doesn't use 0).
-            Input.InputManager.Register("screen.reactor.step", "Step one cycle", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0);
+            Input.InputManager.Register("screen.reactor.step", "Step one cycle", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0).Repeating();
             // Palette letters place that instruction at the grid cursor (the scancode is the id).
             foreach (var letter in new[] { Input.Scancode.Q, Input.Scancode.W, Input.Scancode.E, Input.Scancode.R, Input.Scancode.T,
                 Input.Scancode.Y, Input.Scancode.U, Input.Scancode.I, Input.Scancode.A, Input.Scancode.S, Input.Scancode.D,

@@ -64,6 +64,7 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipMapSideways(1));
             if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());
+            else if (_armed != null) yield return new ElementAction(ActionIds.Back, Unarm);
         }
 
         public override void Build(GraphBuilder b)

@@ -41,20 +41,36 @@ namespace SpeechChem.Screens.Pipeline
                     ControlType = ControlTypes.Button,
                     Announcements = new[]
                     {
-                        new NodeAnnouncement(() => template.string_1, kind: AnnouncementKinds.Label),
+                        new NodeAnnouncement(() => ShelfLabel(template), kind: AnnouncementKinds.Label),
                         new NodeAnnouncement(() => ReferenceEquals(_armed, template) ? Loc.T("reactor.armed") : null, kind: AnnouncementKinds.Selected),
                     },
                     OnActivate = () =>
                     {
                         _armed = template;
-                        Speech.Tts.Speak(Loc.T("reactor.armed.instr", new { instruction = template.string_1 }), interrupt: true);
+                        Speech.Tts.Speak(Loc.T("pipeline.armed"), interrupt: true); // the focused tile already names it (user rule)
                     },
                     OnTooltip = () => Speech.Tts.Speak(GameText.Speech(template.string_2) ?? Loc.T("nav.no_tooltip"), interrupt: true),
                 });
             }
         }
 
-        /// <summary>Enter on a map cell: place the armed shelf type there.</summary>
+        /// <summary>"Standard Reactor, 4 by 4": the name and the body's size in cells (Draggable
+        /// vector2i_0; the output pipes start one column beyond it).</summary>
+        private static string ShelfLabel(Draggable template)
+        {
+            var size = template.vector2i_0;
+            if (size.int_0 <= 0 || size.int_1 <= 0) return template.string_1;
+            return Loc.T("pipeline.shelf.item", new { name = template.string_1, w = size.int_0, h = size.int_1 });
+        }
+
+        /// <summary>Escape anywhere on the pipeline (user rule): drop the armed shelf type.</summary>
+        private void Unarm()
+        {
+            if (_armed == null) return;
+            _armed = null;
+            Speech.Tts.Speak(Loc.T("pipeline.unarmed"), interrupt: true);
+        }
+
         /// <summary>Enter on a map cell: end drawing; else place the armed shelf type there; else,
         /// on a pipe's end, start drawing that pipe.</summary>
         private void ActivateMapCell(int x, int y)
@@ -102,7 +118,7 @@ namespace SpeechChem.Screens.Pipeline
                 }
                 if (!ok)
                 {
-                    string why = Refusal(p);
+                    string why = Refusal(p, parked, at);
                     p.method_10(parked, null);
                     p.draggable_0 = null;
                     p.method_23();
@@ -188,7 +204,7 @@ namespace SpeechChem.Screens.Pipeline
                     p.vector2i_3 = at;
                     ok = p.method_13();
                 }
-                string why = ok ? null : Refusal(p);
+                string why = ok ? null : Refusal(p, item, at);
                 p.method_23();
                 if (!ok)
                 {
@@ -251,16 +267,38 @@ namespace SpeechChem.Screens.Pipeline
 
         /// <summary>Why the last drop was refused: the components it would overlap (Pipeline.hashSet_2,
         /// filled by method_12), terrain as "blocked"; nothing overlapped = off the map.</summary>
-        private static string Refusal(SpaceChem.Pipeline.Pipeline p)
+        private const int MaxBlockedCells = 3; // cells named per blocker; the rest are counted
+
+        /// <summary>Why a drop of <paramref name="item"/> with its top-left on <paramref name="at"/>
+        /// was refused: what is in the way and on which cells ("terrain at 7, 3; 8, 3") — the
+        /// item's cells (body, then its pipes: Draggable's enumerator, the cells Pipeline.method_12
+        /// checks) whose occupant the game recorded as a blocker (hashSet_2); off the map when
+        /// nothing blocked.</summary>
+        private static string Refusal(SpaceChem.Pipeline.Pipeline p, Draggable item, Vector2i at)
         {
-            var names = new List<string>();
-            foreach (var d in p.hashSet_2)
+            var order = new List<string>();
+            var cells = new Dictionary<string, List<Vector2i>>();
+            foreach (Vector2i c in item)
             {
+                var cell = at + c;
+                if (!p.dictionary_0.TryGetValue(cell, out var d) || d == null || !p.hashSet_2.Contains(d)) continue;
                 string n = d is Class612 || string.IsNullOrEmpty(d.string_1?.Trim()) && !(d is ReactorDraggable)
                     ? Loc.T("pipeline.terrain") : PipelineText.Name(p, d);
-                if (!names.Contains(n)) names.Add(n);
+                if (!cells.TryGetValue(n, out var list)) { cells[n] = list = new List<Vector2i>(); order.Add(n); }
+                if (!list.Contains(cell)) list.Add(cell);
             }
-            return names.Count > 0 ? Loc.T("pipeline.edit.blockedby", new { what = string.Join(", ", names.ToArray()) }) : Loc.T("pipeline.edit.offmap");
+            if (order.Count == 0) return Loc.T("pipeline.edit.offmap");
+            var parts = new List<string>();
+            foreach (var n in order)
+            {
+                var list = cells[n];
+                var named = new List<string>();
+                for (int i = 0; i < list.Count && i < MaxBlockedCells; i++) named.Add(PipelineText.Cell(list[i]));
+                string where = string.Join("; ", named.ToArray());
+                if (list.Count > MaxBlockedCells) where += " " + Loc.T("pipeline.edit.more", new { n = list.Count - MaxBlockedCells });
+                parts.Add(Loc.T("pipeline.edit.blockedat", new { what = n, cells = where }));
+            }
+            return string.Join(", ", parts.ToArray());
         }
     }
 }

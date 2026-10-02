@@ -532,10 +532,15 @@ Tab stops:
   components / Open pipe ends; C reads the cell; Ctrl+arrows skip identical cells (as the reactor
   grid; not while drawing). Enter: end drawing / place the armed shelf item /
   on a pipe end start drawing.
-- Shelf: the Class717 tiles (Class472.draggable_0 templates). Enter arms; Enter on the map places
-  via the game's drop: template.method_8 parks a clone at (-100, 0) in drag state 2, Pipeline
-  vector2i_3 = target, method_13 validates + places + records undo; a refusal names the blocker
-  (hashSet_2) or "off the map". The drop reads held Ctrl as COPY: Patches/ModifierMask hides Ctrl.
+- Shelf: the Class717 tiles (Class472.draggable_0 templates), read with the body size ("Standard
+  Reactor, 4 by 4": Draggable.vector2i_0; outputs' pipes start a column beyond). Enter arms ("Armed"); Enter
+  on the map places via the game's drop: template.method_8 parks a clone at (-100, 0) in drag
+  state 2, Pipeline vector2i_3 = target, method_13 validates + places + records undo; a refusal
+  (placing or a Ctrl+V move) names each blocker (hashSet_2) with the cells of the item's footprint
+  it occupies, 3 per blocker then "and N more" ("terrain at 4, 3; 3, 4; 4, 4 and 2 more"), or "off
+  the map". Escape ANYWHERE on the pipeline while armed cancels it, saying only "Canceled" (user
+  rules; ModalCapturesEscape keeps it from the game's exit prompt — verified with a real Escape).
+  The drop reads held Ctrl as COPY: Patches/ModifierMask hides Ctrl.
 - Molecule panels are NOT a stop (user layout 2026-10-01): the game draws each port's annotation
   beside its building, so each is a cell of the component's row right after its port (inputs'
   percentages, outputs' done of required, reactor notes that exist; empty panels such as the

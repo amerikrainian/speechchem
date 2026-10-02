@@ -458,7 +458,8 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   in one visit); Delete / Change Trigger Element still run and close. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
   1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape.
 - SINGLE-CYCLE STEP (`Patches/StepControl`; user request 2026-09-27, replacing the old "no single-step"
-  rule — the game has no step): 0, or the toolbar's "Step one cycle" (between Pause and Play 1).
+  rule — the game has no step): 0, or the toolbar's "Step one cycle" (between Pause and Play 1);
+  the pipeline editor binds 0 too (the run is global).
   Class258.smethod_22 runs 10 sub-ticks per cycle (sub-tick 10k = the boundary: waldos move and act,
   then int_1++; every sub-tick = collision checks via PipelineSimulator.method_4) and loops only while
   Running, so a postfix on method_4 pauses at the target cycle's last sub-tick — exact at any speed

@@ -59,12 +59,17 @@ namespace SpeechChem.Screens.Pipeline
             return d.class485_1.Count > 1 ? Loc.T("pipeline.output.n", new { n = index + 1 }) : Loc.T("pipeline.output");
         }
 
-        /// <summary>"alpha input, from Storage Tank".</summary>
+        /// <summary>"alpha input, from Storage Tank" / "input, 24, 8" — an unfed input names its
+        /// cell, the way an open output names its end (a pipe connects from the cell to its left,
+        /// PipeDraggable.method_24).</summary>
         private static string InputLine(SpaceChem.Pipeline.Pipeline p, Draggable d, PipelineInput input, int index)
         {
             string name = InputName(d, index);
             var from = input.vmethod_0();
-            return from == null ? name : Loc.T("pipeline.port.from", new { port = name, from = PipelineText.Name(p, from) });
+            if (from != null) return Loc.T("pipeline.port.from", new { port = name, from = PipelineText.Name(p, from) });
+            var origin = p?.method_9(d);
+            if (!origin.HasValue) return name;
+            return Loc.T("pipeline.port.at", new { port = name, cell = PipelineText.Cell(origin.Value + input.vector2i_0) });
         }
 
         /// <summary>"psi output, to Recycler input 2" / "psi output, open end 18, 4".</summary>

@@ -111,6 +111,7 @@
   "pipeline.port.from": "{port}, from {from}",
   "pipeline.port.to": "{port}, to {to}",
   "pipeline.port.open": "{port}, open end {cell}",
+  "pipeline.port.at": "{port}, {cell}",
   "pipeline.blocked": "blocked",
   "pipeline.terrain": "terrain",
   "pipeline.pipe": "pipe, {owner} {output}",

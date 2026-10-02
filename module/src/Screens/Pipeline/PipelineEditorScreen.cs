@@ -90,6 +90,11 @@ namespace SpeechChem.Screens.Pipeline
             if (pipeline == null) return;
             EnsurePipeline(pipeline);
             PipelineText.Sync(pipeline); // every frame: a delete and a later placement are never seen together
+            if (_deleteFocus != null && ActiveChild == null)
+            {
+                Navigation.FocusNode(_deleteFocus); // a menu Delete's landing, once the menu has closed
+                _deleteFocus = null;
+            }
             TrackMapCursor();
             UpdateDraw();
             UpdateRunWatch();
@@ -100,6 +105,7 @@ namespace SpeechChem.Screens.Pipeline
 
         private SpaceChem.Pipeline.Pipeline _pipeline;
         private bool _covered;
+        private ControlId _deleteFocus;
 
         /// <summary>A different pipeline after a covered pop (the level was left from above): the
         /// kept focus is stale, start over.</summary>

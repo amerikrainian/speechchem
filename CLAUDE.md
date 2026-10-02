@@ -533,7 +533,8 @@ Tab stops:
   level (Game/NumberingStore: %LOCALAPPDATA%\SpeechChem\numbering.tsv, lines "profile, level id
   (GoalTracker.string_0, set before the level is created), group, x, y" in order, 0-based cells;
   only levels with a numbered group): on opening, the saved order is matched by group + cell, the
-  rest follow in reading order — verified across a module reload. During
+  rest follow in reading order — verified across a module reload. Deleting from the Components list
+  lands on the next entry (the previous when last), not the map's last cell. During
   a run a reactor adds its waldos' WAITING text (Class188.method_2). Enter on a
   reactor = the double-click (vmethod_2); on any other component = jump to its top-left map cell;
   on an input port = jump to its cell (an unfed input reads its cell: "input, 24, 8"). A component is a ROW: Right walks its ports — reactors use

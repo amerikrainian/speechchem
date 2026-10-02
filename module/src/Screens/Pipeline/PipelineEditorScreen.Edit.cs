@@ -232,20 +232,42 @@ namespace SpeechChem.Screens.Pipeline
 
         /// <summary>Delete (the key, or the menu): the game's DraggableMenu "Delete" — remove it,
         /// recompute the connections, record the undo step. Fixed components can't be deleted.</summary>
-        private void Delete(Draggable d)
+        private void Delete(Draggable d) => Delete(d, ComponentsStop.Equals(Navigation.FocusedStopKey), viaMenu: false);
+
+        /// <summary>Delete, then say only where focus is (user rule: no "Deleted"): from the
+        /// Components list the next building (the previous when it was last); on the map the cell,
+        /// now empty. From the menu the list closes first, so the list's landing waits for it
+        /// (<see cref="_deleteFocus"/>) and the map cell is re-read by the return itself.</summary>
+        private void Delete(Draggable d, bool fromList, bool viaMenu)
         {
             var p = Model;
             if (p == null || d == null) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
             if (!CanEdit()) return;
             if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
             string name = PipelineText.Name(p, d);
+            // Deleted from the Components list: its entry vanishes, so land on the next building
+            // (the previous one when it was last) instead of wherever the navigator re-seats.
+            Draggable neighbour = null;
+            bool onMap = !viaMenu && MapStop.Equals(Navigation.FocusedStopKey);
+            if (fromList)
+            {
+                var list = PipelineText.Components(p);
+                int i = list.FindIndex(kv => ReferenceEquals(kv.Key, d));
+                if (i >= 0 && list.Count > 1) neighbour = list[i + 1 < list.Count ? i + 1 : i - 1].Key;
+            }
             try
             {
                 p.method_10(d, null);
                 p.method_15();
                 Locals.smethod_0().smethod_0().method_66(new[] { d });
                 if (ReferenceEquals(_cut, d)) _cut = null;
-                Speech.Tts.Speak(Loc.T("reactor.edit.deleted", new { what = name }), interrupt: true);
+                if (neighbour != null)
+                {
+                    if (viaMenu) _deleteFocus = ComponentId(neighbour);
+                    else Navigation.FocusNode(ComponentId(neighbour));
+                }
+                else if (onMap) Speech.Tts.Speak(MapReadout(_cursorX, _cursorY), interrupt: true);
+                else if (!viaMenu) Speech.Tts.Speak(Loc.T("reactor.edit.deleted", new { what = name }), interrupt: true); // nothing left to land on
             }
             catch (System.Exception ex) { Log.Error("[pipeline] delete failed", ex); }
         }
@@ -272,8 +294,9 @@ namespace SpeechChem.Screens.Pipeline
                         Speech.Tts.Speak(Loc.T("pipeline.edit.reset", new { what = PipelineText.Name(p, d) }), interrupt: true);
                     },
                 });
+            bool fromList = ComponentsStop.Equals(Navigation.FocusedStopKey);
             if (!d.bool_0)
-                items.Add(new ActionListScreen.Item { Label = () => GameText.T("Delete"), Run = () => Delete(d) });
+                items.Add(new ActionListScreen.Item { Label = () => GameText.T("Delete"), Run = () => Delete(d, fromList, viaMenu: true) });
             if (items.Count == 0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
             PushChild(new ActionListScreen("pipeline.menu", PipelineText.Name(p, d), items));
         }

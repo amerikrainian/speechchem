@@ -96,6 +96,15 @@ namespace SpeechChem.Screens.Pipeline
         private SpaceChem.Pipeline.Pipeline _pipeline;
         private bool _covered;
 
+        /// <summary>A different pipeline after a covered pop (the level was left from above): the
+        /// kept focus is stale, start over.</summary>
+        public override void OnPush()
+        {
+            if (!_covered || ReferenceEquals(Editor?.pipeline_0, _pipeline)) return;
+            _covered = false;
+            Navigation.ScreenClosed(this);
+        }
+
         private void EnsurePipeline(SpaceChem.Pipeline.Pipeline pipeline)
         {
             if (ReferenceEquals(pipeline, _pipeline)) return;

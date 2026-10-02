@@ -139,5 +139,15 @@ namespace SpeechChem.Screens.Reactor
         private bool _covered;
 
         public override bool KeepStateOnPop => _covered;
+
+        /// <summary>The covering screen can lead out of the level instead (the completion screen's
+        /// Continue): the kept focus belongs to a reactor that is gone, so a different one starts
+        /// over on the grid.</summary>
+        public override void OnPush()
+        {
+            if (!_covered || ReferenceEquals(Model, _reactor)) return;
+            _covered = false;
+            Navigation.ScreenClosed(this);
+        }
     }
 }

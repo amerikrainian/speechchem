@@ -634,7 +634,10 @@ namespace SpeechChem.Patches
                 if (StepControl.Active) StepControl.OnForeignStateChange();
                 int key = now == 0 && !Log.IsEmpty ? Log.Groups[Log.Groups.Count - 1] : Cycle;
                 Log.Add(key, Screens.Common.ProgressSection.RunState());
-                if (_leaving == 0) Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());
+                // Completing the level (GoalTracker.smethod_7: enum158_0 = 1, then pause) pauses
+                // the run; the completion screen that follows speaks for it (user rule).
+                bool completed = now == 2 && (int)GoalTracker.enum158_0 == 1;
+                if (_leaving == 0 && !completed) Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());
             }
             catch { }
         }

@@ -539,7 +539,7 @@ Tab stops:
   reactor = the double-click (vmethod_2); on any other component = jump to its top-left map cell;
   on an input port = jump to its cell (an unfed input reads its cell: "input, 24, 8"). A component is a ROW: Right walks its ports — reactors use
   the zone names (alpha / beta inputs, psi / omega outputs), others "input 2" / "output"; an input
-  "from X", an output "to Recycler input 2" or "open end 4, 7". Enter on an output jumps to its pipe's end on the map (user rule 2026-10-01: a
+  "from X", an output "to Recycler input 2" or "open 4, 7". Enter on an output jumps to its pipe's end on the map (user rule 2026-10-01: a
   jump, not drawing — Enter on the end there starts drawing).
 - Map: every cell, coordinates first, then the occupant (component + port, "pipe, owner output",
   "end", "crossing Storage Tank 2 output" (no "pipe" word — user), the carried molecule during a run, "blocked" for terrain /

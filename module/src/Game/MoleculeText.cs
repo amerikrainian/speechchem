@@ -17,22 +17,46 @@ namespace SpeechChem.Game
 
         /// <summary>"Oxygen, O2": the name and formula as the panels draw them. A molecule built in
         /// the reactor (bonded or split — MoleculeSheet.method_8 makes a fresh Molecule) still holds
-        /// the class's placeholders, "Unknown" / "???" (Molecule fields string_0 / string_1): the
-        /// game never names it — outputs match structure — so it is described from its atoms.</summary>
+        /// the class's placeholders, "Unknown" / "???" (Molecule fields string_0 / string_1) until
+        /// it leaves through an output, where the game names it (Class77 → Class307.smethod_1).
+        /// So it is named the GAME's way first (Class307.smethod_2: one atom = the element; else the
+        /// first match in the game's catalog of named molecules, list_0, then a custom level's own,
+        /// list_1 — the hand-written names and formulas, "Hydrochloric Acid", "HCl"); then from the
+        /// level's panels (a puzzle molecule the catalog lacks); only then from its atoms, where
+        /// the game itself would say "Unknown".</summary>
         public static string NameAndFormula(Molecule m)
         {
             if (m == null) return null;
-            if (m.string_1 == "???") return NameAndFormula(Known(m)) ?? FromAtoms(m);
+            if (m.string_1 == "???") return GameName(m) ?? NameAndFormula(Known(m)) ?? FromAtoms(m);
             string name = Name(m), formula = Formula(m);
             if (string.IsNullOrEmpty(formula) || formula == name) return name;
             return name + ", " + formula;
         }
 
+        /// <summary>The game's own name for a built molecule (Class307.smethod_2), or null when the
+        /// game has none for it.</summary>
+        private static string GameName(Molecule m)
+        {
+            try
+            {
+                var named = Class307.smethod_2(m);
+                if (!named.bool_0) return null;
+                var n = named.method_0();
+                if (n == null || n.string_1 == "???") return null;
+                string name = n.string_0, formula = Clean(n.string_1);
+                if (string.IsNullOrEmpty(formula) || formula == name) return name;
+                return name + ", " + formula;
+            }
+            catch { return null; }
+        }
+
         /// <summary>The level's named molecule this built one is — matched the way an output accepts
         /// molecules (Molecule.method_2: the same atoms bonded the same way, any position or
-        /// rotation) against every molecule the pipeline's reactor panels show: each input's
-        /// upstream annotation and each output's downstream one (else the reactor's own note), as
-        /// ReactorEditorScreen.PanelAnnotation reads them. Null when none matches.</summary>
+        /// rotation) against every molecule panel on the pipeline: each component's port
+        /// annotations (storage tanks' inputs, freighters' and research outputs' targets, reactor
+        /// notes), CONNECTED OR NOT — matching only through pipes missed a freighter's molecule
+        /// until the reactor's output was piped to it ("ClH" for Hydrochloric Acid). Null when
+        /// none matches.</summary>
         private static Molecule Known(Molecule m)
         {
             try
@@ -41,11 +65,12 @@ namespace SpeechChem.Game
                 if (pipeline == null) return null;
                 foreach (var kv in pipeline)
                 {
-                    if (!(kv.Key is SpaceChem.Pipeline.ReactorDraggable rd)) continue;
-                    foreach (var port in rd.class485_0)
-                        if (Match(port.Value.vmethod_0()?.class485_1.method_4(port.Value.pipeDraggable_0)?.method_0(), m, out var hit)) return hit;
-                    foreach (var port in rd.class485_1)
-                        if (Match(port.Value.vmethod_0()?.class485_0.method_4(port.Value.pipeDraggable_0)?.method_0() ?? port.Value.method_0(), m, out var hit)) return hit;
+                    var d = kv.Key;
+                    if (d == null) continue;
+                    foreach (var port in d.class485_0)
+                        if (Match(port.Value.method_0(), m, out var hit)) return hit;
+                    foreach (var port in d.class485_1)
+                        if (Match(port.Value.method_0(), m, out var hit)) return hit;
                 }
             }
             catch { }
@@ -65,9 +90,11 @@ namespace SpeechChem.Game
             return false;
         }
 
-        /// <summary>One atom: "Fluorine, F", as an input's single atom reads. Several: a formula in
-        /// Hill order — carbon, then hydrogen, then the rest alphabetically (with no carbon, all
-        /// alphabetically), the order the game's own formulas follow: "AgF", "H2O", "CH4".</summary>
+        /// <summary>One atom: "Fluorine, F", as an input's single atom reads. Several (a molecule
+        /// the game has no name for — it would say "Unknown"): a formula in Hill order — carbon,
+        /// then hydrogen, then the rest alphabetically (with no carbon, all alphabetically). The
+        /// game's catalog formulas are hand-written and only mostly follow it ("CH4", "AgF", but
+        /// "H2O", "HCl", "NH3"), which is why the game's own lookup goes first.</summary>
         private static string FromAtoms(Molecule m)
         {
             var counts = new Dictionary<string, int>();

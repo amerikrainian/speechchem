@@ -75,7 +75,6 @@ namespace SpeechChem.Screens.Pipeline
             BuildComponents(b, pipeline);
             BuildMap(b, pipeline);
             BuildShelf(b, editor);
-            BuildMolecules(b, pipeline);
             ProgressSection.Build(b, StatusStop, "pipeline.status");
             b.AddItem(ControlId.Structural("pipeline.status.quota"), ProfileUi.Text(true, () => QuotaText(Model)));
             ToolbarSection.Build(b, ToolsStop, "pipeline.tools");

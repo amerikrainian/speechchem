@@ -534,9 +534,11 @@ Tab stops:
   via the game's drop: template.method_8 parks a clone at (-100, 0) in drag state 2, Pipeline
   vector2i_3 = target, method_13 validates + places + records undo; a refusal names the blocker
   (hashSet_2) or "off the map". The drop reads held Ctrl as COPY: Patches/ModifierMask hides Ctrl.
-- Molecules: the port annotations (inputs' percentages, outputs' done of required, reactor notes
-  that exist; empty panels such as the recycler's skipped); Enter = the molecule viewer (shared
-  ReactorEditorScreen.OpenMolecules / AnnotationText).
+- Molecule panels are NOT a stop (user layout 2026-10-01): the game draws each port's annotation
+  beside its building, so each is a cell of the component's row right after its port (inputs'
+  percentages, outputs' done of required, reactor notes that exist; empty panels such as the
+  recycler's skipped); Enter = the molecule viewer (shared ReactorEditorScreen.OpenMolecules /
+  AnnotationText).
 - Status (shared ProgressSection + "Reactor Quota, 2 of 3", "exceeded"), Tools (shared), Run log.
 Editing: Ctrl+X on a component (entry, port cell or map cell) / Ctrl+V on a map cell moves it
 (hashSet_0 = {it}, vector2i_4 = origin, vector2i_3 = target, method_13 with Ctrl masked; refused

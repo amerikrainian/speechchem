@@ -11,7 +11,8 @@ namespace SpeechChem.Screens.Pipeline
         // ---- ports: a component's inputs (Draggable.class485_0, PipelineInput) and outputs
         // (class485_1, PipelineOutput — each owns its pipe). A reactor's ports take the reactor's
         // own zone names (inputs α β top to bottom, outputs ψ ω); others count them. An input says
-        // where it is fed from; an output where its pipe leads, or where the pipe's open end is. ----
+        // where it is fed from; an output where its pipe leads, or where the pipe's open end is.
+        // Each port is followed by its molecule panel, when it has one (Molecules.cs). ----
 
         private void BuildPorts(GraphBuilder b, Draggable d)
         {
@@ -23,6 +24,7 @@ namespace SpeechChem.Screens.Pipeline
                 var cell = Cell(() => InputLine(Model, d, input, index));
                 cell.OnActivate = () => JumpToInput(d, input); // Enter: the input's cell on the map
                 b.AddItem(PortId(d, false, index), cell);
+                AddPanel(b, d, false, index, input.method_0());
             }
             i = 0;
             foreach (var kv in d.class485_1)
@@ -32,6 +34,7 @@ namespace SpeechChem.Screens.Pipeline
                 var cell = Cell(() => OutputLine(Model, d, output, index));
                 cell.OnActivate = () => StartDraw(output.pipeDraggable_0); // Enter draws this output's pipe
                 b.AddItem(PortId(d, true, index), cell);
+                AddPanel(b, d, true, index, output.method_0());
             }
         }
 

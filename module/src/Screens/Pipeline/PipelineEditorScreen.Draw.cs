@@ -130,7 +130,7 @@ namespace SpeechChem.Screens.Pipeline
             }
             else
             {
-                if (after < before) parts.Add(Loc.T("pipeline.draw.back"));
+                // A retraction is not spoken: the game plays its own sound for it (user rule).
                 var local = target - pipe.method_14();
                 if (pipe.dictionary_4.TryGetValue(local, out var other) && other?.draggable_0 != null)
                     parts.Add(Loc.T("pipeline.pipe.crossing", new { pipe = PipeLabel(p, other.draggable_0, OutputIndex(other)) }));

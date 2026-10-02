@@ -134,7 +134,6 @@
   "pipeline.draw.connected": "connected, {to}",
   "pipeline.draw.open": "open end {cell}",
   "pipeline.draw.disconnected": "disconnected",
-  "pipeline.draw.back": "back",
   "pipeline.draw.refused": "blocked",
   "pipeline.draw.own": "own pipe",
   "pipeline.draw.noturn": "no turns on a crossing",

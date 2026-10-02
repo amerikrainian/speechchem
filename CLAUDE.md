@@ -546,8 +546,9 @@ notes (InlineAnnotationEditor) and Save to Toolbox (Class55) — game screens no
 DRAW MODE (PipelineEditorScreen.Draw.cs): StartDraw opens the undo scope a drag would
 (pipe.class381_0 = worker.method_49(), enum145_0 = 1, vector2i_3 = end); each arrow landing sets
 Pipeline.vector2i_3 to the neighbour and calls pipe.vmethod_4 (the game's own extend / retract /
-crossing rules); vmethod_5 ends it. A step speaks coordinates + only what changed ("back",
-"crossing ...", "connected, X input" once, "disconnected"); a refusal gives the reason (own pipe,
+crossing rules); vmethod_5 ends it. A step speaks coordinates + only what changed
+("crossing ...", "connected, X input" once, "disconnected"; a retraction is silent — the game
+plays a sound for it, user rule); a refusal gives the reason (own pipe,
 no turns on a crossing, pipes cross only at right angles, X in the way) and the cursor returns
 to the end silently. P = pipe status. Enter / Escape (ModalCapturesEscape while drawing) / leaving
 the map ends it. Focus lands a frame after StartDraw: _drawFocusPending guards the "left the map"

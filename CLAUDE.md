@@ -435,7 +435,9 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   lands on after crossing it adds "crossed quantum junction" (arrows, Home/End, jumps). Carrying an
   atom across stops the run with the game's own reaction error ("Atoms may only be teleported across
   the quantum junction …", marked at the last cell before it) — verified live on QT-1 2026-09-27.
-  C reads coordinates. Shift+Backspace = the cell's details (`CellDetailsOf`), most useful first:
+  C reads coordinates. Ctrl+arrows skip cells that read the same as the current one (UI/GridSkip:
+  contents without coordinates; land on the first that differs, else the edge — user request; Up/Down
+  through the cells' OnRegionJump, Left/Right = screen.reactor.skip.*, also on the pipeline map). Shift+Backspace = the cell's details (`CellDetailsOf`), most useful first:
   each waldo's state beyond facing (holding / empty, the game's WAITING text, syncing, rotating, at
   the wall — `WaldoState`, shared with Shift+R), the atom info box, then the game's tooltip text
   (`Patches/TooltipCapture`, Class713.smethod_0 postfix). Home/End = row edges.
@@ -522,7 +524,8 @@ Tab stops:
 - Map: every cell, coordinates first, then the occupant (component + port, "pipe, owner output",
   "end", "crossing pipe, ...", the carried molecule during a run, "blocked" for terrain /
   decoration). [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
-  components / Open pipe ends; C reads the cell. Enter: end drawing / place the armed shelf item /
+  components / Open pipe ends; C reads the cell; Ctrl+arrows skip identical cells (as the reactor
+  grid; not while drawing). Enter: end drawing / place the armed shelf item /
   on a pipe end start drawing.
 - Shelf: the Class717 tiles (Class472.draggable_0 templates). Enter arms; Enter on the map places
   via the game's drop: template.method_8 parks a clone at (-100, 0) in drag state 2, Pipeline

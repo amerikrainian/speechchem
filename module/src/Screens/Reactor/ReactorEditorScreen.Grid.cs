@@ -55,6 +55,7 @@ namespace SpeechChem.Screens.Reactor
                         OnSecondary = OpenContextMenu,
                         OnTooltip = () => Speech.Tts.Speak(CellDetails(cx, cy), interrupt: true),
                         OnJumpEdge = first => JumpRowEdge(cy, first),
+                        OnRegionJump = dir => SkipCells(cx, cy, 0, dir),
                     });
                 }
                 b.EndRow();
@@ -99,6 +100,27 @@ namespace SpeechChem.Screens.Reactor
             LandOnCell(x, y);
             Navigation.FocusNode(CellId(x, y));
             return true;
+        }
+
+        /// <summary>Ctrl+arrows: past the cells that hold the same as this one (UI/GridSkip).</summary>
+        private bool SkipCells(int x, int y, int dx, int dy)
+        {
+            var r = Model;
+            if (r == null) return false;
+            var size = r.method_1();
+            GridSkip.Target(x, y, dx, dy, size.int_0, size.int_1,
+                (cx, cy) => string.Join(", ", CellContents(r, cx, cy).ToArray()), out int tx, out int ty);
+            ClearSelection();
+            if (tx == x && ty == y) Speech.Tts.Speak(CellReadout(x, y), interrupt: true);
+            else FocusCell(tx, ty);
+            return true;
+        }
+
+        /// <summary>Ctrl+Left / Ctrl+Right (Up / Down come through the cells' region jump).</summary>
+        private void SkipSideways(int dx)
+        {
+            if (!Equals(Navigation.FocusedStopKey, GridStop)) return;
+            SkipCells(_cursorX, _cursorY, dx, 0);
         }
 
         /// <summary>Move the grid cursor (and focus) to a cell — the waldo jump keys.</summary>

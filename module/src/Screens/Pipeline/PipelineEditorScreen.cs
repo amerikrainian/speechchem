@@ -60,6 +60,8 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.paste", Paste);
             yield return new ElementAction("screen.reactor.delete", () => Delete(FocusedComponent()));
             yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
+            yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
+            yield return new ElementAction("screen.reactor.skip.right", () => SkipMapSideways(1));
             if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());
         }
 

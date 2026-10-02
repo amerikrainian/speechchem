@@ -43,6 +43,7 @@ namespace SpeechChem.Screens.Pipeline
                         OnActivate = () => ActivateMapCell(cx, cy),
                         OnSecondary = OpenMenu,
                         OnJumpEdge = first => JumpMapEdge(cy, first),
+                        OnRegionJump = dir => SkipMapCells(cx, cy, 0, dir),
                     });
                 }
                 b.EndRow();
@@ -57,6 +58,27 @@ namespace SpeechChem.Screens.Pipeline
             if (_drawPipe != null) return true; // no jumps while drawing: the cursor is the pipe's end
             FocusMapCell(first ? 0 : p.method_4().int_0 - 1, y);
             return true;
+        }
+
+        /// <summary>Ctrl+arrows: past the cells that hold the same as this one (UI/GridSkip).</summary>
+        private bool SkipMapCells(int x, int y, int dx, int dy)
+        {
+            var p = Model;
+            if (p == null) return false;
+            if (_drawPipe != null) return true; // no jumps while drawing: the cursor is the pipe's end
+            var size = p.method_4();
+            GridSkip.Target(x, y, dx, dy, size.int_0, size.int_1,
+                (cx, cy) => string.Join(", ", CellContents(p, new Vector2i(cx, cy)).ToArray()), out int tx, out int ty);
+            if (tx == x && ty == y) Speech.Tts.Speak(MapReadout(x, y), interrupt: true);
+            else FocusMapCell(tx, ty);
+            return true;
+        }
+
+        /// <summary>Ctrl+Left / Ctrl+Right (Up / Down come through the cells' region jump).</summary>
+        private void SkipMapSideways(int dx)
+        {
+            if (!Equals(Navigation.FocusedStopKey, MapStop)) return;
+            SkipMapCells(_cursorX, _cursorY, dx, 0);
         }
 
         /// <summary>Move the map cursor (and focus) to a cell.</summary>

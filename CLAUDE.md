@@ -492,7 +492,11 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   (β 4 rows down; Class80 6 columns across), as InputInstruction.vmethod_7 places it. Outputs stay
   shape-only (an output zone accepts a molecule anywhere in it). M on a grid cell opens the
   molecule of the zone under the cursor the same way (ZoneOf → the panel's port index); nothing
-  outside a zone or on a disabled output; Escape returns to the cell.
+  outside a zone; a disabled output or a panel without a molecule speaks its Molecules line instead
+  (user: silence read as broken); Escape returns to the cell. A port piped to or from ANOTHER
+  REACTOR with no note shows no molecule in the game either, so its line names the connection,
+  as the pipeline does: "psi output: to Standard Reactor 1 beta input", "beta input: from Standard
+  Reactor 2 psi output" (user request; verified live).
 - COVERED BY ANOTHER GAME SCREEN (dialog, periodic table, Story & Info): the editor stays in the chain,
   so OnPop keeps cursor, trackers and focus (KeepStateOnPop while covered) — closing returns to the
   exact node (e.g. the toolbar button). Leaving the reactor starts over.

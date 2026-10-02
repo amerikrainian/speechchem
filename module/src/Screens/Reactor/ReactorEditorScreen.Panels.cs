@@ -259,7 +259,24 @@ namespace SpeechChem.Screens.Reactor
             var port = rd.class485_0[index];
             var upstream = port.vmethod_0();
             var annotation = upstream?.class485_1.method_4(port.pipeDraggable_0)?.method_0();
+            // Fed by another reactor with no note on that output: nothing to show, so say where it
+            // comes from, as the pipeline does (user request).
+            if (upstream is ReactorDraggable && !AnyMolecule(annotation))
+                return zone + ": " + Loc.T("reactor.mol.from", new { from = PipelineText.Name(rd.pipeline_0, upstream) + " " + SourceOutput(upstream, port.pipeDraggable_0) });
             return zone + ": " + AnnotationText(annotation);
+        }
+
+        /// <summary>The output of <paramref name="source"/> whose pipe is <paramref name="pipe"/>, by
+        /// name ("psi output").</summary>
+        private static string SourceOutput(Draggable source, PipeDraggable pipe)
+        {
+            int i = 0;
+            foreach (var kv in source.class485_1)
+            {
+                if (kv.Value.pipeDraggable_0 == pipe) return Pipeline.PipelineEditorScreen.OutputName(source, i);
+                i++;
+            }
+            return Loc.T("pipeline.output");
         }
 
         /// <summary>A research output the level switches off (the panel's "This output is disabled.").</summary>
@@ -271,8 +288,9 @@ namespace SpeechChem.Screens.Reactor
         }
 
         /// <summary>M on the grid: the molecule of the zone under the cursor, opened exactly like
-        /// Enter on its Molecules line (inputs in landing mode). Nothing outside a zone, on a
-        /// disabled output or a zone without a molecule (user rule). Closing returns to the cell.</summary>
+        /// Enter on its Molecules line (inputs in landing mode). Nothing outside a zone; a disabled
+        /// output or a zone without a molecule speaks its Molecules line instead (user request
+        /// 2026-10-01: silence read as broken). Closing returns to the cell.</summary>
         private void OpenZoneMolecules()
         {
             if (!OnGrid) return;
@@ -281,16 +299,30 @@ namespace SpeechChem.Screens.Reactor
             if (!ZoneOf(Model, _cursorX, _cursorY, out input, out index)) return;
             var rd = Editor?.reactorDraggable_0;
             if (rd == null) return;
+            // A panel with no molecule (an output piped to another reactor with no note, a disabled
+            // output, an unfed input) has nothing to open: say its line instead of nothing.
             if (input)
             {
                 if (!rd.class485_0.ContainsKey(index)) return;
-                OpenMolecules(PanelAnnotation(true, index), "reactor.mol.in." + index, InputLanding(index));
+                var a = PanelAnnotation(true, index);
+                if (!AnyMolecule(a)) { Speech.Tts.Speak(InputLine(index), interrupt: true); return; }
+                OpenMolecules(a, "reactor.mol.in." + index, InputLanding(index));
             }
             else
             {
-                if (!rd.class485_1.ContainsKey(index) || OutputDisabled(index)) return;
-                OpenMolecules(PanelAnnotation(false, index), "reactor.mol.out." + index);
+                if (!rd.class485_1.ContainsKey(index)) return;
+                var a = PanelAnnotation(false, index);
+                if (OutputDisabled(index) || !AnyMolecule(a)) { Speech.Tts.Speak(OutputLine(index), interrupt: true); return; }
+                OpenMolecules(a, "reactor.mol.out." + index);
             }
+        }
+
+        private static bool AnyMolecule(Annotation a)
+        {
+            if (a == null) return false;
+            foreach (var m in a.vmethod_6())
+                if (m != null && !m.method_6()) return true;
+            return false;
         }
 
         private static string OutputLine(int index)
@@ -303,6 +335,9 @@ namespace SpeechChem.Screens.Reactor
             if (OutputDisabled(index))
                 return zone + ": " + GameText.T("This output") + " " + GameText.T("is disabled.");
             var annotation = downstream?.class485_0.method_4(port.pipeDraggable_0)?.method_0() ?? port.method_0();
+            // Piped into another reactor and no note: say where it goes (user request).
+            if (downstream is ReactorDraggable && !AnyMolecule(annotation))
+                return zone + ": " + Loc.T("reactor.mol.to", new { to = PipelineText.Name(rd.pipeline_0, downstream) + " " + Pipeline.PipelineEditorScreen.TargetInput(downstream, port.pipeDraggable_0) });
             return zone + ": " + AnnotationText(annotation);
         }
 

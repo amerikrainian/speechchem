@@ -81,7 +81,7 @@ namespace SpeechChem.Screens.Pipeline
             try { pipe.vmethod_5(); } catch (System.Exception ex) { Log.Error("[pipeline] draw end failed", ex); }
             if (quiet) return;
             var p = Model;
-            Speech.Tts.Speak(Loc.T("pipeline.draw.done", new { state = PipeState(p, pipe) }), interrupt: true);
+            Speech.Tts.Speak(Loc.T("pipeline.draw.done"), interrupt: true); // connections were spoken as they happened (user rule)
         }
 
         /// <summary>"Storage Tank output", "Assembly Reactor 2 psi output".</summary>
@@ -133,7 +133,7 @@ namespace SpeechChem.Screens.Pipeline
                 // A retraction is not spoken: the game plays its own sound for it (user rule).
                 var local = target - pipe.method_14();
                 if (pipe.dictionary_4.TryGetValue(local, out var other) && other?.draggable_0 != null)
-                    parts.Add(Loc.T("pipeline.pipe.crossing", new { pipe = PipeLabel(p, other.draggable_0, OutputIndex(other)) }));
+                    parts.Add(Loc.T("pipeline.pipe.crossing", new { pipe = DrawName(p, other) }));
                 bool connected = pipe.pipelineOutput_0?.vmethod_0() != null;
                 if (connected && !wasConnected) parts.Add(PipeState(p, pipe));
                 else if (!connected && wasConnected) parts.Add(Loc.T("pipeline.draw.disconnected"));

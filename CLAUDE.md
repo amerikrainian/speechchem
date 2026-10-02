@@ -526,7 +526,7 @@ Tab stops:
   "from X", an output "to Recycler input 2" or "open end 4, 7". Enter on an output jumps to its pipe's end on the map (user rule 2026-10-01: a
   jump, not drawing — Enter on the end there starts drawing).
 - Map: every cell, coordinates first, then the occupant (component + port, "pipe, owner output",
-  "end", "crossing pipe, ...", the carried molecule during a run, "blocked" for terrain /
+  "end", "crossing Storage Tank 2 output" (no "pipe" word — user), the carried molecule during a run, "blocked" for terrain /
   decoration). [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
   components / Open pipe ends; C reads the cell; Ctrl+arrows skip identical cells (as the reactor
   grid; not while drawing). Enter: end drawing / place the armed shelf item /
@@ -550,11 +550,11 @@ DRAW MODE (PipelineEditorScreen.Draw.cs): StartDraw opens the undo scope a drag 
 (pipe.class381_0 = worker.method_49(), enum145_0 = 1, vector2i_3 = end); each arrow landing sets
 Pipeline.vector2i_3 to the neighbour and calls pipe.vmethod_4 (the game's own extend / retract /
 crossing rules); vmethod_5 ends it. A step speaks coordinates + only what changed
-("crossing ...", "connected, X input" once, "disconnected"; a retraction is silent — the game
+("crossing Storage Tank 2 output", "connected, X input" once, "disconnected"; a retraction is silent — the game
 plays a sound for it, user rule); a refusal gives the reason (own pipe,
 no turns on a crossing, pipes cross only at right angles, X in the way) and the cursor returns
 to the end silently. P = pipe status. Enter / Escape (ModalCapturesEscape while drawing) / leaving
-the map ends it. Focus lands a frame after StartDraw: _drawFocusPending guards the "left the map"
+the map ends it, saying only "Done" (the connection was already spoken — user rule). Focus lands a frame after StartDraw: _drawFocusPending guards the "left the map"
 check (without it drawing ended at once).
 Undo on the pipeline (Patches/UndoCapture): components by type + cell and pipe ends relative to
 the owner; a component undo reloads the level synchronously and focus survives it. An undo of a

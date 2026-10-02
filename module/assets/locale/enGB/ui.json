@@ -130,7 +130,7 @@
   "pipeline.edit.fixed": "{what} is fixed in place.",
   "pipeline.edit.reset": "{what} pipes reset",
   "pipeline.draw.start": "Drawing {pipe}, end {cell}",
-  "pipeline.draw.done": "Done, {state}",
+  "pipeline.draw.done": "Done",
   "pipeline.draw.connected": "connected, {to}",
   "pipeline.draw.open": "open end {cell}",
   "pipeline.draw.disconnected": "disconnected",

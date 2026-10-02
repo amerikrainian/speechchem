@@ -137,7 +137,7 @@ namespace SpeechChem.Screens.Pipeline
                     string carried = MoleculeIn(pipe, local);
                     if (carried != null) parts.Add(carried);
                     if (pipe.dictionary_4.TryGetValue(local, out var other) && other?.draggable_0 != null)
-                        parts.Add(Loc.T("pipeline.pipe.crossing", new { pipe = PipeLabel(p, other.draggable_0, OutputIndex(other)) }));
+                        parts.Add(Loc.T("pipeline.pipe.crossing", new { pipe = DrawName(p, other) })); // "crossing Storage Tank 2 output"
                     return parts;
                 }
                 outIndex++;

@@ -147,7 +147,10 @@ namespace SpeechChem.Screens.Pipeline
                     },
                     SpeaksOwnPosition = true,
                 };
+                // Enter: a reactor opens (the double-click); any other building jumps to its
+                // top-left cell on the map.
                 if (d is ReactorDraggable rd) vt.OnActivate = () => OpenReactor(rd);
+                else vt.OnActivate = () => JumpToComponent(d);
                 vt.OnSecondary = OpenMenu;
                 // A component with ports is a ROW: Right walks its inputs, then its outputs.
                 bool ports = d.class485_0.Count > 0 || d.class485_1.Count > 0;
@@ -159,6 +162,12 @@ namespace SpeechChem.Screens.Pipeline
                     b.EndRow();
                 }
             }
+        }
+
+        private void JumpToComponent(Draggable d)
+        {
+            var at = Model?.method_9(d);
+            if (at.HasValue) FocusMapCell(at.Value.int_0, at.Value.int_1);
         }
 
         /// <summary>A stable id per component: its type and top-left cell at build time would move

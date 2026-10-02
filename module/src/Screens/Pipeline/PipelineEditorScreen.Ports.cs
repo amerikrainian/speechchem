@@ -20,7 +20,9 @@ namespace SpeechChem.Screens.Pipeline
             {
                 int index = i++;
                 var input = kv.Value;
-                b.AddItem(PortId(d, false, index), Cell(() => InputLine(Model, d, input, index)));
+                var cell = Cell(() => InputLine(Model, d, input, index));
+                cell.OnActivate = () => JumpToInput(d, input); // Enter: the input's cell on the map
+                b.AddItem(PortId(d, false, index), cell);
             }
             i = 0;
             foreach (var kv in d.class485_1)
@@ -31,6 +33,14 @@ namespace SpeechChem.Screens.Pipeline
                 cell.OnActivate = () => StartDraw(output.pipeDraggable_0); // Enter draws this output's pipe
                 b.AddItem(PortId(d, true, index), cell);
             }
+        }
+
+        private void JumpToInput(Draggable d, PipelineInput input)
+        {
+            var origin = Model?.method_9(d);
+            if (!origin.HasValue) return;
+            var at = origin.Value + input.vector2i_0;
+            FocusMapCell(at.int_0, at.int_1);
         }
 
         private NodeVtable Cell(System.Func<string> text)

@@ -102,11 +102,27 @@ namespace SpeechChem.Patches
         private static bool SpeakEvents => StepControl.Active
             || ((int)Class258.smethod_16() == 1 && Class258.smethod_14() == SimulatorSpeed.Slow);
 
-        private static void Add(string text, bool speak)
+        private static void Add(string text, bool speak) => Add(text, speak, null);
+
+        /// <summary>Log <paramref name="text"/>; speak <paramref name="spoken"/> when given (a
+        /// waldo event of the reactor being edited drops its "reactor 2, " — user rule), else the
+        /// logged text.</summary>
+        private static void Add(string text, bool speak, string spoken)
         {
             if (string.IsNullOrEmpty(text)) return;
             Log.Add(Cycle, text);
-            if (speak && SpeakEvents) Speech.Tts.Speak(text);
+            if (speak && SpeakEvents) Speech.Tts.Speak(spoken ?? text);
+        }
+
+        /// <summary>A waldo event: logged with its reactor's number (several reactors), spoken
+        /// without it when that reactor is the one open (user rule 2026-10-01).</summary>
+        private static void AddWaldo(Class188 w, string text)
+        {
+            string colour = Loc.T((int)w.enum114_0 == ReactorText.Red ? "reactor.red" : "reactor.blue");
+            string full = WaldoName(w) + ": " + text;
+            bool here = false;
+            try { here = ReferenceEquals(Class53.smethod_5<Class77>()?.reactor_0, w.reactor_0); } catch { }
+            Add(full, speak: true, spoken: here ? colour + ": " + text : null);
         }
 
         // ---- waldo steps ----
@@ -171,19 +187,18 @@ namespace SpeechChem.Patches
                 if (GoalTracker.bool_0) return; // the step is skipped once the level is complete
                 var r = __instance.reactor_0;
                 if (r == null) return;
-                string who = WaldoName(__instance);
                 bool turned = __instance.vector2i_1 != __state.Heading;
                 var i = __state.Instruction;
                 bool nonArrowTurned = false;
                 if (i != null && !(i is StartInstruction))
                 {
                     string text = InstructionEffect(__instance, __state, i, ref nonArrowTurned, turned);
-                    if (text != null) Add(who + ": " + text, speak: true);
+                    if (text != null) AddWaldo(__instance, text);
                 }
                 // A turn the instruction above didn't already report (an arrow): the new heading.
                 // An arrow the waldo already follows changes nothing and logs nothing.
                 if (turned && !nonArrowTurned)
-                    Add(who + ": " + Loc.T("run.heading", new { dir = Heading(__instance.vector2i_1) }), speak: true);
+                    AddWaldo(__instance, Loc.T("run.heading", new { dir = Heading(__instance.vector2i_1) }));
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] waldo step capture", ex); }
         }
@@ -224,10 +239,10 @@ namespace SpeechChem.Patches
                 var cell = __instance.method_0();
                 if (cell != __state.Cell) { Blocked.Remove(__instance); return; }
                 if (!__state.Moving || !Blocked.Add(__instance)) return;
-                Add(WaldoName(__instance) + ": " + Loc.T("run.wall", new
+                AddWaldo(__instance, Loc.T("run.wall", new
                 {
                     cell = Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }),
-                }), speak: true);
+                }));
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] waldo move capture", ex); }
         }

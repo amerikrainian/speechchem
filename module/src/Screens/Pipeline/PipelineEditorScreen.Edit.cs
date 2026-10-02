@@ -84,7 +84,20 @@ namespace SpeechChem.Screens.Pipeline
             }
             var p = Model;
             var pipe = p == null ? null : PipeEndingAt(p, new Vector2i(x, y));
-            if (pipe != null) StartDraw(pipe);
+            if (pipe != null) { StartDraw(pipe); return; }
+            var reactor = p == null ? null : ReactorBodyAt(p, new Vector2i(x, y));
+            if (reactor != null) OpenReactor(reactor); // the double-click, as Enter on its Components entry (user rule)
+        }
+
+        /// <summary>The reactor whose BODY covers a map cell (not its pipes), or null.</summary>
+        private static ReactorDraggable ReactorBodyAt(SpaceChem.Pipeline.Pipeline p, Vector2i cell)
+        {
+            if (!(p.method_7(cell) is ReactorDraggable rd)) return null;
+            var origin = p.method_9(rd);
+            if (!origin.HasValue) return null;
+            var local = cell - origin.Value;
+            var size = rd.vector2i_0;
+            return local.int_0 >= 0 && local.int_1 >= 0 && local.int_0 < size.int_0 && local.int_1 < size.int_1 ? rd : null;
         }
 
         private static bool Running => (int)Class258.smethod_16() != 0;

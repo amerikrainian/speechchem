@@ -531,7 +531,7 @@ Tab stops:
   decoration). [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
   components / Open pipe ends; C reads the cell; Ctrl+arrows skip identical cells (as the reactor
   grid; not while drawing). Enter: end drawing / place the armed shelf item /
-  on a pipe end start drawing.
+  on a pipe end start drawing / on a reactor's body open it (user rule).
 - Shelf: the Class717 tiles (Class472.draggable_0 templates), read with the body size ("Standard
   Reactor, 4 by 4": Draggable.vector2i_0; outputs' pipes start a column beyond). Enter arms ("Armed"); Enter
   on the map places via the game's drop: template.method_8 parks a clone at (-100, 0) in drag

@@ -81,7 +81,7 @@ namespace SpeechChem.Screens.Pipeline
             try { pipe.vmethod_5(); } catch (System.Exception ex) { Log.Error("[pipeline] draw end failed", ex); }
             if (quiet) return;
             var p = Model;
-            Speech.Tts.Speak(Loc.T("pipeline.draw.done", new { state = PipeState(p, pipe), n = pipe.linkedList_0.Count }), interrupt: true);
+            Speech.Tts.Speak(Loc.T("pipeline.draw.done", new { state = PipeState(p, pipe) }), interrupt: true);
         }
 
         /// <summary>"Storage Tank output", "Assembly Reactor 2 psi output".</summary>
@@ -199,7 +199,7 @@ namespace SpeechChem.Screens.Pipeline
             var p = Model;
             if (p == null) return;
             if (_drawPipe == null) { Speech.Tts.Speak(Common.ProgressSection.Summary(), interrupt: true); return; }
-            Speech.Tts.Speak(Loc.T("pipeline.draw.status", new { pipe = DrawName(p, _drawPipe), n = _drawPipe.linkedList_0.Count, state = PipeState(p, _drawPipe) }), interrupt: true);
+            Speech.Tts.Speak(Loc.T("pipeline.draw.status", new { pipe = DrawName(p, _drawPipe), state = PipeState(p, _drawPipe) }), interrupt: true);
         }
     }
 }

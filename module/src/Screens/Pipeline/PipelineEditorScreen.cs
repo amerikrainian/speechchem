@@ -89,6 +89,7 @@ namespace SpeechChem.Screens.Pipeline
             var pipeline = Model;
             if (pipeline == null) return;
             EnsurePipeline(pipeline);
+            PipelineText.Sync(pipeline); // every frame: a delete and a later placement are never seen together
             TrackMapCursor();
             UpdateDraw();
             UpdateRunWatch();

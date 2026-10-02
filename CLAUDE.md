@@ -523,9 +523,17 @@ owner, dictionary_3 shapes, dictionary_4 crossings, linkedList_1 one molecule sl
 Tab stops:
 - Components (initial): named components in READING ORDER (Game/PipelineText: terrain Class612 and
   unnamed port-less decoration skipped; shelf clones parked at x < 0 skipped); "Assembly Reactor 2,
-  12, 14" — reactors numbered in reading order when there are several, the run log uses the same
-  numbers; any other component numbered in reading order among those sharing its name ("Cargo
-  Freighter 2" — user rule: everywhere it is named, map, menus, Molecules, ports, run log); during
+  12, 14" — when several share a group (all reactors; any other component's same-named ones,
+  "Cargo Freighter 2") they are numbered in FIRST-SEEN order (user rule 2026-10-01, replacing
+  reading order): a level opens numbered in reading order, a placed one takes the next number, a
+  moved one keeps it, a deleted one closes the gap (PipelineText.Sync, every frame from the
+  pipeline screen; an undo's reload re-pairs by group + cell, then the group's vanished slot).
+  The same numbers everywhere it is named (map, menus, ports, panels, run log "reactor 2"). Verified
+  live: placed above existing reactors = 3, then 4; deleting 3 made 4 into 3. SAVED per profile +
+  level (Game/NumberingStore: %LOCALAPPDATA%\SpeechChem\numbering.tsv, lines "profile, level id
+  (GoalTracker.string_0, set before the level is created), group, x, y" in order, 0-based cells;
+  only levels with a numbered group): on opening, the saved order is matched by group + cell, the
+  rest follow in reading order — verified across a module reload. During
   a run a reactor adds its waldos' WAITING text (Class188.method_2). Enter on a
   reactor = the double-click (vmethod_2); on any other component = jump to its top-left map cell;
   on an input port = jump to its cell (an unfed input reads its cell: "input, 24, 8"). A component is a ROW: Right walks its ports — reactors use

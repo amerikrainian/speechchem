@@ -523,13 +523,13 @@ namespace SpeechChem.Patches
         {
             try
             {
-                // Reading-order numbers, the pipeline screen's own (Game/PipelineText).
+                // The pipeline screen's own numbers (Game/PipelineText: first-seen order).
                 var editor = Class53.smethod_5<PipelineEditor>();
                 if (editor == null || r == null) return null;
-                foreach (var rd in PipelineText.Reactors(editor.pipeline_0))
+                foreach (var kv in PipelineText.Components(editor.pipeline_0))
                 {
-                    if (rd.class77_0 == null || rd.class77_0.reactor_0 != r) continue;
-                    int n = PipelineText.ReactorNumber(editor.pipeline_0, rd);
+                    if (!(kv.Key is ReactorDraggable rd) || rd.class77_0 == null || rd.class77_0.reactor_0 != r) continue;
+                    int n = PipelineText.Number(editor.pipeline_0, rd);
                     return n > 0 ? Loc.T("run.reactor", new { n }) : null;
                 }
                 return null;

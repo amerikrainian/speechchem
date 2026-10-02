@@ -618,7 +618,8 @@ apart) pauses under the box and closing it STOPS (wipes molecules, waldos home),
 smethod_12 postfix snapshots the frozen reactor (`Screens/Reactor/ReactorSnapshotScreen`: every
 cell's contents on ALL layers, waldos, every atom — CellContents(allLayers), AtomsAt lists both atoms
 of a collision — plus the box's markers as cells) and hangs it on the error's log entry as a TAG
-(GroupedLog.Add(key, text, tag); WindowedLogView turns tagged rows into buttons). Enter opens a
+(GroupedLog.Add(key, text, tag); WindowedLogView turns tagged rows into buttons). With several reactors the
+entry names the failed one like the waldo events ("reactor 1, Reaction Error: …"; verified live). Enter opens a
 read-only grid on the marked cell ("error here"); Escape returns to the entry. Atoms collide when
 closer than a cell mid-move, so the marked cell may hold one atom with the other beside it. GroupedLog (ported from Echopunks) keeps the whole run under
 a 10M-entry insurance cap; WindowedLogView is the reusable Tab stop: one region per cycle, a window of

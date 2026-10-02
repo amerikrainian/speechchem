@@ -588,7 +588,11 @@ namespace SpeechChem.Patches
                     snapshot = Screens.Reactor.ReactorSnapshot.Capture(editor?.reactor_0, __3, Cycle);
                 }
                 catch (Exception ex) { SpeechChem.Log.Error("[run] crash snapshot", ex); }
-                Log.Add(Cycle, GameText.T("Reaction Error") + ": " + GameText.Speech(__1), snapshot);
+                // Several reactors: say which one failed, as the waldo events do ("reactor 2, ...").
+                string text = GameText.T("Reaction Error") + ": " + GameText.Speech(__1);
+                string reactor = null;
+                try { reactor = ReactorName((__0.bool_0 ? __0.method_0() : Class53.smethod_5<Class77>())?.reactor_0); } catch { }
+                Log.Add(Cycle, reactor == null ? text : reactor + ", " + text, snapshot);
             }
             catch { }
         }

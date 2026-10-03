@@ -428,10 +428,9 @@ namespace SpeechChem.UI
                     if (!string.IsNullOrEmpty(Screen.ScreenName)) Speak(Screen.ScreenName, interrupt: true);
                     return true;
                 }
-                if (Screen != null && Screen.Wrap)
-                    ni = ((ni % stops.Count) + stops.Count) % stops.Count;
-                else
-                    return true; // at the end; consume, no wrap
+                if (Screen == null || !Screen.Wrap || stops.Count == 1)
+                    return true; // at the end, or the only stop (user rule): consume, no wrap
+                ni = ((ni % stops.Count) + stops.Count) % stops.Count;
             }
             return LandOnStop(stops[ni]);
         }

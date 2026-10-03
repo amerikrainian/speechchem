@@ -220,6 +220,28 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void TabOnTheOnlyStopIsSilent()
+        {
+            var screen = new TestScreen
+            {
+                Declare = b =>
+                {
+                    b.BeginStop();
+                    b.AddItem(ControlId.Structural("a"), Vt("Alpha"));
+                    b.AddItem(ControlId.Structural("b"), Vt("Beta"));
+                },
+            };
+            _nav.Attach(screen);
+            _nav.EnsureFocus();
+            _nav.OnInputJustPressed(Action("ui.down")); // Beta
+            int spoken = _speech.Spoken.Count;
+
+            Assert.True(_nav.OnInputJustPressed(Action("ui.next"))); // nowhere to wrap to: consumed, nothing said
+            Assert.True(_nav.OnInputJustPressed(Action("ui.prev")));
+            Assert.Equal(spoken, _speech.Spoken.Count);
+        }
+
+        [Fact]
         public void TabConsumesAtTheEndWhenWrapIsOff()
         {
             var screen = new TestScreen

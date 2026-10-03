@@ -218,6 +218,8 @@ obfuscated names never spoken), `Game/` (GameText, GameApi, SdlNative, Synthetic
 
 TAB WRAPS by default on every screen (`Screen.Wrap`, user rule 2026-09-27): Tab past the last stop
 lands on the first, Shift+Tab before the first on the last; a screen may opt out with `Wrap = false`.
+With a single stop there is nothing to wrap to: Tab / Shift+Tab are consumed silently (user rule
+2026-10-03; they used to re-land on the stop and repeat the focused node).
 
 SCREEN-SCOPED ACTIONS: any input action id starting with `screen.` is dispatched to the focused
 screen's `GetActions()` (GraphNavigator's default branch). This replaced Echopunks' explicit

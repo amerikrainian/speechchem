@@ -26,7 +26,7 @@ namespace SpeechChem.Screens.Common
             b.BeginStop(stopKey);
             StateButton(b, idPrefix + ".stop", () => Loc.T("toolbar.stop"), () => Toolbar.method_2((Enum16)0));
             StateButton(b, idPrefix + ".pause", () => Loc.T("toolbar.pause"), () => Toolbar.method_2((Enum16)2));
-            // The mod's single-cycle step (Patches/StepControl; the game has no such button).
+            // The mod's step to the next event (Patches/StepControl; the game has no such button).
             b.AddItem(ControlId.Structural(idPrefix + ".step"), new NodeVtable
             {
                 ControlType = ControlTypes.Button,

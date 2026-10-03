@@ -63,7 +63,7 @@ This is work-in-progress. Pipeline and research have been verified and are at le
 | Space | Run; pauses when running |
 | Backquote | Stop |
 | 1 / 2 / 3 / 4 | Play at speed 1 to 4 |
-| 0 | Step one cycle |
+| 0 | Step to the next event |
 | Escape | Research levels: stops a run; when stopped, opens the exit prompt. Production, defense and sandbox: returns to the pipeline, and the run keeps going |
 
 Run events (grabs, drops, bonds, sensor hits, outputs, errors) are always logged in the Run log;

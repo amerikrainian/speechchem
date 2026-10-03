@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.0.4
+
+- 0 no longer steps by cycles, but rather by an event(s) we log.
+- 0 always steps by the fastest possible speed so we get instant feedback when tracing.
+
 ## V0.0.3
 
 - Reduce verbosity of pipelines; label components as tables for clarity in pipelines.

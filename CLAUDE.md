@@ -457,16 +457,23 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant
   in one visit); Delete / Change Trigger Element still run and close. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
   1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape.
-- SINGLE-CYCLE STEP (`Patches/StepControl`; user request 2026-09-27, replacing the old "no single-step"
-  rule — the game has no step): 0, or the toolbar's "Step one cycle" (between Pause and Play 1);
-  the pipeline editor binds 0 too (the run is global).
+- STEP TO THE NEXT EVENT (`Patches/StepControl`; user request 2026-10-03, replacing the single-cycle
+  step of 2026-09-27 — the game has no step): 0 (repeats while held), or the toolbar's "Step to next
+  event" (between Pause and Play 1); the pipeline editor binds 0 too (the run is global).
   Class258.smethod_22 runs 10 sub-ticks per cycle (sub-tick 10k = the boundary: waldos move and act,
   then int_1++; every sub-tick = collision checks via PipelineSimulator.method_4) and loops only while
-  Running, so a postfix on method_4 pauses at the target cycle's last sub-tick — exact at any speed
-  (it runs at the speed last used; nothing to restore). Says "Cycle N", then that cycle's events queue
-  (RunCapture speaks events while stepping); its own Running/Paused are neither logged nor spoken;
-  paused mid-cycle it finishes that cycle silently and steps the next; any other state change (an
-  error, a completion) ends it; FrameLoop "step" is the safety net (overshoot or 10 s).
+  Running. The step runs AT WARP whatever the speed (user rule 2026-10-03; defense levels: the
+  toolbar's own map of warp, ToolbarComponent.method_1), set through the clock fields as
+  Class258.smethod_13 does — never smethod_15, which would start a paused run — and the old speed
+  comes back however the step ends (verified: Slow again after each step). It runs until
+  RunCapture.Add logs any event (StepControl.OnEvent), which says "Cycle N" (the event's log group) and sets the pause at the
+  end of the cycle the clock is in, so all of that cycle's events queue after it (RunCapture speaks
+  events while stepping); event-less cycles pass silently (user rule). A postfix on method_4 pauses —
+  exact at any speed. Its own Running/Paused are neither logged nor spoken; paused mid-cycle it
+  starts at the next boundary; any other state change (an error, a completion) ends it; no event in
+  1000 cycles (a deadlocked sync) pauses with "No events in 1000 cycles"; FrameLoop "step" is the
+  safety net (overshoot or 10 s after the event). Verified live 2026-10-03 on Sleepless on
+  Sernimir IV: from stopped, Cycle 1 (the waits), then Cycle 5, 6, 7 (2-4 silent).
 - UNDO / REDO feedback (`Patches/UndoCapture`): keys and toolbar both land in SpaceChemUserWorker
   method_46 / method_47 (SQLite history, no descriptions; method_52/54 rebuild the reactor
   synchronously), so prefix/postfix diff the open reactor's members: "red grab drop at 3, 2",

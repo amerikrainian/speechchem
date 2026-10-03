@@ -474,6 +474,14 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   1000 cycles (a deadlocked sync) pauses with "No events in 1000 cycles"; FrameLoop "step" is the
   safety net (overshoot or 10 s after the event). Verified live 2026-10-03 on Sleepless on
   Sernimir IV: from stopped, Cycle 1 (the waits), then Cycle 5, 6, 7 (2-4 silent).
+  TWO KINDS (user rule 2026-10-03): 0 (and the toolbar button) stops only on an event that CONCERNS
+  THE OPEN REACTOR and speaks only those; Ctrl+0 stops on any event and speaks the cycle's events of
+  every reactor. With no reactor open (pipeline screen) they are the same. RunCapture.Add decides
+  `concerns`: a waldo event of the open reactor; an output / invalid molecule of a building that
+  reactor feeds straight through a pipe (via a storage tank does not count), or any building in a
+  level with one reactor; completion always; everything when no Class77 is in the chain. Verified
+  live on Sleepless on Sernimir IV inside reactor 1: 0 went Cycle 10, 12, 14, 17, 28 (reactor 2's
+  events skipped, still logged); Ctrl+0 stopped on reactor 2's.
 - UNDO / REDO feedback (`Patches/UndoCapture`): keys and toolbar both land in SpaceChemUserWorker
   method_46 / method_47 (SQLite history, no descriptions; method_52/54 rebuild the reactor
   synchronously), so prefix/postfix diff the open reactor's members: "red grab drop at 3, 2",
@@ -638,7 +646,8 @@ waldo's "red: pause" is logged, just after it) — verified live on a test puzzl
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,
-run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed (run state
+run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed, and inside
+a reactor only the events that concern it (user rule 2026-10-03; the step's `concerns`, §16) (run state
 changes always, except the "Stopped" of leaving the level: Class53.smethod_8 / smethod_9 stop the
 run first — Continue after a completion, the exit prompt's Yes — user rule). The log is
 cleared when a run starts from stopped, and when a different level instance (Class83) opens —

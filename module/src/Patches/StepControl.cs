@@ -27,6 +27,11 @@ namespace SpeechChem.Patches
     /// when it ends, however it ends. The Running / Paused announcements it causes are silenced; a
     /// reaction error or a completion ends it normally. With no event for
     /// <see cref="MaxCycles"/> cycles (both waldos stuck in a sync, say) it pauses and says so.
+    ///
+    /// Two kinds (user rule 2026-10-03): 0 stops only on an event that concerns the open reactor
+    /// (its waldos, a building it feeds straight — RunCapture decides) and speaks only those;
+    /// Ctrl+0 stops on any event and speaks the cycle's events from every reactor. With no
+    /// reactor open (the pipeline screen) the two are the same. Everything is logged either way.
     /// </summary>
     internal static class StepControl
     {
@@ -38,6 +43,7 @@ namespace SpeechChem.Patches
         private static bool _starting, _pausing;
         private static DateTime _found;
         private static SimulatorSpeed? _restore;
+        private static bool _ownOnly;
 
         /// <summary>A step is in progress (its events are spoken).</summary>
         public static bool Active => _target >= 0;
@@ -45,6 +51,10 @@ namespace SpeechChem.Patches
         /// <summary>The state change in progress is the step's own (its start or its final pause):
         /// not announced or logged. Any other change during a step ends the step.</summary>
         public static bool Quiet => _starting || _pausing;
+
+        /// <summary>The step in progress is 0's: only events concerning the open reactor end it or
+        /// are spoken.</summary>
+        public static bool OwnOnly => Active && _ownOnly;
 
         public static void Apply(Harmony harmony)
         {
@@ -57,12 +67,18 @@ namespace SpeechChem.Patches
             catch (Exception ex) { Log.Error("[patch] step control failed to apply", ex); }
         }
 
-        /// <summary>The 0 key / the toolbar's Step button.</summary>
-        public static void Step()
+        /// <summary>The 0 key / the toolbar's Step button: to the next event of the open reactor.</summary>
+        public static void Step() => Step(ownOnly: true);
+
+        /// <summary>Ctrl+0: to the next event of any reactor.</summary>
+        public static void StepAll() => Step(ownOnly: false);
+
+        private static void Step(bool ownOnly)
         {
             try
             {
                 if (Active || GoalTracker.bool_0) return; // one at a time; nothing after a completion
+                _ownOnly = ownOnly;
                 int state = (int)Class258.smethod_16();
                 int tick = state == 0 ? 0 : Class258.int_2;
                 _startTick = tick % 10 == 0 ? tick : (tick / 10 + 1) * 10;
@@ -88,14 +104,15 @@ namespace SpeechChem.Patches
             }
         }
 
-        /// <summary>RunCapture logged an event under <paramref name="cycle"/> (its log group): the
-        /// step's first one says the cycle and sets the pause at the end of the cycle the clock is
-        /// in.</summary>
-        public static void OnEvent(int cycle)
+        /// <summary>RunCapture logged an event under <paramref name="cycle"/> (its log group);
+        /// <paramref name="concerns"/>: it concerns the open reactor (true with none open). The
+        /// step's first qualifying one says the cycle and sets the pause at the end of the cycle
+        /// the clock is in.</summary>
+        public static void OnEvent(int cycle, bool concerns)
         {
             try
             {
-                if (_target != Searching) return;
+                if (_target != Searching || (_ownOnly && !concerns)) return;
                 _target = Class258.int_2 / 10 * 10 + 9;
                 _found = DateTime.UtcNow;
                 Speech.Tts.Speak(Loc.T("run.cycle", new { n = cycle }), interrupt: true);

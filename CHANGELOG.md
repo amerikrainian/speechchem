@@ -4,6 +4,7 @@
 
 - 0 no longer steps by cycles, but rather by an event(s) we log.
 - 0 always steps by the fastest possible speed so we get instant feedback when tracing.
+- 0 Respects your currently open reactor. Ctrl+0 steps by any event, regardless of reactor.
 
 ## V0.0.3
 

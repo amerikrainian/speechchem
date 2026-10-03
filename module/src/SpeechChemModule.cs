@@ -108,8 +108,9 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.T, ctrl: true); // bare T = the game's Sync hotkey
             Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);
             Input.InputManager.Register("screen.reactor.molecule", "Molecule of this zone", Input.InputCategory.UI).AddBinding(Input.Scancode.M);
-            // Single-cycle step on 0, beside the game's speed keys 1-4 (the game doesn't use 0).
-            Input.InputManager.Register("screen.reactor.step", "Step to next event", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0).Repeating();
+            // Step to the next event on 0 (this reactor) / Ctrl+0 (any), beside the game's speed keys 1-4 (the game doesn't use 0).
+            Input.InputManager.Register("screen.reactor.step", "Step to next event of this reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0).Repeating();
+            Input.InputManager.Register("screen.reactor.step.all", "Step to next event of any reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0, ctrl: true).Repeating();
             // Palette letters place that instruction at the grid cursor (the scancode is the id).
             foreach (var letter in new[] { Input.Scancode.Q, Input.Scancode.W, Input.Scancode.E, Input.Scancode.R, Input.Scancode.T,
                 Input.Scancode.Y, Input.Scancode.U, Input.Scancode.I, Input.Scancode.A, Input.Scancode.S, Input.Scancode.D,

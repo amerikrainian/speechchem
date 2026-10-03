@@ -62,6 +62,7 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
             yield return new ElementAction("screen.reactor.molecule", OpenFocusedMolecules); // M on a port cell
             yield return new ElementAction("screen.reactor.step", Patches.StepControl.Step); // 0, as in the reactor
+            yield return new ElementAction("screen.reactor.step.all", Patches.StepControl.StepAll); // Ctrl+0: the same here (no reactor open)
             yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipMapSideways(1));
             if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());

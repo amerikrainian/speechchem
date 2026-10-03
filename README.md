@@ -63,11 +63,13 @@ This is work-in-progress. Pipeline and research have been verified and are at le
 | Space | Run; pauses when running |
 | Backquote | Stop |
 | 1 / 2 / 3 / 4 | Play at speed 1 to 4 |
-| 0 | Step to the next event |
+| 0 | Step to the next event of the open reactor (any reactor on the pipeline screen) |
+| Ctrl+0 | Step to the next event of any reactor |
 | Escape | Research levels: stops a run; when stopped, opens the exit prompt. Production, defense and sandbox: returns to the pipeline, and the run keeps going |
 
 Run events (grabs, drops, bonds, sensor hits, outputs, errors) are always logged in the Run log;
-they are spoken only at speed 1 and while stepping. Run state changes are always spoken.
+they are spoken only at speed 1 and while stepping, and inside a reactor only that reactor's events
+(Ctrl+0 speaks every reactor's). Run state changes are always spoken.
 
 ## 3. Pipeline editor
 

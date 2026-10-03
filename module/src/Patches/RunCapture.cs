@@ -98,21 +98,25 @@ namespace SpeechChem.Patches
         }
 
         // Spoken at the slowest speed, and during a step at any speed (they queue after the step's
-        // "Cycle N").
-        private static bool SpeakEvents => StepControl.Active
-            || ((int)Class258.smethod_16() == 1 && Class258.smethod_14() == SimulatorSpeed.Slow);
+        // "Cycle N") — inside a reactor only the events that concern it (user rule 2026-10-03),
+        // except during an all-events step (Ctrl+0).
+        private static bool SpeakEvents(bool concerns) => StepControl.Active
+            ? concerns || !StepControl.OwnOnly
+            : concerns && (int)Class258.smethod_16() == 1 && Class258.smethod_14() == SimulatorSpeed.Slow;
 
-        private static void Add(string text, bool speak) => Add(text, speak, null);
+        private static void Add(string text, bool speak) => Add(text, speak, null, concerns: true);
 
-        /// <summary>Log <paramref name="text"/>; speak <paramref name="spoken"/> when given (a
-        /// waldo event of the reactor being edited drops its "reactor 2, " — user rule), else the
-        /// logged text.</summary>
-        private static void Add(string text, bool speak, string spoken)
+        /// <summary>Log <paramref name="text"/> (always, whoever it concerns); speak
+        /// <paramref name="spoken"/> when given (a waldo event of the reactor being edited drops
+        /// its "reactor 2, " — user rule), else the logged text. <paramref name="concerns"/>: the
+        /// event concerns the open reactor (always true with none open) — it may end a step, and
+        /// only such events are spoken inside a reactor.</summary>
+        private static void Add(string text, bool speak, string spoken, bool concerns)
         {
             if (string.IsNullOrEmpty(text)) return;
             Log.Add(Cycle, text);
-            StepControl.OnEvent(Cycle); // a step ends with this event's cycle
-            if (speak && SpeakEvents) Speech.Tts.Speak(spoken ?? text);
+            StepControl.OnEvent(Cycle, concerns); // a step ends with this event's cycle ("Cycle N" first)
+            if (speak && SpeakEvents(concerns)) Speech.Tts.Speak(spoken ?? text);
         }
 
         /// <summary>A waldo event: logged with its reactor's number (several reactors), spoken
@@ -121,9 +125,30 @@ namespace SpeechChem.Patches
         {
             string colour = Loc.T((int)w.enum114_0 == ReactorText.Red ? "reactor.red" : "reactor.blue");
             string full = WaldoName(w) + ": " + text;
-            bool here = false;
-            try { here = ReferenceEquals(Class53.smethod_5<Class77>()?.reactor_0, w.reactor_0); } catch { }
-            Add(full, speak: true, spoken: here ? colour + ": " + text : null);
+            Class77 open = null;
+            try { open = Class53.smethod_5<Class77>(); } catch { }
+            bool here = open != null && ReferenceEquals(open.reactor_0, w.reactor_0);
+            Add(full, speak: true, spoken: here ? colour + ": " + text : null, concerns: open == null || here);
+        }
+
+        /// <summary>An event of building <paramref name="d"/> concerns the open reactor when the
+        /// reactor feeds it straight through a pipe, when the level has one reactor, or when no
+        /// reactor is open.</summary>
+        private static bool ConcernsOpen(Draggable d)
+        {
+            try
+            {
+                var editor = Class53.smethod_5<Class77>();
+                if (editor == null || d == null) return true;
+                foreach (var kv in d.class485_0)
+                    if (kv.Value.vmethod_0() is ReactorDraggable rd && rd.class77_0?.reactor_0 == editor.reactor_0) return true;
+                var p = editor.reactorDraggable_0?.pipeline_0;
+                if (p == null) return true;
+                int reactors = 0;
+                foreach (var c in p.dictionary_1.Keys) if (c is ReactorDraggable) reactors++;
+                return reactors <= 1;
+            }
+            catch { return true; }
         }
 
         // ---- waldo steps ----
@@ -576,7 +601,8 @@ namespace SpeechChem.Patches
                     int before;
                     if (kv.Value == null || !__state.TryGetValue(kv.Key, out before) || kv.Value.int_0 <= before) continue;
                     string name = OutputLabel(__instance);
-                    Add(Loc.T("run.produced", new { output = name, molecule = MoleculeText.NameAndFormula(kv.Key), done = kv.Value.int_0, required = kv.Value.int_1 }), speak: true);
+                    Add(Loc.T("run.produced", new { output = name, molecule = MoleculeText.NameAndFormula(kv.Key), done = kv.Value.int_0, required = kv.Value.int_1 }),
+                        speak: true, spoken: null, concerns: ConcernsOpen(__instance));
                 }
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] output capture", ex); }
@@ -618,7 +644,8 @@ namespace SpeechChem.Patches
             try
             {
                 string target = OutputLabel(__instance);
-                Add(GameText.T("An invalid molecule was passed to") + " " + target + ": " + MoleculeText.NameAndFormula(__0), speak: false);
+                Add(GameText.T("An invalid molecule was passed to") + " " + target + ": " + MoleculeText.NameAndFormula(__0),
+                    speak: false, spoken: null, concerns: ConcernsOpen(__instance));
             }
             catch { }
         }

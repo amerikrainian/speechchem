@@ -55,7 +55,7 @@ namespace SpeechChem.Screens.Pipeline
                         _armed = template;
                         Speech.Tts.Speak(Loc.T("pipeline.armed"), interrupt: true); // the focused tile already names it (user rule)
                     },
-                    OnTooltip = () => Speech.Tts.Speak(GameText.Speech(template.string_2) ?? Loc.T("nav.no_tooltip"), interrupt: true),
+                    OnTooltip = () => Speech.Tts.Speak(PipelineText.Tooltip(template) ?? Loc.T("nav.no_tooltip"), interrupt: true),
                     OnSelect = () => ShowShelfPage(-1),
                 };
                 b.AddItem(ControlId.Structural("pipeline.shelf." + i), vt);
@@ -85,7 +85,7 @@ namespace SpeechChem.Screens.Pipeline
                         Speech.Tts.Speak(Loc.T("pipeline.armed"), interrupt: true);
                     },
                     OnSecondary = () => DesignMenu(design),
-                    OnTooltip = () => Speech.Tts.Speak(GameText.Speech(design.Template.string_2) ?? Loc.T("nav.no_tooltip"), interrupt: true),
+                    OnTooltip = () => Speech.Tts.Speak(PipelineText.Tooltip(design.Template) ?? Loc.T("nav.no_tooltip"), interrupt: true),
                     OnSelect = () => ShowShelfPage(index / DesignsPerPage),
                 });
                 // The tile's red X (Class470), to its right — as the profile picker's delete.
@@ -148,10 +148,10 @@ namespace SpeechChem.Screens.Pipeline
             return list;
         }
 
-        /// <summary>"Ethylene, Standard Reactor" (+ the tile's "(LOCKED)").</summary>
+        /// <summary>"Ethylene, Standard Reactor, 2 inputs, 2 outputs" (+ the tile's "(LOCKED)").</summary>
         private static string DesignLabel(Design d)
         {
-            string text = (d.Template.string_0 ?? "").Trim() + ", " + d.Template.string_1;
+            string text = (d.Template.string_0 ?? "").Trim() + ", " + d.Template.string_1 + ", " + PipelineText.Ports(d.Template);
             return d.Locked ? text + ", " + GameText.Speech(GameText.T("\n(LOCKED)")) : text;
         }
 
@@ -221,13 +221,15 @@ namespace SpeechChem.Screens.Pipeline
             return int.TryParse(tail, out i) && i < _designs.Count ? _designs[i] : null;
         }
 
-        /// <summary>"Standard Reactor, 4 by 4": the name and the body's size in cells (Draggable
-        /// vector2i_0; the output pipes start one column beyond it).</summary>
+        /// <summary>"Standard Reactor, 4 by 4, 2 inputs, 2 outputs": the name, the body's size in
+        /// cells (Draggable vector2i_0; the output pipes start one column beyond it) and the ports
+        /// the tile's picture shows.</summary>
         private static string ShelfLabel(Draggable template)
         {
             var size = template.vector2i_0;
-            if (size.int_0 <= 0 || size.int_1 <= 0) return template.string_1;
-            return Loc.T("pipeline.shelf.item", new { name = template.string_1, w = size.int_0, h = size.int_1 });
+            string text = size.int_0 <= 0 || size.int_1 <= 0 ? template.string_1
+                : Loc.T("pipeline.shelf.item", new { name = template.string_1, w = size.int_0, h = size.int_1 });
+            return text + ", " + PipelineText.Ports(template);
         }
 
         /// <summary>Escape anywhere on the pipeline (user rule): drop the armed shelf type.</summary>

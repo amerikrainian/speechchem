@@ -225,5 +225,31 @@ namespace SpeechChem.Game
         }
 
         public static string Cell(Vector2i c) => Loc.T("reactor.cell", new { x = c.int_0 + 1, y = c.int_1 + 1 });
+
+        /// <summary>"2 inputs, 1 output" — the ports the component's picture shows (class485_0 /
+        /// class485_1); the game writes no such text (a mod addition, user request 2026-10-03).</summary>
+        public static string Ports(Draggable d)
+        {
+            if (d == null) return null;
+            return Count(d.class485_0.Count, "pipeline.ports.in") + ", " + Count(d.class485_1.Count, "pipeline.ports.out");
+        }
+
+        private static string Count(int n, string key)
+            => Loc.T(n == 0 ? key + ".none" : n == 1 ? key + ".one" : key + ".many", new { n });
+
+        /// <summary>The component's hover tooltip as the game builds it (Draggable.vmethod_18 →
+        /// Class713.smethod_0(string_1, string_2, struct103_0)) minus the title, which the focused
+        /// item already names: the general description (string_2), then the type's own text
+        /// (struct103_0.string_1 — for a reactor its abilities, outputs and the flavour line).</summary>
+        public static string Tooltip(Draggable d)
+        {
+            if (d == null) return null;
+            var parts = new System.Collections.Generic.List<string>();
+            string body = GameText.Speech(d.string_2);
+            if (!string.IsNullOrEmpty(body)) parts.Add(body);
+            string extra = GameText.Speech(d.struct103_0.string_1);
+            if (!string.IsNullOrEmpty(extra)) parts.Add(extra);
+            return parts.Count == 0 ? null : string.Join(" ", parts.ToArray());
+        }
     }
 }

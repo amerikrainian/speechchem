@@ -32,6 +32,11 @@ namespace SpeechChem.Dev
     ///   instrmenu          the context-menu labels of a control instruction (C, down), placed on the
     ///                      first empty red cell of the open reactor for the read, then removed
     ///   custom &lt;json&gt;|clean  open a test research puzzle / wipe its saved solution (CustomPuzzle)
+    ///   pipemap            the open pipeline as text (0-based cells): '#' blocked, a letter per
+    ///                      component body, '+' pipe, '*' crossing, '.' free; then each component's
+    ///                      origin, ports, and every pipe's end and link
+    ///   focus &lt;stop&gt; &lt;id&gt;  focus a stop, then a node by structural id (e.g. "pipeline.map
+    ///                      pipeline.cell.4.7"), as the navigator's own jumps do
     /// </summary>
     internal static class Probe
     {
@@ -55,6 +60,8 @@ namespace SpeechChem.Dev
                     return "returned to level select\n";
                 case "instrmenu": return InstrMenu();
                 case "custom": return CustomPuzzle.Run(argument);
+                case "pipemap": return PipeMap();
+                case "focus": return Focus(argument);
                 case "switchprofile":
                 {
                     // The main menu's "Switch Profile" button handler (the picker only shows at boot
@@ -66,6 +73,76 @@ namespace SpeechChem.Dev
                 }
                 default: return "commands: screens | push shiplost|credits|epilogue | pop | key <action id> | click | type <text> | profiles\n";
             }
+        }
+
+        private static string Focus(string argument)
+        {
+            var parts = (argument ?? "").Trim().Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2) return "[usage: focus <stop key> <structural id>]\n";
+            UI.Navigation.FocusStop(parts[0]);
+            UI.Navigation.FocusNode(UI.Graph.ControlId.Structural(parts[1]));
+            return "focus requested: " + parts[1] + "\n";
+        }
+
+        private static string PipeMap()
+        {
+            var p = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+            if (p == null) return "[no pipeline open]\n";
+            var size = p.method_4();
+            var comps = PipelineText.Components(p);
+            var sb = new StringBuilder();
+            sb.Append("    ");
+            for (int x = 0; x < size.int_0; x++) sb.Append(x % 10);
+            sb.Append('\n');
+            for (int y = 0; y < size.int_1; y++)
+            {
+                sb.Append(y.ToString().PadLeft(3)).Append(' ');
+                for (int x = 0; x < size.int_0; x++)
+                {
+                    var cell = new Impeller.Vector2i(x, y);
+                    var d = p.method_7(cell);
+                    var origin = d == null ? null : p.method_9(d);
+                    char c = '.';
+                    if (d == null) c = '.';
+                    else if (d is Class612 || !origin.HasValue) c = '#';
+                    else
+                    {
+                        var local = cell - origin.Value;
+                        bool pipe = false, cross = false;
+                        foreach (var o in d.class485_1.Values)
+                        {
+                            var pd = o.pipeDraggable_0;
+                            if (pd == null || !pd.dictionary_3.ContainsKey(local)) continue;
+                            pipe = true;
+                            if (pd.dictionary_4.ContainsKey(local)) cross = true;
+                        }
+                        int i = comps.FindIndex(kv => ReferenceEquals(kv.Key, d));
+                        c = cross ? '*' : pipe ? '+' : i >= 0 ? (char)('A' + i) : '?';
+                    }
+                    sb.Append(c);
+                }
+                sb.Append('\n');
+            }
+            for (int i = 0; i < comps.Count; i++)
+            {
+                var d = comps[i].Key;
+                var o = comps[i].Value;
+                sb.Append((char)('A' + i)).Append(' ').Append(PipelineText.Name(p, d)).Append(" at ").Append(o.int_0).Append(',').Append(o.int_1)
+                  .Append(" size ").Append(d.vector2i_0.int_0).Append('x').Append(d.vector2i_0.int_1).Append(d.bool_0 ? " fixed" : "").Append('\n');
+                foreach (var kv in d.class485_0)
+                    sb.Append("   in ").Append(kv.Key).Append(" cell ").Append(o.int_0 + kv.Value.vector2i_0.int_0).Append(',').Append(o.int_1 + kv.Value.vector2i_0.int_1)
+                      .Append(kv.Value.pipeDraggable_0 != null ? " fed by " + PipelineText.Name(p, kv.Value.pipeDraggable_0.draggable_0) : "").Append('\n');
+                foreach (var kv in d.class485_1)
+                {
+                    var pd = kv.Value.pipeDraggable_0;
+                    if (pd == null) continue;
+                    var end = pd.linkedList_0.Last.Value + pd.method_14();
+                    var to = kv.Value.vmethod_0();
+                    sb.Append("   out ").Append(kv.Key).Append(" len ").Append(pd.linkedList_0.Count).Append(" end ").Append(end.int_0).Append(',').Append(end.int_1)
+                      .Append(to != null ? " -> " + PipelineText.Name(p, to) : " open").Append('\n');
+                }
+            }
+            return sb.ToString();
         }
 
         private static string InstrMenu()

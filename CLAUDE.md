@@ -180,6 +180,10 @@ don't update; use it to test what the game receives, e.g. that suppression block
 `profiles` (the profile set, `*` = current), `switchprofile` (main menu's Switch Profile),
 `instrmenu` (a control instruction's context-menu labels: placed on the first empty red cell of the
 open, stopped reactor for the read, then removed and forgotten),
+`pipemap` (the open pipeline as text, 0-based cells: terrain, bodies, pipes, crossings, then every
+component's ports, pipe ends and links), `focus <stop> <id>` (focus a node by structural id, e.g.
+`focus pipeline.map pipeline.cell.15.11`; with `key` it drives the pipeline editor's cut / paste /
+menu / drawing exactly as the keys do — how a layout was rebuilt 2026-10-04),
 `custom <json>` / `custom clean` (Dev/CustomPuzzle — THE MECHANICS TEST BENCH: opens a research
 puzzle from a journal.json-style level object, e.g. `has-fuser`, `bonder-count`, input/output molecule
 strings `name;formula;` + one `x y Z right down` token per atom, under the fixed id

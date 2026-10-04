@@ -595,9 +595,13 @@ Tab stops:
 - Status (shared ProgressSection + "Reactor Quota, 2 of 3", "exceeded"), Tools (shared), Run log.
 Editing: Ctrl+X on a component (entry, port cell or map cell) / Ctrl+V on a map cell moves it
 (hashSet_0 = {it}, vector2i_4 = origin, vector2i_3 = target, method_13 with Ctrl masked; refused
-stays on the clipboard); Delete = the menu's delete (method_10 null, method_15, method_66);
-Backspace = the menu as a list (Reset Pipes = Draggable.method_6; Delete). NOT YET: the output
-notes (InlineAnnotationEditor) and Save to Toolbox (Class55) — game screens not modeled.
+stays on the clipboard); Ctrl+C then Ctrl+V COPIES (the game's Ctrl-drag: the same method_13 under
+ModifierMask.ForceCtrl — each selected item is cloned, program + notes + pipe shapes, inputs
+unlinked; the source counts as a blocker so a copy can't overlap it; the selection afterwards is
+the clone; the clipboard keeps the source for more copies; fixed components refused); Delete = the
+menu's delete (method_10 null, method_15, method_66); Backspace = the menu as a list in the game's
+order (DraggableMenu): Reset Pipes (Draggable.method_6 — NO undo step), the reactor's note items,
+Save to Toolbox, Delete — see §16b. Verified live 2026-10-03.
 DRAW MODE (PipelineEditorScreen.Draw.cs): StartDraw opens the undo scope a drag would
 (pipe.class381_0 = worker.method_49(), enum145_0 = 1, vector2i_3 = end); each arrow landing sets
 Pipeline.vector2i_3 to the neighbour and calls pipe.vmethod_4 (the game's own extend / retract /
@@ -613,6 +617,61 @@ the owner; a component undo reloads the level synchronously and focus survives i
 reactor edit from the pipeline makes the game open that reactor (its own behaviour).
 Progress panel: ProgressSection follows Class709 ("Control Center" / "The Prometheus" in
 defense-style levels, GoalTracker.int_1 percent; Class148's own measure).
+
+## 16b. Saved designs, notes, text fields — verified live 2026-10-03
+- SAVE TO TOOLBOX (`Screens/Pipeline/SaveDesignScreen.cs`): the menu item shows for an unlocked
+  reactor when the level allows saved designs (`Class83.bool_0`; false in Class125/127/132/135/137/151)
+  and pushes the game's `Class55` (`Editor.method_3(new Class55(rd))`, a plain Class54: prompt, a
+  10-character GClass16, Okay / Cancel). Okay or Enter on the field = `method_13`; a blank name does
+  nothing in the game, so the mod speaks the widget's own `string_1` ("Required!"). Names need not be
+  unique. Saving queues `SpaceChemUserWorker.method_58` (copies Component/Member/Annotation rows into
+  a level-less Component row, per profile), then the shelf refreshes onto its saved tab.
+- SAVED DESIGNS ON THE SHELF (`PipelineEditorScreen.Edit.cs`): after the stock tiles, every design
+  (all pages: `method_59` page count, `method_60(pipeline, page)` 4 per page as LOCKED templates,
+  `string_0` = name, `string_1` = reactor type), one list counted as one (each row speaks its own
+  "n of m"; a design row = the design + a Delete cell, the tile's red X). Label "Ace1, Assembly
+  Reactor" (+ the game's "(LOCKED)": type not on this shelf, or members this level forbids — Enter
+  says "unavailable"). Enter arms; the map's Enter places through the stock tiles' drop. Cache
+  re-read when the shelf's saved page widget (`Class717.gclass10_1`) is rebuilt by the game (a save
+  / delete refresh), or at once after our delete. PAGE FOLLOWS FOCUS: OnSelect shows the stock tab
+  (`method_3(true)`) or the design's page (`int_0`, `gclass10_1 = method_7(page)`, `method_3(false)`).
+  Delete (key, Delete cell, Backspace menu) = the game's own confirm box (Class470's
+  MessageBoxEditor: Yes → `method_61`, synchronous), focus starting on No
+  (`MessageBoxEditorScreen.StartOnLastFor`, like the profile delete's Cancel).
+- NOTES (`Screens/Pipeline/NoteEditorScreen.cs` over `InlineAnnotationEditor`, the "Output Note
+  Editor"): a note (`ReactorAnnotation`, one per reactor output, `rd.class485_1[i].method_0()`) is
+  THREE molecules on 4 x 4 grids (`molecule_0[0..2]`) + Show in Pipeline (`bool_1`); no text. Opened
+  from the pipeline menu ("Add Note to Upper Output" / "Edit Upper Note (Visible)" / "(Hidden)",
+  Lower likewise; `Editor.method_3(new InlineAnnotationEditor(note, false))`) and from a reactor's
+  output line in its Molecules stop on Backspace (the panel's right-click, `Class53.smethod_1(...,
+  true)`; never with a Class84 research host). The game's grid cells (Class468) are bound straight to
+  the molecules, so the mod edits the molecules with the cell drop's own calls: place =
+  `method_19(MoleculePart.smethod_0(atom))`, `method_28`, single `method_30` toward the 4 neighbours
+  (that resets an existing double bond to single — the game's rule), `Class307.smethod_1` rename;
+  remove = `method_18(Class178.smethod_0(pos))` + `method_28` + rename; bonds = `method_30(Struct98,
+  n)` (false = an atom has no room → "Too many bonds") / `method_31`. Stops: Molecule 1-3 (header
+  "Molecule 1, Water, H2O" / "empty", then the grid: "x, y, atom, bonds"), Palette (the 16 fixed atoms
+  `list_1`; the 4 recent `list_0`, static, newest LAST; Select Element = `method_15` → the periodic
+  picker, `method_16` appends the pick and focus lands on it — deferred to OnUpdate because the
+  navigator's re-attach drops a focus request made in OnPush), Options (Show in Pipeline = `class476_0`
+  Class475 toggle; Done = `method_13`). Keys follow the reactor: Enter on an atom arms (one shot),
+  Enter / Ctrl+V on a cell places; Delete removes; Ctrl+C arms the cell's atom, Ctrl+X arms + removes;
+  Backspace = bond radio groups per neighbouring atom (no / single / double / triple bond right, down,
+  left, up) + Delete. A place speaks "Hydrogen, single bond right. Hydroxyl Radical, OH" (no molecule
+  name for a lone atom). Closing always commits (`method_13`: rename, store the checkbox, renumber,
+  save or delete the Annotation row as an undo step) — Done, or a real Escape (native; verified it
+  does not reach the reactor's exit prompt when opened from a reactor). The game has no cancel.
+- TEXT FIELDS (Echopunks' stack, ported 2026-10-03): `UI/GameTextField.Node` = the TextEntry node over
+  any GClass16 (append-only widget: no caret, no selection — Echopunks' caret narration does not
+  apply): `TextValue` = the RAW `string_0` (`method_7()` marks formula digits "~02"), `TextIdentity`
+  = the widget, empty = "blank". The navigator echoes typed characters ("Cap A") and deletions;
+  F6 (`ui.echo`, `TypingEcho`, persisted as `speech.typingEcho` through the host's
+  `HostConfig.SetBool` — the host gained Set/SetBool and the never-overwrite-an-unreadable-file
+  guard) silences TYPED characters only. Stop jumps (`FocusStop`) now blur/arm like Tab landings.
+  SEAM 3 (`GameKeySuppression`): `Class54.method_11` (SDL text input) and the widget path's
+  `Keys.Paste` reach the game only while a TextEntry node is focused — the game's field keeps its
+  keyboard focus whatever the mod's is, so typing on a dialog's button used to change the name
+  silently (verified: "z" typed on Okay dropped).
 
 ## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
 Only events the game has (user rule), worded as what HAPPENED ("grabbed Oxygen", "nothing to drop"):
@@ -729,8 +788,9 @@ dismiss with `pop` — Continue would leave the level).
 4. (done) Profile flow (§10), main menu (§11), level select + Australium sites + 63 Corvi (§12),
    ResearchNet journal (§12a), challenges (§13), options (§14), in-level dialogs (§15), reactor editor
    (§16) + run log (§17), periodic table (§18), Story / Training / Performance (§19).
-5. (done) the pipeline editor (§16a). Next: defense levels (the sandbox reaches the DefenseLevelEditor
-   screen through the `custom` probe), the ResearchNet builders, the pipeline's note editor and
-   Save to Toolbox.
+5. (done) the pipeline editor (§16a), saved designs, notes, copy (§16b). Next: defense levels (the
+   sandbox reaches the DefenseLevelEditor screen through the `custom` probe), the ResearchNet
+   builders (they reuse the note editor's pieces: Class286 palettes, Class420.smethod_1/2 grids).
 6. (done) The Rust installer (§5).
-7. (done for profiles) Text entry over GClass16; reuse for ResearchNet fields.
+7. (done for profiles, Save to Toolbox) Text entry over GClass16 (§16b); reuse for ResearchNet fields
+   (several fields per screen: arm on landing via Class56.method_14).

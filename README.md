@@ -16,9 +16,10 @@ This is work-in-progress. Pipeline and research have been verified and are at le
 | Home / End | First / last item of the stop (grid rows: row start / end; run log: the whole log's ends) |
 | Ctrl+Up / Ctrl+Down | Previous / next region (a journal issue, a run-log cycle); on grids, skip cells that read the same |
 | Page Up / Page Down | Sliders only: large step up / down |
-| Backspace | Secondary action (the right-click menu, Delete on a profile); in a text field it deletes a character |
-| Shift+Backspace | Details of the focused item (the game's tooltip, atom info); "No details" when there are none |
+| Backspace | Secondary action (the right-click menu, Delete on a profile) |
+| Shift+Backspace | Details of the focused item (the game's tooltip, atom info) |
 | Escape | Back / cancel / close |
+| F6 | Typing echo on / off |
 
 ## 2. Reactor editor
 
@@ -63,22 +64,16 @@ This is work-in-progress. Pipeline and research have been verified and are at le
 | Space | Run; pauses when running |
 | Backquote | Stop |
 | 1 / 2 / 3 / 4 | Play at speed 1 to 4 |
-| 0 | Step to the next event of the open reactor (any reactor on the pipeline screen) |
+| 0 | Step to the next event of the open reactor |
 | Ctrl+0 | Step to the next event of any reactor |
 | Escape | Research levels: stops a run; when stopped, opens the exit prompt. Production, defense and sandbox: returns to the pipeline, and the run keeps going |
 
 Run events (grabs, drops, bonds, sensor hits, outputs, errors) are always logged in the Run log;
-they are spoken only at speed 1 and while stepping, and inside a reactor only that reactor's events
-(Ctrl+0 speaks every reactor's). Run state changes are always spoken.
+they are spoken only at speed 1 and while stepping, and inside a reactor only that reactor's events. Run state changes are always spoken.
 
 ## 3. Pipeline editor
 
-Output notes on reactors are not yet supported.
-
 Majority of keys are shared with reactor. Here's what we additionally add.
-
-The Components stop is a table: one row per component, then a column per input and output ("N/A"
-where a component has none). A column's name is spoken only when you cross into it.
 
 | Key | Where | Action |
 |---|---|---|
@@ -86,10 +81,16 @@ where a component has none). A column's name is spoken only when you cross into 
 | M | Components, on a port | The port's molecule in the molecule viewer |
 | Escape | while armed | Cancel the armed item |
 | Ctrl+X | Components or Map | Cut the component |
-| Ctrl+V | Map | Move the cut component here |
+| Ctrl+C | Components or Map | Copy the component |
+| Ctrl+V | Map | Move the cut component here, or place a copy (the copy stays on the clipboard) |
 | Delete | Components or Map | Delete the component |
-| Backspace | Components or Map | Component menu |
+| Delete | Shelf, on a saved design | Delete the design |
+| Backspace | Components or Map | Component menu: Reset Pipes, the reactor's notes, Save to Toolbox, Delete |
 | Escape | anywhere | Exit prompt |
+
+The Shelf lists the stock components, then your saved reactor designs (with a Delete button to the
+right of each). Enter arms one; Enter on the map places it. Save a design with Save to Toolbox from a
+reactor's menu.
 
 ### 3.1 Drawing a pipe
 
@@ -98,3 +99,17 @@ where a component has none). A column's name is spoken only when you cross into 
 | Arrows | Extend or retract the pipe |
 | P | Pipe status |
 | Enter / Escape / leaving the map | Finish |
+
+### 3.2 Output notes
+
+A note is up to three molecules on 4 by 4 grids. Open it from a reactor's menu on the pipeline, or with
+Backspace on an output line in the reactor's Molecules stop.
+
+| Key | Where | Action |
+|---|---|---|
+| Enter | Palette | Arm an atom |
+| Enter / Ctrl+V | Grid | Place the armed atom (it bonds singly to its neighbours) |
+| Delete | Grid | Remove the atom |
+| Ctrl+C / Ctrl+X | Grid | Arm the atom |
+| Backspace | Grid | Bonds to each neighbouring atom, and Delete |
+| Escape, or Done | anywhere | Close and keep the note (the game has no cancel; use Undo) |

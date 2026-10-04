@@ -158,7 +158,13 @@ namespace SpeechChem.UI
                 if (_pendingStop != null)
                 {
                     var land = KeyGraph.StopLanding(_graph.Current, _graph.State, _pendingStop);
-                    if (land != null) _graph.Focus(land.Id);
+                    if (land != null && _graph.Focus(land.Id))
+                    {
+                        // Like LandOnStop: blur the old holder first (a rename commits), then a
+                        // text field lands ARMED.
+                        FocusArrived(_graph.CurrentNode);
+                        ArmTextEntry(_graph.CurrentNode);
+                    }
                     _pendingStop = null; // announce rides the normal differ below
                 }
             }
@@ -581,11 +587,14 @@ namespace SpeechChem.UI
             string removed = old.Substring(prefix, old.Length - prefix - suffix);
             string added = v.Substring(prefix, v.Length - prefix - suffix);
 
+            // F6 (TypingEcho) silences TYPED characters only — deletions always speak.
             if (added.Length > 0 && removed.Length == 0)
-                Speak(EchoText(added, caps), interrupt: true);
+            {
+                if (TypingEcho.Enabled) Speak(EchoText(added, caps), interrupt: true);
+            }
             else if (removed.Length > 0 && added.Length == 0)
                 Speak(EchoText(removed, caps), interrupt: true);
-            else if (added.Length > 0)
+            else if (added.Length > 0 && TypingEcho.Enabled)
                 Speak(EchoText(added, caps), interrupt: true); // replaced (selection typed over)
         }
 

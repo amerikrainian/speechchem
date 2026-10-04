@@ -26,7 +26,10 @@ namespace SpeechChem.Patches
     /// queues the press for its widget tree (GClass8: the screen's imethod_0 first — Escape cancels,
     /// Enter confirms some dialogs — then the focused widget, e.g. a text field's Enter/Backspace).
     /// A prefix on method_9 drops the same keys before they are queued. Characters travel separately
-    /// (SDL text input → method_11) and are never touched, so typing always reaches the game.
+    /// (SDL text input → method_11) and reach the game only while a text-entry node is focused:
+    /// the game's field keeps its keyboard focus whatever the mod's focus is, so typing on a dialog's
+    /// button used to change the name silently (the Echopunks rule: a field takes keys only while
+    /// armed). The same holds for the paste key (Ctrl+V → Keys.Paste).
     ///
     /// While a text-entry node is focused, Backspace belongs to the game's field (the navigator
     /// stands its own Backspace binding down), so it passes both seams.
@@ -57,6 +60,7 @@ namespace SpeechChem.Patches
 
         private const int EscapeScancode = 41;
         private const int BackspaceScancode = 42;
+        private const int PasteKey = 515; // Impeller.Keys.Paste, the engine's Ctrl+V
 
         // An Escape press a mod-side modal took, held until the key is released. Polling screens
         // (the reactor's Class77, Reactor) read Escape in the game's update, AFTER our tick — by then
@@ -82,6 +86,8 @@ namespace SpeechChem.Patches
                     prefix: new HarmonyMethod(typeof(GameKeySuppression), nameof(HeldPrefix)));
                 harmony.Patch(Expr.MethodOf(() => default(Class54).method_9(default(Keys), false)),
                     prefix: new HarmonyMethod(typeof(GameKeySuppression), nameof(QueuePrefix)));
+                harmony.Patch(Expr.MethodOf(() => default(Class54).method_11(default(char))),
+                    prefix: new HarmonyMethod(typeof(GameKeySuppression), nameof(CharacterPrefix)));
                 Log.Info("[patch] game key suppression armed");
             }
             catch (Exception ex) { Log.Error("[patch] key suppression failed to apply", ex); }
@@ -118,6 +124,21 @@ namespace SpeechChem.Patches
         }
 
         // Class54.method_9(key, isRepeat): void — skipping it simply never queues the press.
-        private static bool QueuePrefix(Keys __0) => !Suppressed((int)__0);
+        // Paste only here, never in the polling seams (the reactor's own Ctrl+V polls it).
+        private static bool QueuePrefix(Keys __0) => (int)__0 == PasteKey ? CharacterPrefix() : !Suppressed((int)__0);
+
+        /// <summary>Class54.method_11(char): a typed character reaches the game's widgets only while
+        /// a text-entry node is focused (on modeled screens, with focus mode on).</summary>
+        private static bool CharacterPrefix()
+        {
+            try
+            {
+                if (!FocusMode.Active) return true;
+                var cur = Screens.ScreenManager.Current;
+                if (cur == null || cur.CapturesRawInput) return true;
+                return UI.Navigation.TextEntryFocused;
+            }
+            catch { return true; }
+        }
     }
 }

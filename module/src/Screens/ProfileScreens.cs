@@ -178,22 +178,10 @@ namespace SpeechChem.Screens
             var entry = Entry;
             if (entry == null || entry.gclass16_0 == null) return;
 
-            b.AddItem(ControlId.Structural("profiles.new.name"), new NodeVtable
-            {
-                ControlType = ControlTypes.TextField,
-                Announcements = new[]
-                {
-                    new NodeAnnouncement(() => GameText.T("Enter a Profile Name"), kind: AnnouncementKinds.Label),
-                    new NodeAnnouncement(() => FieldValue(), kind: AnnouncementKinds.Value),
-                },
-                TextEntry = true,
-                TextValue = () => Entry?.gclass16_0?.method_7() ?? "",
-                // The widget INSTANCE is the buffer: a rebuild swaps it (see ProfileUi.Settled), and the
-                // echo must re-baseline instead of reading the swap as a deletion.
-                TextIdentity = () => Entry?.gclass16_0,
-                SpeaksOwnPosition = true, // a lone field, not "1 of 2" beside the notice
-                OnActivate = () => Entry?.method_19(),
-            });
+            // The widget INSTANCE is the buffer: a rebuild swaps it (see ProfileUi.Settled), and the
+            // echo re-baselines instead of reading the swap as a deletion (UI/GameTextField).
+            b.AddItem(ControlId.Structural("profiles.new.name"), GameTextField.Node(
+                () => Entry?.gclass16_0, () => GameText.T("Enter a Profile Name"), () => Entry?.method_19()));
             // One vertical column, no counts: name -> Create Profile -> Cancel -> notice (user layout,
             // 2026-09-27; the game draws the two buttons side by side).
             var create = ProfileUi.Button(() => GameText.T("Create Profile"), () => Entry?.method_19());
@@ -205,12 +193,6 @@ namespace SpeechChem.Screens
             b.AddItem(ControlId.Structural("profiles.new.notice"), ProfileUi.Text(true, () => GameText.Speech(string.Format(
                 GameText.T("The profile name you enter here may be displayed publicly, such as on a high-score table or with one of your solutions.\n\nFor more information, please visit {0}."),
                 "http://www.zachtronics.com"))));
-        }
-
-        private static string FieldValue()
-        {
-            string v = Entry?.gclass16_0?.method_7();
-            return string.IsNullOrEmpty(v) ? Loc.T("text.blank") : v;
         }
     }
 

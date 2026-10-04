@@ -21,11 +21,16 @@ namespace SpeechChem.Tests
         private readonly TestSpeech _speech = new TestSpeech();
         private readonly GraphNavigator _nav = new GraphNavigator();
 
-        public GraphNavigatorTests() { FocusMode.Active = true; }
+        public GraphNavigatorTests()
+        {
+            FocusMode.Active = true;
+            TypingEcho.ResetForTests(true); // the default, never the dev machine's saved F6 choice
+        }
 
         public void Dispose()
         {
             FocusMode.Active = true;
+            TypingEcho.ResetForTests(null);
             _speech.Dispose();
         }
 
@@ -402,6 +407,25 @@ namespace SpeechChem.Tests
             h.Value = "a"; // deletion echoes the removed character bare
             _nav.EnsureFocus();
             Assert.Equal("b", _speech.Spoken[_speech.Spoken.Count - 1]);
+        }
+
+        [Fact]
+        public void EchoOffSilencesTypingButNotDeletions()
+        {
+            TypingEcho.ResetForTests(false); // F6 off
+            var h = new TextFieldHarness();
+            var screen = new TestScreen { Declare = b => b.AddItem(ControlId.Structural("f"), h.Vt("Field")) };
+            _nav.Attach(screen);
+            _nav.EnsureFocus(); // baseline
+            int spoken = _speech.Spoken.Count;
+
+            h.Value = "ab";
+            _nav.EnsureFocus();
+            Assert.Equal(spoken, _speech.Spoken.Count); // typed: silent
+
+            h.Value = "a";
+            _nav.EnsureFocus();
+            Assert.Equal("b", _speech.Spoken[_speech.Spoken.Count - 1]); // deleted: still spoken
         }
 
         [Fact]

@@ -273,6 +273,8 @@
   "value.off": "off",
   "value.percent": "{value} percent",
   "text.blank": "blank",
+  "text.echo.on": "Echo characters",
+  "text.echo.off": "Echo off",
   "text.space": "space",
   "text.capital": "Cap {letter}",
   "text.selected": "{text} selected",

@@ -115,6 +115,19 @@ namespace SpeechChem.Patches
         // ---- events as data (Narration/): every capture builds a NarrationEvent and hands it to
         // the Narrator, which logs it, lets the step key stop on it and speaks it by the player's
         // settings (defaults = the mod's original rules and wording). ----
+        //
+        // NOT DONE — MEMOIZING (2026-10-04, parked unless speed-4 stutter is noticed): at warp ~500
+        // events a frame are built and then mostly discarded by the log's interning (an equal one is
+        // already stored). The HALF STEP: memoize only the events WITHOUT a molecule (heading, turn,
+        // nothing-to-grab and the like, waits, wall hits, bare instruction passes — ~60% of a loop's
+        // events) by a struct key of waldo, kind, instruction (by reference) and heading → the stored
+        // event's id, appended with a GroupedLog.AddId; reference identity only, so no collision risk.
+        // The per-emission fields (cycle, Concerns, colour) must travel beside the id, not live on the
+        // shared event (the step and speech read them). Clear the memo with the log, and when reactor
+        // numbering changes (names are baked into the parts). The FULL version adds molecule events,
+        // which need a structural molecule fingerprint (a new Molecule per input defeats identity) —
+        // a hash collision there would log a wrong name silently. Expected: normal-mode allocation
+        // ~2.2 → ~1.3 MB a frame at warp, p95 ~20-24 → ~17-18 ms (Dev/LogStress measures it).
 
         /// <summary>A waldo's event: its reactor (named when the pipeline has several) and colour
         /// as the common parts; it concerns the open reactor when that is its own (or none is open).</summary>

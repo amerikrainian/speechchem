@@ -922,6 +922,8 @@ BURST-PROOF (2026-10-04, user request after Echopunks' GC freeze; measured with 
   ~66 MB), 3 full GCs, worst frame 28.9 ms, a cap drop ~13 ms. Output lines carry the counter, so a
   huge test quota makes every output a distinct event; the game stops counting at the quota
   (Class578.vmethod_11), so real levels can't.
+- PARKED: memoizing events (skip building ones the log already holds) — the plan and the safe
+  half step are a comment at the top of RunCapture's event builders.
 OVERRIDE TRAP (cost a game crash): `Expr.MethodOf(() => default(Sub).vmethod())` names the BASE
 declaration, so Harmony patches it for every subclass and a Sub-typed handler reads foreign fields
 (AccessViolation, uncatchable). Patch overrides through `Expr.OverrideOf(typeof(Sub), ...)`.

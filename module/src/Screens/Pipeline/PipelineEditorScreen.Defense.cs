@@ -9,8 +9,9 @@ namespace SpeechChem.Screens.Pipeline
     {
         // ---- defense levels: the Enemy stop (after the map), generic over every enemy
         // (Game/DefenseText): the intro card's name and title (+ "destroyed"), where its drawing
-        // lies on the map ("columns 21 to 32, rows 3 to 11", live), and its parts when the level's
-        // enemy has a parts entry ("2 of 3 motors intact", live). The map also names the enemy on
+        // lies on the map ("columns 21 to 32, rows 3 to 11", live), its parts when the level's
+        // enemy has a parts entry ("2 of 3 motors intact", live), its visible state when it has a
+        // state entry ("eye open, red", live). The map also names the enemy on
         // the cells its drawing covers. ----
 
         private const string EnemyStop = "pipeline.enemy";
@@ -31,6 +32,12 @@ namespace SpeechChem.Screens.Pipeline
             LiveRow(b, "pipeline.enemy.span", () => DefenseText.Span(DefenseText.Enemy(DefenseText.Level)));
             if (DefenseText.PartFlags(enemy) != null)
                 LiveRow(b, "pipeline.enemy.parts", () => DefenseText.PartsText(DefenseText.Enemy(DefenseText.Level)));
+            if (DefenseText.HasEnemyState(enemy.GetType()))
+                LiveRow(b, "pipeline.enemy.state", () =>
+                {
+                    var lvl = DefenseText.Level;
+                    return DefenseText.EnemyState(lvl, DefenseText.Enemy(lvl)) ?? Loc.T("defense.state.none");
+                });
         }
 
         private static void LiveRow(GraphBuilder b, string id, System.Func<string> text)

@@ -25,12 +25,14 @@ namespace SpeechChem.Patches
     ///                          intact"), "Isambard MMD hit" (health only), or "missed";
     ///   Class310.method_4      enemy damage outside such an event ("… hit"), and its destruction
     ///                          ("Isambard MMD destroyed", after the hit that caused it);
-    ///   Class310.method_3      the enemy's per-cycle step: a part lost by any other cause;
+    ///   Class310.method_3      the enemy's per-cycle step: a part lost by any other cause, a
+    ///                          move (its span on the map changed), a change of its visible state
+    ///                          (DefenseText's EnemyStates table: "Xothothor: eye open, red");
     ///   every Class310 subclass's vmethod_2 with a body: "{enemy} attacks" (its attack timer);
     ///   every Class310 subclass's vmethod_3 (its draw): the rectangles it draws through
-    ///       SpriteBatch.method_8 (every sprite overload funnels there), minus particle effects
-    ///       (Class190) — the enemy's FOOTPRINT on the map; a change of its span while running is
-    ///       "Isambard MMD at columns 21 to 32, rows 3 to 11";
+    ///       SpriteBatch.method_8 (every sprite overload funnels there; top-left = position −
+    ///       origin), minus particle effects (Class190) — the enemy's FOOTPRINT, used when the
+    ///       Bodies table has no entry for it;
     ///   GoalTracker.smethod_10 damage to the Control Center: "Control Center 95 percent";
     ///   Class710.method_7      an F1-F4 toggle: spoken at once.
     /// Captures run under flags set only around the mod's own calls: a building's run meter
@@ -160,7 +162,12 @@ namespace SpeechChem.Patches
             public int Parts;
             public float Health;
             public bool Weapon;
+            public bool Continuous;
         }
+
+        // A continuous weapon (a beam raises its event every cycle while firing): one line per
+        // burst, "hit" once per burst. Burst = consecutive cycles; [last cycle, hit yet].
+        private static readonly ConditionalWeakTable<Class598, int[]> Bursts = new ConditionalWeakTable<Class598, int[]>();
 
         private static int _inEvent;
         private static string _pendingDestroyed;
@@ -172,8 +179,8 @@ namespace SpeechChem.Patches
             {
                 // Inside the building's intake (its 35th methane): the intake line goes first.
                 if (ReferenceEquals(_intakeBuilding, __instance)) FlushIntake(withMeter: false);
-                bool weapon;
-                string text = DefenseText.EventText(__instance, __0, out weapon);
+                bool weapon, continuous;
+                string text = DefenseText.EventText(__instance, __0, out weapon, out continuous);
                 var enemy = DefenseText.Enemy(Level);
                 __state = new EnemySnapshot
                 {
@@ -181,14 +188,24 @@ namespace SpeechChem.Patches
                     Parts = DefenseText.Intact(DefenseText.PartFlags(enemy)),
                     Health = enemy?.float_0 ?? 0f,
                     Weapon = weapon,
+                    Continuous = continuous,
                 };
                 _inEvent++;
+                if (continuous)
+                {
+                    var burst = Bursts.GetValue(__instance, _ => new[] { int.MinValue, 0 });
+                    int cycle = Class258.int_1;
+                    bool same = burst[0] == cycle || burst[0] == cycle - 1;
+                    burst[0] = cycle;
+                    if (same) return;
+                    burst[1] = 0;
+                }
                 RunCapture.AddLevelEvent(text);
             }
             catch (Exception ex) { Log.Error("[defense] building event", ex); }
         }
 
-        private static Exception AfterEvent(Exception __exception, EnemySnapshot __state)
+        private static Exception AfterEvent(Class598 __instance, Exception __exception, EnemySnapshot __state)
         {
             try
             {
@@ -198,6 +215,15 @@ namespace SpeechChem.Patches
                 {
                     int parts = DefenseText.Intact(DefenseText.PartFlags(enemy));
                     if (parts < __state.Parts) RunCapture.AddLevelEvent(PartLostText(enemy));
+                    else if (__state.Continuous)
+                    {
+                        int[] burst;
+                        if (enemy.float_0 < __state.Health && __instance != null && Bursts.TryGetValue(__instance, out burst) && burst[1] == 0)
+                        {
+                            burst[1] = 1;
+                            RunCapture.AddLevelEvent(Loc.T("defense.hit", new { name = EnemyName }));
+                        }
+                    }
                     else if (enemy.float_0 < __state.Health) RunCapture.AddLevelEvent(Loc.T("defense.hit", new { name = EnemyName }));
                     else if (__state.Weapon) RunCapture.AddLevelEvent(Loc.T("defense.miss"));
                     RememberParts(enemy);
@@ -248,16 +274,41 @@ namespace SpeechChem.Patches
             box[0] = DefenseText.Intact(DefenseText.PartFlags(enemy));
         }
 
-        /// <summary>Per cycle: a part lost outside a building's event.</summary>
+        private sealed class Watch
+        {
+            public int Cycle = -1;
+            public string Span, State;
+        }
+
+        private static readonly ConditionalWeakTable<Class310, Watch> Watches = new ConditionalWeakTable<Class310, Watch>();
+
+        /// <summary>Per cycle (whatever draws the enemy): a part lost outside a building's event,
+        /// a move ("Isambard MMD at columns 22 to 32, rows 3 to 11") and a change of its visible
+        /// state ("…: eye open, red"). A new run (the cycle counter went back) re-baselines silently.</summary>
         private static void AfterEnemyCycle(Class310 __instance)
         {
             try
             {
-                if (DefenseText.PartFlags(__instance) == null) return;
-                int now = DefenseText.Intact(DefenseText.PartFlags(__instance));
-                var box = LastParts.GetValue(__instance, _ => new[] { now });
-                if (now < box[0] && _inEvent == 0) RunCapture.AddLevelEvent(PartLostText(__instance));
-                box[0] = now;
+                if (DefenseText.PartFlags(__instance) != null)
+                {
+                    int now = DefenseText.Intact(DefenseText.PartFlags(__instance));
+                    var box = LastParts.GetValue(__instance, _ => new[] { now });
+                    if (now < box[0] && _inEvent == 0) RunCapture.AddLevelEvent(PartLostText(__instance));
+                    box[0] = now;
+                }
+                var level = Level;
+                var watch = Watches.GetValue(__instance, _ => new Watch());
+                string span = DefenseText.Span(__instance), state = DefenseText.EnemyState(level, __instance);
+                int cycle = Class258.int_1;
+                bool fresh = watch.Cycle < 0 || cycle < watch.Cycle;
+                watch.Cycle = cycle;
+                if (!fresh && (int)Class258.smethod_16() == 1 && !DefenseText.Defeated(__instance))
+                {
+                    if (span != null && span != watch.Span) RunCapture.AddLevelEvent(Loc.T("defense.enemy.at", new { name = EnemyName, span }));
+                    if (state != null && state != watch.State) RunCapture.AddLevelEvent(Loc.T("defense.enemy.state", new { name = EnemyName, state }));
+                }
+                watch.Span = span;
+                watch.State = state;
             }
             catch { }
         }
@@ -273,7 +324,6 @@ namespace SpeechChem.Patches
         private static List<Rectangle> _sprites;
         private static int _particles;
         private static readonly ConditionalWeakTable<Class310, List<Rectangle>> Footprints = new ConditionalWeakTable<Class310, List<Rectangle>>();
-        private static readonly ConditionalWeakTable<Class310, string[]> LastSpan = new ConditionalWeakTable<Class310, string[]>();
 
         /// <summary>The rectangles (pipeline pixels) of the enemy's last draw, or null.</summary>
         public static List<Rectangle> Footprint(Class310 enemy)
@@ -298,21 +348,17 @@ namespace SpeechChem.Patches
                 if (rects == null) return __exception;
                 Footprints.Remove(__instance);
                 Footprints.Add(__instance, rects);
-                string span = DefenseText.Span(__instance);
-                var last = LastSpan.GetValue(__instance, _ => new string[1]);
-                if (span == last[0]) return __exception;
-                last[0] = span;
-                // A move while running is an event; a reset (stop) or a static first draw is not.
-                if ((int)Class258.smethod_16() == 1 && !DefenseText.Defeated(__instance))
-                    RunCapture.AddLevelEvent(Loc.T("defense.enemy.at", new { name = EnemyName, span }));
             }
             catch (Exception ex) { Log.Error("[defense] enemy footprint", ex); }
             return __exception;
         }
 
-        private static void BeforeSprite(Rectangle __1)
+        /// <summary>method_8(texture, rect, source, colour, rotation, ORIGIN, flip, depth): the
+        /// sprite is drawn with its origin at rect's position, so its top-left is position − origin
+        /// (rotation ignored).</summary>
+        private static void BeforeSprite(Rectangle __1, Vector2i __5)
         {
-            if (_sprites != null && _particles == 0) _sprites.Add(__1);
+            if (_sprites != null && _particles == 0) _sprites.Add(new Rectangle(__1.vector2i_0 - __5, __1.vector2i_1));
         }
 
         private static void BeforeParticles() => _particles++;
@@ -326,30 +372,35 @@ namespace SpeechChem.Patches
         // ---- building run meters (the bubble's bar + label, rebuilt under capture) ----
 
         private static bool _meterCapture;
-        private static float? _bar;
-        private static string _barLabel;
+        private static readonly List<float> _bars = new List<float>();
+        private static readonly List<string> _barLabels = new List<string>();
 
-        /// <summary>The run meter of a building (label, fraction), or null when it draws none.</summary>
-        public static KeyValuePair<string, float>? CaptureMeter(Draggable d)
+        /// <summary>The run meter(s) of a building — (label, fraction) per bar, in the order the
+        /// bubble builds them (a launch pad draws one bar per ingredient) — or null when it draws
+        /// none. Labels lose the formula font markup ("H~02" → "H2").</summary>
+        public static List<KeyValuePair<string, float>> CaptureMeter(Draggable d)
         {
             _meterCapture = true;
-            _bar = null;
-            _barLabel = null;
+            _bars.Clear();
+            _barLabels.Clear();
             try { d.vmethod_19(); }
             catch { return null; }
             finally { _meterCapture = false; }
-            if (!_bar.HasValue) return null;
-            return new KeyValuePair<string, float>(GameText.Speech(_barLabel), _bar.Value);
+            if (_bars.Count == 0) return null;
+            var meters = new List<KeyValuePair<string, float>>();
+            for (int i = 0; i < _bars.Count; i++)
+                meters.Add(new KeyValuePair<string, float>(i < _barLabels.Count ? MoleculeText.Clean(GameText.Speech(_barLabels[i])) : null, _bars[i]));
+            return meters;
         }
 
         private static void BeforeBar(float __0)
         {
-            if (_meterCapture && !_bar.HasValue) _bar = __0;
+            if (_meterCapture) _bars.Add(__0);
         }
 
         private static void BeforeText(string __1)
         {
-            if (_meterCapture && _barLabel == null) _barLabel = __1;
+            if (_meterCapture) _barLabels.Add(__1);
         }
 
         // ---- the graph's labelled ranges (the level's vmethod_9, rebuilt under capture) ----

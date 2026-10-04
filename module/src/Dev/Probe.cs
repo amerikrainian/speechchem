@@ -40,6 +40,12 @@ namespace SpeechChem.Dev
     ///                      (0-based: 12, 18, 24) raises its blast event (method_15) without
     ///                      being filled — the level's handler then hits or misses the robot;
     ///                      during a run only
+    ///   profile …, openlevel &lt;id&gt;, fire …   auditing unreached levels on a throwaway
+    ///                      "SCAudit*" profile (Dev/LiveAudit)
+    ///   defense status     the open defense level as the mod reads it: enemy span / parts /
+    ///                      state, graph rows, special buildings' meters
+    ///   defense audit      every defense level built in memory and run through the mod's generic
+    ///                      defense readers (Dev/DefenseAudit; names enemies — never spoken)
     ///   focus &lt;stop&gt; &lt;id&gt;  focus a stop, then a node by structural id (e.g. "pipeline.map
     ///                      pipeline.cell.4.7"), as the navigator's own jumps do
     /// </summary>
@@ -69,6 +75,16 @@ namespace SpeechChem.Dev
                 case "focus": return Focus(argument);
                 case "runlog": return RunLog(argument);
                 case "blast": return Blast(argument);
+                case "profile": return LiveAudit.Profile(argument);
+                case "openlevel": return LiveAudit.OpenLevel(argument);
+                case "fire": return LiveAudit.Fire(argument);
+                case "defense":
+                    switch ((argument ?? "").Trim())
+                    {
+                        case "audit": return DefenseAudit.Run();
+                        case "status": return DefenseAudit.Status();
+                        default: return "[usage: defense audit|status]" + (char)10;
+                    }
                 case "switchprofile":
                 {
                     // The main menu's "Switch Profile" button handler (the picker only shows at boot

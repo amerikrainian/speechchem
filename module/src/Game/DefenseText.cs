@@ -27,8 +27,10 @@ namespace SpeechChem.Game
     ///   normalised) and the labelled ranges of the level's vmethod_9 (brackets Class377.smethod_1,
     ///   labels smethod_2), each range read as its peaks in percent of the graph's height.
     /// What the game keeps only as meaning — which array of an enemy is its "motors", what event
-    /// code 0 of an Oxygen Tank is — lives in the small tables below (Parts, Events, States), the
-    /// only per-enemy / per-building pieces.
+    /// code 0 of an Oxygen Tank is, which of an enemy's sprites is its body, what its eye sprite
+    /// says — lives in the small tables below (Parts, Events, Bodies, EnemyStates, States), the
+    /// only per-enemy / per-building pieces; filled for every defense level from the decompile and
+    /// checked by Dev/DefenseAudit.
     ///   Reactor Controls (Class710): four toggles, Enum111 0-3 = control A-D = F1-F4, shown in
     ///   place of the shelf / palette while a defense run is not stopped.
     /// </summary>
@@ -63,14 +65,101 @@ namespace SpeechChem.Game
 
         private sealed class EventSpec
         {
-            public string Key;  // "{building} exploded"
-            public bool Weapon; // an attack on the enemy: report hit / missed
+            public string Key;       // "{building} exploded"
+            public bool Weapon;      // an attack on the enemy: report hit / missed
+            public bool Continuous;  // raised every cycle while it lasts (a beam): logged once per
+                                     // burst, "hit" once per burst, never "missed"
         }
 
-        /// <summary>Special buildings' event codes (Class598.method_15).</summary>
+        private static KeyValuePair<Type, int> Code(Type t, int code) => new KeyValuePair<Type, int>(t, code);
+
+        /// <summary>Special buildings' event codes (Class598.method_15) — what each level's handler
+        /// (its method_13 registration) does with them.</summary>
         private static readonly Dictionary<KeyValuePair<Type, int>, EventSpec> Events = new Dictionary<KeyValuePair<Type, int>, EventSpec>
         {
-            { new KeyValuePair<Type, int>(typeof(Class605), Class605.int_1), new EventSpec { Key = "defense.event.exploded", Weapon = true } },
+            { Code(typeof(Class605), Class605.int_1), new EventSpec { Key = "defense.event.exploded", Weapon = true } },
+            { Code(typeof(Class599), Class599.int_1), new EventSpec { Key = "defense.event.fired", Weapon = true } },
+            { Code(typeof(Class600), Class600.int_1), new EventSpec { Key = "defense.event.firing", Weapon = true, Continuous = true } },
+            { Code(typeof(ParticleAcceleratorDraggable), ParticleAcceleratorDraggable.int_1), new EventSpec { Key = "defense.event.fired", Weapon = true } },
+            { Code(typeof(Class601), 0), new EventSpec { Key = "defense.event.launched" } },
+            { Code(typeof(Class603), 0), new EventSpec { Key = "defense.event.left" } },
+            { Code(typeof(Class603), 1), new EventSpec { Key = "defense.event.right" } },
+            { Code(typeof(Class604), 0), new EventSpec { Key = "defense.event.missile" } }, // hits later: the enemy's damage reports it
+            { Code(typeof(Class607), 0), new EventSpec { Key = "defense.event.launched" } },
+        };
+
+        /// <summary>Where an enemy's BODY is drawn (pipeline pixels), when its drawing also holds
+        /// attacks, backgrounds or nothing at all (the level draws it): an empty rectangle = not in
+        /// sight. Enemies without an entry use everything their own draw puts on the map.</summary>
+        private static readonly Dictionary<Type, Func<DefenseLevelEditor, Class310, Rectangle>> Bodies = new Dictionary<Type, Func<DefenseLevelEditor, Class310, Rectangle>>
+        {
+            { typeof(Class313), (l, e) => new Rectangle(((Class313)e).vector2i_0, Class313.class358_0.method_2()) },
+            { typeof(Class311), (l, e) => new Rectangle(Class311.vector2i_0, new Vector2i(800, 558)) },
+            { typeof(Class312), (l, e) => l is Class150 w ? Centred(w.vector2i_3, new Vector2i(123, 173)) : default(Rectangle) },
+            { typeof(Class314), (l, e) => { var s = (Class314)e; return s.bool_0 && !s.method_1() ? Centred(s.vector2f_0, new Vector2i(368, 230)) : default(Rectangle); } },
+            { typeof(Class315), (l, e) => Centred(Class315.vector2i_1, new Vector2i(375, 348)) },
+            { typeof(Ktrechtasach), (l, e) => new Rectangle(((Ktrechtasach)e).method_12(), new Vector2i(382, 272)) },
+            // The pyramid: its lower and upper sprites (not the offset shadow drawn first, nor the
+            // lightning to the Control Center), each drawn around method_6 with its own origin.
+            { typeof(Quororque), (l, e) =>
+                {
+                    var q = (Quororque)e;
+                    var at = q.method_6();
+                    return Union(new Rectangle(at - new Vector2i(256, 31), Quororque.class358_0.method_2()),
+                                 new Rectangle(at - new Vector2i(76, 160), q.class249_0.method_2().method_2()));
+                } },
+        };
+
+        private static Rectangle Union(Rectangle a, Rectangle b)
+        {
+            int x0 = Math.Min(a.vector2i_0.int_0, b.vector2i_0.int_0), y0 = Math.Min(a.vector2i_0.int_1, b.vector2i_0.int_1);
+            int x1 = Math.Max(a.vector2i_0.int_0 + a.vector2i_1.int_0, b.vector2i_0.int_0 + b.vector2i_1.int_0);
+            int y1 = Math.Max(a.vector2i_0.int_1 + a.vector2i_1.int_1, b.vector2i_0.int_1 + b.vector2i_1.int_1);
+            return new Rectangle(new Vector2i(x0, y0), new Vector2i(x1 - x0, y1 - y0));
+        }
+
+        private static Rectangle Centred(Vector2i centre, Vector2i size) => new Rectangle(centre - size / 2, size);
+
+        /// <summary>An enemy's visible state the game shows only as sprites ("eye open, red",
+        /// "shield down"); a change while running is a run event.</summary>
+        private static readonly Dictionary<Type, Func<DefenseLevelEditor, Class310, string>> EnemyStates = new Dictionary<Type, Func<DefenseLevelEditor, Class310, string>>
+        {
+            { typeof(Class311), (l, e) =>
+                {
+                    var b = (Class311)e;
+                    if (b.method_1()) return null;
+                    int eye = (int)b.enum92_0;
+                    string text = Loc.T("defense.eye." + eye);
+                    if (eye != 0) text += ", " + Loc.T("defense.colour." + (int)b.eyeColor_0);
+                    return b.bool_0 ? text + ", " + Loc.T("defense.state.laser") : text;
+                } },
+            { typeof(Class312), (l, e) =>
+                {
+                    var w = l as Class150;
+                    if (w == null || e.method_1()) return null;
+                    var parts = new List<string>();
+                    if (w.int_5 > 0) parts.Add(Loc.T("defense.state.phasing"));
+                    if (w.int_4 > 0) parts.Add(Loc.T("defense.state.stunned"));
+                    return parts.Count == 0 ? null : string.Join(", ", parts.ToArray());
+                } },
+            { typeof(Ktrechtasach), (l, e) =>
+                {
+                    var s = (Ktrechtasach)e;
+                    if (s.method_1()) return null;
+                    string mouth = Loc.T("defense.mouth." + Math.Max(0, Math.Min(2, s.int_3)));
+                    return s.bool_0 ? Loc.T("defense.state.walking") + ", " + mouth : mouth;
+                } },
+            { typeof(Quororque), (l, e) =>
+                {
+                    var q = (Quororque)e;
+                    if (q.method_1()) return null;
+                    var parts = new List<string>();
+                    int stage = q.class249_0.method_0();
+                    if (stage > 0) parts.Add(Loc.T(stage == 1 ? "defense.state.damaged" : "defense.state.damaged2"));
+                    if (q.bool_0) parts.Add(Loc.T("defense.state.shielddown"));
+                    if (q.int_2 > 0) parts.Add(Loc.T("defense.state.lightning"));
+                    return parts.Count == 0 ? null : string.Join(", ", parts.ToArray());
+                } },
         };
 
         /// <summary>A building state the game shows only as a sprite change.</summary>
@@ -78,6 +167,13 @@ namespace SpeechChem.Game
         {
             { typeof(Class605), d => ((Class605)d).bool_3 ? Loc.T("defense.exploded") : null },
         };
+
+        /// <summary>Table coverage, for the dev audit.</summary>
+        internal static bool HasParts(Type enemy) => Parts.ContainsKey(enemy);
+        internal static bool HasEvent(Type building, int code) => Events.ContainsKey(Code(building, code));
+        internal static bool HasState(Type building) => States.ContainsKey(building);
+        internal static bool HasBody(Type enemy) => Bodies.ContainsKey(enemy);
+        internal static bool HasEnemyState(Type enemy) => EnemyStates.ContainsKey(enemy);
 
         // ---- the enemy ----
 
@@ -120,6 +216,14 @@ namespace SpeechChem.Game
             try { return enemy != null && enemy.method_1(); } catch { return false; }
         }
 
+        /// <summary>The enemy's visible state, or null (none, or no entry).</summary>
+        public static string EnemyState(DefenseLevelEditor level, Class310 enemy)
+        {
+            Func<DefenseLevelEditor, Class310, string> f;
+            if (enemy == null || !EnemyStates.TryGetValue(enemy.GetType(), out f)) return null;
+            try { return f(enemy.defenseLevelEditor_0 ?? level, enemy); } catch { return null; }
+        }
+
         /// <summary>The enemy's part flags (true = intact), or null when it has no parts entry.</summary>
         public static bool[] PartFlags(Class310 enemy)
         {
@@ -151,21 +255,37 @@ namespace SpeechChem.Game
             return enemy != null && Parts.TryGetValue(enemy.GetType(), out spec) ? Loc.T(spec.LostKey) : null;
         }
 
+        /// <summary>The rectangles that stand for the enemy on the map: its body entry, else what
+        /// its own draw put there (null before the first draw).</summary>
+        private static List<Rectangle> Shape(Class310 enemy)
+        {
+            if (enemy == null) return null;
+            Func<DefenseLevelEditor, Class310, Rectangle> body;
+            if (Bodies.TryGetValue(enemy.GetType(), out body))
+            {
+                try { return new List<Rectangle> { body(enemy.defenseLevelEditor_0 ?? Level, enemy) }; } catch { return null; }
+            }
+            return Patches.DefenseCapture.Footprint(enemy);
+        }
+
+        private static bool Empty(Rectangle r) => r.vector2i_1.int_0 <= 0 || r.vector2i_1.int_1 <= 0;
+
         /// <summary>The cells (0-based, on the map) one drawn rectangle covers.</summary>
         private static void CellsOf(Rectangle r, out int x0, out int x1, out int y0, out int y1)
         {
             x0 = FloorDiv(r.vector2i_0.int_0, CellWidth);
-            x1 = FloorDiv(r.vector2i_0.int_0 + Math.Max(1, r.vector2i_1.int_0) - 1, CellWidth);
+            x1 = FloorDiv(r.vector2i_0.int_0 + r.vector2i_1.int_0 - 1, CellWidth);
             y0 = FloorDiv(r.vector2i_0.int_1, CellHeight);
-            y1 = FloorDiv(r.vector2i_0.int_1 + Math.Max(1, r.vector2i_1.int_1) - 1, CellHeight);
+            y1 = FloorDiv(r.vector2i_0.int_1 + r.vector2i_1.int_1 - 1, CellHeight);
         }
 
         public static bool Covers(Class310 enemy, Vector2i cell)
         {
-            var rects = Patches.DefenseCapture.Footprint(enemy);
+            var rects = Shape(enemy);
             if (rects == null) return false;
             foreach (var r in rects)
             {
+                if (Empty(r)) continue;
                 int x0, x1, y0, y1;
                 CellsOf(r, out x0, out x1, out y0, out y1);
                 if (cell.int_0 >= x0 && cell.int_0 <= x1 && cell.int_1 >= y0 && cell.int_1 <= y1) return true;
@@ -177,11 +297,12 @@ namespace SpeechChem.Game
         /// or null before the enemy's first draw.</summary>
         public static string Span(Class310 enemy)
         {
-            var rects = Patches.DefenseCapture.Footprint(enemy);
+            var rects = Shape(enemy);
             if (rects == null) return null;
             int ax0 = int.MaxValue, ax1 = int.MinValue, ay0 = int.MaxValue, ay1 = int.MinValue;
             foreach (var r in rects)
             {
+                if (Empty(r)) continue;
                 int x0, x1, y0, y1;
                 CellsOf(r, out x0, out x1, out y0, out y1);
                 x0 = Math.Max(0, x0); x1 = Math.Min(MapColumns - 1, x1);
@@ -206,12 +327,17 @@ namespace SpeechChem.Game
             {
                 try { string s = state(d); if (s != null) return s; } catch { }
             }
-            var m = Patches.DefenseCapture.CaptureMeter(d);
-            if (m == null) return null;
-            int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, m.Value.Value)) * 100f);
-            return string.IsNullOrEmpty(m.Value.Key)
-                ? Loc.T("run.percent", new { percent })
-                : Loc.T("defense.status", new { label = m.Value.Key, percent });
+            var meters = Patches.DefenseCapture.CaptureMeter(d);
+            if (meters == null) return null;
+            var parts = new List<string>();
+            foreach (var m in meters)
+            {
+                int percent = (int)Math.Round(Math.Max(0f, Math.Min(1f, m.Value)) * 100f);
+                parts.Add(string.IsNullOrEmpty(m.Key)
+                    ? Loc.T("run.percent", new { percent })
+                    : Loc.T("defense.status", new { label = m.Key, percent }));
+            }
+            return string.Join(", ", parts.ToArray());
         }
 
         /// <summary>The Control Center's name as the progress panel titles it.</summary>
@@ -220,15 +346,18 @@ namespace SpeechChem.Game
         // ---- special-building events ----
 
         /// <summary>"Oxygen Tank 2 exploded", or "Oxygen Tank 2, event 3" for a code not in the
-        /// table; <paramref name="weapon"/> = the event attacks the enemy.</summary>
-        public static string EventText(Class598 b, int code, out bool weapon)
+        /// table; <paramref name="weapon"/> = the event attacks the enemy, <paramref name="continuous"/>
+        /// = raised every cycle while it lasts.</summary>
+        public static string EventText(Class598 b, int code, out bool weapon, out bool continuous)
         {
             weapon = false;
+            continuous = false;
             string name = PipelineText.Name(b.pipeline_0, b);
             EventSpec spec;
-            if (Events.TryGetValue(new KeyValuePair<Type, int>(b.GetType(), code), out spec))
+            if (Events.TryGetValue(Code(b.GetType(), code), out spec))
             {
                 weapon = spec.Weapon;
+                continuous = spec.Continuous;
                 return Loc.T(spec.Key, new { building = name });
             }
             return Loc.T("defense.event", new { building = name, code });

@@ -746,8 +746,39 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   made it visible, `bool_1`, while stopped) is read after the molecule in the tank's input cell.
 - Step (0) after the enemy's destruction (GoalTracker.bool_0 freezes the waldos for 700 cycles
   before the win) says "{enemy} destroyed, waldos stopped".
-- NOT DONE: undo inside a defense level (untested); table lines for later enemies / weapons as
-  they are met (their events read "…, event N" until then).
+- TABLES FILLED FOR EVERY DEFENSE LEVEL (2026-10-04, from the decompile; `DefenseText`): Events —
+  every special building's codes (tank exploded, lasers / accelerator fired — weapons, the beam
+  laser "firing" as a CONTINUOUS weapon: one line and at most one "hit" per burst — canister /
+  launch pad launched, missile launcher "launched a missile" (its hits arrive later as enemy
+  damage), thruster left / right); Bodies — which drawn rectangle is each enemy's body (some draw
+  attacks, water or a shadow too; one is drawn by its LEVEL, not itself; one is absent until it
+  arrives = "off the map"); EnemyStates — visible states (an eye's opening and colour, a shield
+  down, a mouth opening / firing, walking, phasing / stunned, damage stages, lightning); Parts —
+  only the robot. Bodies / states read the enemy's OWN level (Class310.defenseLevelEditor_0).
+  Multi-bar meters read every bar ("H2 0 percent, O2 0 percent, Pu 0 percent"; formula markup
+  stripped with MoleculeText.Clean).
+- AUDIT TOOLS (DEBUG; report names enemies — keep them out of anything the player hears / reads):
+  `defense audit` builds every DefenseLevelEditor subclass IN MEMORY (Activator, never
+  Levels.smethod_14 — no save access), saving and restoring the clock's static delegates
+  (Class258.delegate22/23/25/26/27_0, class161_0), GoalTracker's defense globals, Class83.bool_1 and
+  the tutorial list (Class424.list_0); it reports the enemy, its body / footprint, parts / state,
+  graph labels, special buildings' meters, the event codes their IL passes to method_15 (constant
+  pushed two instructions before the call; "?" when not a constant) against the tables. The sandbox
+  (Class147) can't be built that way (needs a custom level) — expected. `defense status` = the open
+  level as the mod reads it. LIVE AUDIT on a throwaway profile (Dev/LiveAudit): `profile create /
+  select / delete SCAudit…` (create / delete refuse other names), `openlevel <id>` (level select →
+  any level, no unlock check; refuses non-SCAudit profiles), `fire list | fire <n> <code>` (raise a
+  building's event; PAUSED only). Never let a run reach a win (scores / Steam achievements): fire
+  while paused, stop at once. After switching back to the player's profile, level select may show
+  their planets "Locked" until it is reopened (the level progress cache, Levels.dictionary_7, is
+  refilled by the profile's worker after level select was built) — reopen it; the save is untouched.
+  2026-10-04: all 7 enemy levels + the no-enemy one audited live, no errors.
+- KNOWN LIMITS: a weapon hit that does 0 damage (the accelerator below 15 voltage) reads "missed"
+  (hit = a health or part drop); projectiles and hazards (asteroids, the player's ship, missiles in
+  flight, the spider's shots) are not tracked — per-level mechanics, to read when the player gets
+  there; noisy lines measured live: a walking enemy's span changes at every cell edge, and one
+  level's laser damages the base 1 percent at a time.
+- NOT DONE: undo inside a defense level (untested).
 
 ## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
 Only events the game has (user rule), worded as what HAPPENED ("grabbed Oxygen", "nothing to drop"):

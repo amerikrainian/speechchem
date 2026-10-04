@@ -495,6 +495,11 @@ namespace SpeechChem.Screens.Reactor
         /// The menu's own opener can't be used: it pushes the game's menu screen and clicks.</summary>
         internal static void SyncMenu(InstructionMenu menu, Instruction member)
         {
+            // The items read the instruction's colour from its reactor cell (ReactorMember.method_0
+            // → reactor.method_19(this).Value): after the menu's Delete it has none, and every item
+            // threw "Nullable object must have a value" (the re-sync after a run). Nothing to fit.
+            try { if (member?.reactor_0?.method_19(member) == null) return; }
+            catch { return; }
             foreach (var component in menu.linkedList_0)
             {
                 if (!(component is MenuItem<Instruction> item)) continue;

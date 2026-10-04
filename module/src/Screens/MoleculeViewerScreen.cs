@@ -95,15 +95,15 @@ namespace SpeechChem.Screens
             if (_molecule.dictionary_2.TryGetValue(pos, out atom))
             {
                 parts.Add(atom.method_0());
-                foreach (var bond in Bonds(pos)) parts.Add(bond);
+                foreach (var bond in Bonds(_molecule, pos)) parts.Add(bond);
             }
             return string.Join(", ", parts.ToArray());
         }
 
         /// <summary>The bonds touching an atom, by direction ("double bond right").</summary>
-        private IEnumerable<string> Bonds(Vector2i pos)
+        internal static IEnumerable<string> Bonds(Molecule molecule, Vector2i pos)
         {
-            foreach (var kv in _molecule.dictionary_3)
+            foreach (var kv in molecule.dictionary_3)
             {
                 var from = kv.Key.vector2i_0;
                 var to = kv.Key.method_0();

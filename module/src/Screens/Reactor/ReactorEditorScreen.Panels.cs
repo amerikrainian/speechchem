@@ -193,8 +193,22 @@ namespace SpeechChem.Screens.Reactor
                 int index = kv.Key;
                 var vt = ProfileUi.Text(true, () => OutputLine(index));
                 vt.OnActivate = () => OpenMolecules(PanelAnnotation(false, index), "reactor.mol.out." + index);
+                vt.OnSecondary = () => EditNote(index);
                 b.AddItem(ControlId.Structural("reactor.mol.out." + index), vt);
             }
+        }
+
+        /// <summary>Backspace on an output line: the game's right-click on that output panel
+        /// (Class77.vmethod_2) — this reactor's own note for the output, in the Output Note Editor
+        /// (NoteEditorScreen), centred. Research levels (a Class84 host) can't edit notes.</summary>
+        private static void EditNote(int index)
+        {
+            var rd = Editor?.reactorDraggable_0;
+            if (rd == null || !rd.class485_1.ContainsKey(index) || Class53.smethod_5<Class84>() != null) return;
+            var note = rd.class485_1[index].method_0() as SpaceChem.Pipeline.ReactorAnnotation;
+            if (note == null) return;
+            try { Class53.smethod_1(new InlineAnnotationEditor(note, bool_2: true)); }
+            catch (System.Exception ex) { Log.Error("[reactor] note editor failed", ex); }
         }
 
         /// <summary>A panel's annotation (input: the upstream port's; output: the downstream port's,

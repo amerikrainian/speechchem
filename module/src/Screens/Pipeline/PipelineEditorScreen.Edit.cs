@@ -468,7 +468,9 @@ namespace SpeechChem.Screens.Pipeline
 
         /// <summary>Backspace: the game's right-click menu (Class82 / DraggableMenu) as a list, in its
         /// order — "Reset Pipes" (a component with outputs and no locked pipe: every pipe back to its
-        /// stub); "Save to Toolbox" (an unlocked reactor in a level that allows saved designs, Class83.bool_0:
+        /// stub); on a reactor its output notes ("Add Note to Upper Output" / "Edit Upper Note
+        /// (Visible)" / "(Hidden)", the same for Lower: the Output Note Editor, NoteEditorScreen);
+        /// "Save to Toolbox" (an unlocked reactor in a level that allows saved designs, Class83.bool_0:
         /// the name dialog, SaveDesignScreen); "Delete" (unlocked components).</summary>
         private void OpenMenu()
         {
@@ -490,6 +492,8 @@ namespace SpeechChem.Screens.Pipeline
                 });
             if (d is ReactorDraggable rd)
             {
+                AddNoteItem(items, rd, 0, "Upper");
+                AddNoteItem(items, rd, 1, "Lower");
                 if (!d.bool_0 && (Editor?.method_0() as Class83)?.bool_0 == true)
                     items.Add(new ActionListScreen.Item
                     {
@@ -502,6 +506,22 @@ namespace SpeechChem.Screens.Pipeline
                 items.Add(new ActionListScreen.Item { Label = () => GameText.T("Delete"), Run = () => Delete(d, fromList, viaMenu: true) });
             if (items.Count == 0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
             PushChild(new ActionListScreen("pipeline.menu", PipelineText.Name(p, d), items));
+        }
+
+        /// <summary>A reactor output's note item, labelled as the game's menu labels it (DraggableMenu):
+        /// "Add Note to Upper Output" when the note is empty, else "Edit Upper Note (Visible)" /
+        /// "(Hidden)". Opens the game's Output Note Editor over the pipeline.</summary>
+        private void AddNoteItem(List<ActionListScreen.Item> items, ReactorDraggable rd, int output, string side)
+        {
+            if (!rd.class485_1.ContainsKey(output)) return;
+            var note = rd.class485_1[output].method_0() as ReactorAnnotation;
+            if (note == null) return;
+            items.Add(new ActionListScreen.Item
+            {
+                Label = () => GameText.T(note.method_4() ? "Add Note to " + side + " Output"
+                    : note.bool_1 ? "Edit " + side + " Note (Visible)" : "Edit " + side + " Note (Hidden)"),
+                Run = () => Editor?.method_3(new InlineAnnotationEditor(note, bool_2: false)),
+            });
         }
 
         /// <summary>Why the last drop was refused: the components it would overlap (Pipeline.hashSet_2,

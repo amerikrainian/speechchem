@@ -206,6 +206,7 @@ namespace SpeechChem.Screens
             Register(new Reactor.ReactorEditorScreen());
             Register(new Pipeline.PipelineEditorScreen());
             Register(new Pipeline.SaveDesignScreen());
+            Register(new Pipeline.NoteEditorScreen());
             Register(new PeriodicTableScreen());
             Register(new StoryInfoScreen());
             Register(new ShipLostScreen());

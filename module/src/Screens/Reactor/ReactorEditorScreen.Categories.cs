@@ -44,12 +44,14 @@ namespace SpeechChem.Screens.Reactor
             new Category { Name = "reactor.cat.waldos", Items = (r, e) => WaldoItems() },
         });
 
+        // Only categories holding something are stops (UI/CategoryCycle, user rule 2026-10-04).
         private void StepCategory(int delta)
         {
             var r = Model;
             if (r == null) return;
-            int n = Categories.Count;
-            _category = _category < 0 ? (delta > 0 ? 0 : n - 1) : ((_category + delta) % n + n) % n;
+            int next = CategoryCycle.Next(_category, delta, Categories.Count, i => Categories[i].Items(r, Editor).Count);
+            if (next < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
+            _category = next;
             _item = -1;
             var items = Categories[_category].Items(r, Editor);
             Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(Categories[_category].Name), n = items.Count }), interrupt: true);
@@ -59,13 +61,10 @@ namespace SpeechChem.Screens.Reactor
         {
             var r = Model;
             if (r == null) return;
-            if (_category < 0) _category = 0;
+            int category = CategoryCycle.ForItems(_category, Categories.Count, i => Categories[i].Items(r, Editor).Count);
+            if (category < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
+            if (category != _category) { _category = category; _item = -1; }
             var items = Categories[_category].Items(r, Editor);
-            if (items.Count == 0)
-            {
-                Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(Categories[_category].Name), n = 0 }), interrupt: true);
-                return;
-            }
             _item = _item < 0 ? (delta > 0 ? 0 : items.Count - 1) : ((_item + delta) % items.Count + items.Count) % items.Count;
             var item = items[_item];
             if (item.Run != null) { item.Run(); return; }

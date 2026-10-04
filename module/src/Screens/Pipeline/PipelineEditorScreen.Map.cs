@@ -264,12 +264,14 @@ namespace SpeechChem.Screens.Pipeline
             return cells;
         }
 
+        // Only categories holding something are stops (UI/CategoryCycle, user rule 2026-10-04).
         private void StepCategory(int delta)
         {
             var p = Model;
             if (p == null || _drawPipe != null) return;
-            int n = Categories.Length;
-            _category = _category < 0 ? (delta > 0 ? 0 : n - 1) : ((_category + delta) % n + n) % n;
+            int next = CategoryCycle.Next(_category, delta, Categories.Length, i => CategoryCells(p, i).Count);
+            if (next < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
+            _category = next;
             _item = -1;
             Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryName(_category)), n = CategoryCells(p, _category).Count }), interrupt: true);
         }
@@ -278,13 +280,10 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null || _drawPipe != null) return;
-            if (_category < 0) _category = 0;
+            int category = CategoryCycle.ForItems(_category, Categories.Length, i => CategoryCells(p, i).Count);
+            if (category < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
+            if (category != _category) { _category = category; _item = -1; }
             var cells = CategoryCells(p, _category);
-            if (cells.Count == 0)
-            {
-                Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryName(_category)), n = 0 }), interrupt: true);
-                return;
-            }
             _item = _item < 0 ? (delta > 0 ? 0 : cells.Count - 1) : ((_item + delta) % cells.Count + cells.Count) % cells.Count;
             var c = cells[_item];
             if (c.int_0 == _cursorX && c.int_1 == _cursorY && Equals(Navigation.FocusedNodeId, MapCellId(c.int_0, c.int_1)))

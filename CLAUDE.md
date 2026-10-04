@@ -505,7 +505,7 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   START only on its own cell, a branch ends at the wall or a repeated cell+heading) as a list; Enter
   jumps to the line's cell (deferred a frame: closing the list restores focus after the item runs).
   P status, Ctrl+T repeat tutorial step (bare T = the game's Sync hotkey).
-- CATEGORIES (user request): [ / ] cycle Instructions, Inputs, Outputs, Hardware, Waldos ("name,
+- CATEGORIES (user request): [ / ] cycle Instructions, Inputs, Outputs, Hardware, Waldos — only those holding something (UI/CategoryCycle, user rule 2026-10-04; the pipeline's too) ("name,
   count"; no per-colour program
   lists — user: Waldos is enough); , / . cycle items in READING ORDER (fixed by the board, never by the
   cursor — the user asked for a stable order). Grid items move the cursor; an instruction item arms it

@@ -120,6 +120,7 @@
   "pipeline.pipe": "pipe, {owner} {output}",
   "pipeline.pipe.end": "end",
   "pipeline.pipe.crossing": "crossing {pipe}",
+  "reactor.cat.none": "Nothing to list",
   "pipeline.cat.reactors": "Reactors",
   "pipeline.cat.inputs": "Inputs",
   "pipeline.cat.outputs": "Outputs",

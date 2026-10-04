@@ -33,8 +33,23 @@ namespace SpeechChem
         }
 
         /// <summary>Run every registered step, in order. Called from the GameLogic tick prefix.</summary>
+#if DEBUG
+        /// <summary>The last tick's own duration (Dev/LogStress measures the mod's work with it).</summary>
+        internal static double LastTickMs;
+        private static readonly System.Diagnostics.Stopwatch TickClock = new System.Diagnostics.Stopwatch();
+#endif
+
         public static void Tick()
         {
+#if DEBUG
+            TickClock.Restart();
+            try { TickSteps(); }
+            finally { LastTickMs = TickClock.Elapsed.TotalMilliseconds; }
+        }
+
+        private static void TickSteps()
+        {
+#endif
             for (int i = 0; i < Steps.Count; i++)
             {
                 var step = Steps[i];

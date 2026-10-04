@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,97 +11,128 @@ namespace SpeechChem.Narration
     /// as the order places them; several items are joined with "; ". The reactor part in its
     /// "unnamed" variant is left out where that reactor is the open one (the mod's rule: inside
     /// reactor 2 its own events drop "reactor 2").
+    ///
+    /// Runs for every event and (uncached) every rendered log row, so it reads the compiled
+    /// <see cref="FormatPlan"/> and reuses its scratch buffers: the only allocation is the result.
     /// </summary>
     internal static class Formatter
     {
+        private struct Piece
+        {
+            public string Text, Suffix;
+            public Piece(string text, string suffix) { Text = text; Suffix = suffix; }
+        }
+
+        // Scratch, reused per call (per thread: the game calls from its main thread, tests may not).
+        [ThreadStatic] private static List<Piece> _lead, _trail, _parts, _all;
+        [ThreadStatic] private static StringBuilder _items, _join;
+
         /// <param name="openReactor">The reactor whose view this is (the one open for speech, the
         /// reactor whose Run log is shown), or null (the pipeline's view: every reactor named).</param>
         public static string Format(NarrationEvent e, FormatLayer layer, object openReactor)
         {
             if (e?.Kind == null) return null;
-            var kind = e.Kind;
-            var order = EventSettings.Order(kind, layer);
-            var defs = new Dictionary<string, PartDef>();
-            foreach (var p in kind.Parts) defs[p.Key] = p;
+            var plan = Rules.Of(e.Kind).Plan(layer);
+            var lead = _lead ?? (_lead = new List<Piece>());
+            var trail = _trail ?? (_trail = new List<Piece>());
+            var parts = _parts ?? (_parts = new List<Piece>());
+            var all = _all ?? (_all = new List<Piece>());
+            var items = _items ?? (_items = new StringBuilder());
+            lead.Clear(); trail.Clear(); all.Clear(); items.Length = 0;
 
-            var lead = new List<KeyValuePair<string, string>>();
-            var trail = new List<KeyValuePair<string, string>>();
             bool itemsSeen = false;
-            foreach (var key in order)
+            for (int o = 0; o < plan.Order.Length; o++)
             {
-                var common = e.Common.Find(p => p.Key == key);
-                if (common == null) { if (AnyItemHas(e, key)) itemsSeen = true; continue; }
-                var text = Render(e, kind, layer, defs, common, openReactor);
+                string key = plan.Order[o];
+                var common = Find(e.Common, key);
+                if (common == null) { if (!itemsSeen && AnyItemHas(e, key)) itemsSeen = true; continue; }
+                var text = Render(e, plan, o, common, openReactor);
                 if (text == null) continue;
-                (itemsSeen ? trail : lead).Add(new KeyValuePair<string, string>(text, common.Suffix));
+                (itemsSeen ? trail : lead).Add(new Piece(text, common.Suffix));
             }
 
-            var items = new List<string>();
+            int itemCount = 0;
             foreach (var item in e.Items)
             {
                 // A part's own punctuation holds only before the part it preceded in the event as
                 // built (the default order); after a reorder, unrelated neighbours get a comma.
-                var parts = new List<KeyValuePair<string, string>>();
-                EventPart prev = null;
-                foreach (var key in order)
+                parts.Clear();
+                int prev = -1;
+                for (int o = 0; o < plan.Order.Length; o++)
                 {
-                    var part = item.Find(p => p.Key == key);
-                    if (part == null) continue;
-                    var text = Render(e, kind, layer, defs, part, openReactor);
+                    int at = IndexOf(item, plan.Order[o]);
+                    if (at < 0) continue;
+                    var part = item[at];
+                    var text = Render(e, plan, o, part, openReactor);
                     if (text == null) continue;
-                    if (prev != null && parts.Count > 0 && !Follows(item, prev, part))
-                        parts[parts.Count - 1] = new KeyValuePair<string, string>(parts[parts.Count - 1].Key, ",");
-                    parts.Add(new KeyValuePair<string, string>(text, part.Suffix));
-                    prev = part;
+                    if (prev >= 0 && parts.Count > 0 && at != prev + 1)
+                        parts[parts.Count - 1] = new Piece(parts[parts.Count - 1].Text, ",");
+                    parts.Add(new Piece(text, part.Suffix));
+                    prev = at;
                 }
-                string joined = Join(parts);
-                if (!string.IsNullOrEmpty(joined)) items.Add(joined);
+                if (parts.Count == 0) continue;
+                if (itemCount++ > 0) items.Append("; ");
+                Append(items, parts);
             }
 
-            var all = new List<KeyValuePair<string, string>>(lead);
-            if (items.Count > 0) all.Add(new KeyValuePair<string, string>(string.Join("; ", items.ToArray()), trail.Count > 0 ? "," : null));
+            all.AddRange(lead);
+            if (itemCount > 0) all.Add(new Piece(items.ToString(), trail.Count > 0 ? "," : null));
             all.AddRange(trail);
-            return Join(all);
+            if (all.Count == 0) return "";
+            var join = _join ?? (_join = new StringBuilder());
+            join.Length = 0;
+            Append(join, all);
+            return join.ToString();
         }
 
-        /// <summary>Whether <paramref name="b"/> came straight after <paramref name="a"/> in the item as
-        /// built (ignoring parts turned off in between is not needed: built order = default order).</summary>
-        private static bool Follows(List<EventPart> item, EventPart a, EventPart b)
+        private static EventPart Find(List<EventPart> list, string key)
         {
-            int ia = item.IndexOf(a), ib = item.IndexOf(b);
-            return ia >= 0 && ib == ia + 1;
+            for (int i = 0; i < list.Count; i++) if (list[i].Key == key) return list[i];
+            return null;
+        }
+
+        private static int IndexOf(List<EventPart> list, string key)
+        {
+            for (int i = 0; i < list.Count; i++) if (list[i].Key == key) return i;
+            return -1;
         }
 
         private static bool AnyItemHas(NarrationEvent e, string key)
         {
-            foreach (var item in e.Items) if (item.Exists(p => p.Key == key)) return true;
+            foreach (var item in e.Items) if (IndexOf(item, key) >= 0) return true;
             return false;
         }
 
-        private static string Render(NarrationEvent e, EventKind kind, FormatLayer layer, Dictionary<string, PartDef> defs,
-            EventPart part, object openReactor)
+        private static string Render(NarrationEvent e, FormatPlan plan, int o, EventPart part, object openReactor)
         {
-            if (!EventSettings.PartOn(kind, layer, part.Key)) return null;
-            PartDef def;
-            string variant = defs.TryGetValue(part.Key, out def) ? EventSettings.Variant(kind, layer, def) : null;
-            if (part.Key == "reactor" && variant == "unnamed" && openReactor != null && ReferenceEquals(openReactor, e.Reactor)) return null;
+            if (!plan.On[o]) return null;
+            string variant = plan.Variant[o];
+            if (variant == "unnamed" && part.Key == "reactor" && openReactor != null && ReferenceEquals(openReactor, e.Reactor)) return null;
             string text = part.TextFor(variant);
             return string.IsNullOrEmpty(text) ? null : text;
         }
 
         /// <summary>"a, b: c" — each part's suffix goes before the next part, never after the last.</summary>
-        internal static string Join(List<KeyValuePair<string, string>> parts)
+        private static void Append(StringBuilder sb, List<Piece> parts)
         {
-            var sb = new StringBuilder();
             for (int i = 0; i < parts.Count; i++)
             {
                 if (i > 0)
                 {
-                    if (!string.IsNullOrEmpty(parts[i - 1].Value)) sb.Append(parts[i - 1].Value);
+                    if (!string.IsNullOrEmpty(parts[i - 1].Suffix)) sb.Append(parts[i - 1].Suffix);
                     sb.Append(' ');
                 }
-                sb.Append(parts[i].Key);
+                sb.Append(parts[i].Text);
             }
+        }
+
+        /// <summary>The joining rule on its own (tests).</summary>
+        internal static string Join(List<KeyValuePair<string, string>> parts)
+        {
+            var list = new List<Piece>();
+            foreach (var p in parts) list.Add(new Piece(p.Key, p.Value));
+            var sb = new StringBuilder();
+            Append(sb, list);
             return sb.ToString();
         }
     }

@@ -281,7 +281,7 @@ namespace SpeechChem.Screens.Pipeline
 
         private const string LogStop = "pipeline.log";
 
-        private readonly WindowedLogView<int> _logView = new WindowedLogView<int>(
+        private readonly WindowedLogView<int, Narration.NarrationEvent> _logView = new WindowedLogView<int, Narration.NarrationEvent>(
             "pipeline.log.", k => k.ToString(), s => { int n; return int.TryParse(s, out n) ? n : (int?)null; });
 
         private int _logGeneration = -1;
@@ -291,9 +291,10 @@ namespace SpeechChem.Screens.Pipeline
             _logView.Build(b, LogStop, Loc.T("run.log"), RunCapture.Log,
                 cycle => Loc.T("run.cycle", new { n = cycle }),
                 (Navigation.Active as GraphNavigator)?.FocusCursorId,
-                tag => tag is Narration.NarrationEvent e && e.Payload is Reactor.ReactorSnapshot s ? () => PushChild(new Reactor.ReactorSnapshotScreen(s)) : (System.Action)null,
+                e => e.Payload is Reactor.ReactorSnapshot s ? () => PushChild(new Reactor.ReactorSnapshotScreen(s)) : (System.Action)null,
                 // Entries are events: the log format, every reactor named (this is no reactor's view).
-                (text, tag) => tag is Narration.NarrationEvent e ? Narration.Formatter.Format(e, Narration.FormatLayer.Log, null) : text);
+                e => Narration.Formatter.Format(e, Narration.FormatLayer.Log, null),
+                Narration.NarrationStore.Revision);
         }
 
         private void UpdateRunWatch()

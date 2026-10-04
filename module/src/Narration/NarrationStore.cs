@@ -28,6 +28,10 @@ namespace SpeechChem.Narration
         /// <summary>Raised after a commit (formats cached by views may re-render).</summary>
         public static event Action Committed;
 
+        /// <summary>Moves whenever the COMMITTED values may have changed: caches of them (the
+        /// compiled Rules, rendered log rows) rebuild when it differs from theirs.</summary>
+        public static int Revision { get; private set; }
+
         private static Dictionary<string, string> Saved => _saved ?? (_saved = Load());
 
         /// <summary>The committed value, or null (= default).</summary>
@@ -60,7 +64,7 @@ namespace SpeechChem.Narration
             bool immediate = _draft == null;
             var map = _draft ?? Saved;
             if (value == null) map.Remove(key); else map[key] = value;
-            if (immediate) Write(Saved);
+            if (immediate) { Revision++; Write(Saved); }
         }
 
         /// <summary>Drop every draft key under <paramref name="prefix"/> (a reset).</summary>
@@ -70,7 +74,7 @@ namespace SpeechChem.Narration
             var keys = new List<string>();
             foreach (var k in map.Keys) if (k.StartsWith(prefix, StringComparison.Ordinal) && k != VersionKey) keys.Add(k);
             foreach (var k in keys) map.Remove(k);
-            if (_draft == null) Write(Saved);
+            if (_draft == null) { Revision++; Write(Saved); }
         }
 
         public static void Commit()
@@ -78,6 +82,7 @@ namespace SpeechChem.Narration
             if (_draft == null) return;
             _saved = _draft;
             _draft = null;
+            Revision++;
             Write(_saved);
             try { Committed?.Invoke(); } catch { }
         }
@@ -131,6 +136,6 @@ namespace SpeechChem.Narration
         }
 
         /// <summary>Tests: forget everything loaded (the next read reloads from FilePath).</summary>
-        internal static void ResetForTests() { _saved = null; _draft = null; _unreadable = false; }
+        internal static void ResetForTests() { _saved = null; _draft = null; _unreadable = false; Revision++; }
     }
 }

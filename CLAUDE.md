@@ -184,7 +184,7 @@ open, stopped reactor for the read, then removed and forgotten),
 component's ports, pipe ends and links), `focus <stop> <id>` (focus a node by structural id, e.g.
 `focus pipeline.map pipeline.cell.15.11`; with `key` it drives the pipeline editor's cut / paste /
 menu / drawing exactly as the keys do — how a layout was rebuilt 2026-10-04),
-`runlog [n]` (the last n cycle groups of the run log as text), `blast <x>` (first defense level only,
+`runlog [n]` (the last n cycle groups of the run log as text), `logstress fill <n> [reactors] | burst <per frame> <frames> [reactors] | frames <n> | report | clear | mem | mode normal|mute|bypass` (Dev/LogStress: synthetic waldo events through the real Narrator, never spoken; frame / mod-tick times, GC counts, allocation, memory held; `clear` also empties older module generations' logs, which hot reload never frees), `blast <x>` (first defense level only,
 during a run: the Oxygen Tank at map column x — 12, 18, 24 — raises its blast event (`method_15`)
 without being filled, so the level's handler hits or misses the robot exactly as a real blast; destroying all 3 motors starts the 700-cycle win timer, so STOP
 the run right after — never let a test win the level),
@@ -887,6 +887,41 @@ closer than a cell mid-move, so the marked cell may hold one atom with the other
 a 10M-entry insurance cap; WindowedLogView is the reusable Tab stop: one region per cycle, a window of
 51 groups / 1200 rows re-centred on focus every rebuild, tail-follow when focus is elsewhere, Home/End
 = the whole log's ends.
+BURST-PROOF (2026-10-04, user request after Echopunks' GC freeze; measured with `logstress`, §7):
+- STORE: Echopunks' compact GroupedLog, generic over the value: entries are int ids in 64 KB chunks
+  (no references for the GC to scan, under the LOH threshold); values are NarrationEvents INTERNED
+  by content (EventContentComparer: kind, reactor and payload by reference, every part's key / text
+  / variants / suffix), so a looping run's entries share a few records and a format change still
+  re-renders old entries. 629 → 8 bytes held per event; 1M entries ~600 MB → ~10 MB.
+- RULES: each kind's committed settings compiled once per NarrationStore.Revision (Narration/Rules:
+  log, speak moments, scope, sources, a FormatPlan per layer); the Formatter reads the plan with
+  [ThreadStatic] scratch (no settings-key strings per call).
+- MUTED: NarrationEvent's constructor asks Narrator.Wants (log on, a step running, or speakable at
+  this moment); a muted event skips its parts (molecule texts) and Emit drops it. Game-touching
+  parts live in Narrator.LiveWants / RunMoment so the unit tests (no game assembly) never JIT them.
+- VIEW: rows (id, vtable, text) are cached per (group, row) and texts per value id until the store's
+  Version, the render revision (NarrationStore.Revision) or scope (the reactor whose view it is)
+  changes; with focus elsewhere only the anchor's group is materialized (a Tab landing still finds
+  its row; the full window grows on the next rebuild).
+- Numbers (custom puzzle open, 4 reactors' synthetic events): idle with 500k entries, mod tick 6.4 →
+  0.6 ms, 2.2 MB → 0.36 MB allocated per frame (= an empty log); a burst of 1000 events / frame,
+  tick 16 → 3.7 ms average, 47 → 7.4 ms max, gen1 collections 509 → 19 per 500 frames. GC LATENCY
+  MODE untouched (user: not yet).
+- REAL RUN (2026-10-04, `logstress mode normal|mute|bypass` on a looping custom puzzle at speed 4):
+  WARP IS A FIXED ~33,300 cycles/s whatever the mod does — capture costs FRAME TIME, not simulation
+  speed — and one reactor's two waldos log ~500 events a FRAME (the synthetic burst was gentle).
+  Capture runs inside the game's update, so the mod tick does not show it; compare frame p95 and
+  allocation across the three modes. Fixes from it: the GROUP INDEX (ChunkedList keys / starts, no
+  LOH regrowth; binary search while cycle keys grow, a dictionary once one arrives out of order;
+  ABSOLUTE positions with a chunk-aligned _base so a backstop drop never rewrites ~4M group starts —
+  the old loop was an 80 ms hitch every ~18 s at the cap), the output hook's per-cycle dictionary
+  (a reused counter buffer), muted-first builders (instruction labels / cell texts only for wanted
+  events). Result, quota-10 output (14 distinct events per 400k entries): capture-off 15.7 / 16.7 ms
+  avg / p95 and 1.1 MB per frame; muted 15.7 / 17.2, 1.26 MB; normal 16.1-17.2 / 19.5-24.3, 2.2 MB,
+  gen1 10-24 per 600 frames. Six minutes at warp: the 10M cap held (9.5M entries, 3.8M groups,
+  ~66 MB), 3 full GCs, worst frame 28.9 ms, a cap drop ~13 ms. Output lines carry the counter, so a
+  huge test quota makes every output a distinct event; the game stops counting at the quota
+  (Class578.vmethod_11), so real levels can't.
 OVERRIDE TRAP (cost a game crash): `Expr.MethodOf(() => default(Sub).vmethod())` names the BASE
 declaration, so Harmony patches it for every subclass and a Sub-typed handler reads foreign fields
 (AccessViolation, uncatchable). Patch overrides through `Expr.OverrideOf(typeof(Sub), ...)`.

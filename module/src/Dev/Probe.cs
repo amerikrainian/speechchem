@@ -74,6 +74,7 @@ namespace SpeechChem.Dev
                 case "pipemap": return PipeMap();
                 case "focus": return Focus(argument);
                 case "runlog": return RunLog(argument);
+                case "logstress": return LogStress.Run(argument);
                 case "optionstab":
                 {
                     // Settings dialog tabs: "game", "mod", or a Mod sub-tab "general" / "events" / "keys".
@@ -155,7 +156,7 @@ namespace SpeechChem.Dev
             {
                 int key = log.Groups[g];
                 sb.Append("Cycle ").Append(key).Append('\n');
-                foreach (var line in log.Entries(key)) sb.Append("  ").Append(line).Append('\n');
+                foreach (var e in log.Entries(key)) sb.Append("  ").Append(Narration.Formatter.Format(e, Narration.FormatLayer.Log, null)).Append('\n');
             }
             return sb.Length == 0 ? "[run log empty]\n" : sb.ToString();
         }

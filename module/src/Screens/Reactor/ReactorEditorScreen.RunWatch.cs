@@ -13,7 +13,7 @@ namespace SpeechChem.Screens.Reactor
 
         private const string LogStop = "reactor.log";
 
-        private readonly WindowedLogView<int> _logView = new WindowedLogView<int>(
+        private readonly WindowedLogView<int, Narration.NarrationEvent> _logView = new WindowedLogView<int, Narration.NarrationEvent>(
             "reactor.log.", k => k.ToString(), s => { int n; return int.TryParse(s, out n) ? n : (int?)null; });
 
         private int _logGeneration = -1;
@@ -28,8 +28,9 @@ namespace SpeechChem.Screens.Reactor
                 cycle => Loc.T("run.cycle", new { n = cycle }),
                 (Navigation.Active as GraphNavigator)?.FocusCursorId,
                 // A reaction error's entry opens the crash snapshot (Enter).
-                tag => tag is Narration.NarrationEvent e && e.Payload is ReactorSnapshot s ? () => PushChild(new ReactorSnapshotScreen(s)) : (System.Action)null,
-                (text, tag) => tag is Narration.NarrationEvent e ? Narration.Formatter.Format(e, Narration.FormatLayer.Log, reactor) : text);
+                e => e.Payload is ReactorSnapshot s ? () => PushChild(new ReactorSnapshotScreen(s)) : (System.Action)null,
+                e => Narration.Formatter.Format(e, Narration.FormatLayer.Log, reactor),
+                Narration.NarrationStore.Revision, reactor);
         }
 
         /// <summary>A new run cleared the store: the window goes back to following the tail.</summary>

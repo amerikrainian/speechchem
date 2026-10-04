@@ -142,6 +142,40 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void TheLogInternsEventsByContent()
+        {
+            var log = new SpeechChem.UI.GroupedLog<int, NarrationEvent>(1000, EventContentComparer.Instance);
+            for (int c = 0; c < 100; c++) { log.Add(c, Bond()); log.Add(c, Bond()); }
+            Assert.Equal(200, log.EntryCount);
+            Assert.Equal(1, log.DistinctValues);           // a looping program: one record
+
+            var other = Bond();
+            other.Reactor = new object();                  // another reactor's: its own record
+            log.Add(100, other);
+            var crash = Bond();
+            crash.Payload = new object();                  // a crash snapshot keeps its entry its own
+            log.Add(100, crash);
+            var reworded = new NarrationEvent("waldo.bond") { Reactor = Reactor2 };
+            reworded.CommonPart("reactor", "reactor 2", ",").CommonPart("waldo", "blue", ":");
+            reworded.Part("action", "bonded");
+            log.Add(100, reworded);
+            Assert.Equal(4, log.DistinctValues);
+            Assert.Same(crash, log.Entries(100)[1]);
+        }
+
+        [Fact]
+        public void ACompiledFormatFollowsACommit()
+        {
+            Assert.StartsWith("reactor 2, red:", Formatter.Format(Bond(), FormatLayer.Log, null));
+            var kind = EventKinds.Get("waldo.bond");
+            NarrationStore.BeginEdit();
+            EventSettings.SetPartOn(kind, FormatLayer.Default, "reactor", false);
+            Assert.StartsWith("reactor 2, red:", Formatter.Format(Bond(), FormatLayer.Log, null)); // drafts don't apply
+            NarrationStore.Commit();
+            Assert.StartsWith("red:", Formatter.Format(Bond(), FormatLayer.Log, null));
+        }
+
+        [Fact]
         public void StepKeysDefaultToTheOriginalTwo()
         {
             Assert.True(StepKeys.Assigned("0"));

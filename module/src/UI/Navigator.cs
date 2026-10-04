@@ -22,6 +22,10 @@ namespace SpeechChem.UI
         /// announce memory survive); a new screen resets both.</summary>
         public abstract void Attach(Screen screen);
 
+        /// <summary>Bind back to a screen whose CHILD just closed (a combo box's list): the focused
+        /// control is re-read, but not the contexts around it, which focus never left.</summary>
+        public virtual void Resume(Screen screen) => Attach(screen);
+
         /// <summary>Drop focus back to the screen's unfocused state — the same place Tab-off-the-end
         /// lands. Only meaningful on <see cref="Screen.StartUnfocused"/> screens; elsewhere focus
         /// re-establishes next frame.</summary>

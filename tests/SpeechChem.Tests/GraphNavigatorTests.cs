@@ -149,6 +149,37 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void ResumingAfterAChildRereadsOnlyTheControl()
+        {
+            var a = new TestScreen
+            {
+                Declare = gb =>
+                {
+                    gb.PushContext("Page");
+                    gb.AddItem(ControlId.Structural("a"), Vt("Alpha"));
+                    gb.PopContext();
+                },
+            };
+            var child = new TestScreen { Declare = gb => gb.AddItem(ControlId.Structural("x"), Vt("Choice")) };
+
+            _nav.Attach(a);
+            _nav.EnsureFocus();
+            Assert.Equal("Page, Alpha", _speech.Spoken[_speech.Spoken.Count - 1]);
+
+            _nav.Attach(child);
+            _nav.EnsureFocus();
+            _nav.Resume(a); // the child closed: the page context is not repeated
+            _nav.EnsureFocus();
+            Assert.Equal("Alpha", _speech.Spoken[_speech.Spoken.Count - 1]);
+
+            _nav.Attach(child);
+            _nav.EnsureFocus();
+            _nav.Attach(a); // an ordinary re-attach still reads the whole landing
+            _nav.EnsureFocus();
+            Assert.Equal("Page, Alpha", _speech.Spoken[_speech.Spoken.Count - 1]);
+        }
+
+        [Fact]
         public void ScreenClosedDropsPerScreenState()
         {
             var a = TwoItemScreen();

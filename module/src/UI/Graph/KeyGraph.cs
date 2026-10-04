@@ -400,13 +400,19 @@ namespace SpeechChem.UI.Graph
             return stops;
         }
 
-        /// <summary>Where focus lands when entering a stop with no active cursor: the remembered
-        /// position, else the SELECTED member (a radio/tab/list item currently checked â€” the old
+        /// <summary>Where focus lands when entering a stop with no active cursor: a selection-follows-
+        /// focus strip's selected member; else the remembered position, else the SELECTED member (a radio/tab/list item currently checked â€” the old
         /// RepresentativeChild behavior; a boon on long lists), else the stop's first node.</summary>
         public GraphNode StopLanding(object stopKey) => StopLanding(_current, _state, stopKey);
 
         internal static GraphNode StopLanding(GraphRender render, GraphState state, object stopKey)
         {
+            // A strip whose selection FOLLOWS focus (tabs: Selected + OnSelect) lands on the selected
+            // member whatever was remembered — the two agree unless something else moved the
+            // selection (a mouse click) or a reconcile fallback parked focus there for a frame
+            // (a page swap whose focused row vanished), and then the remembered one is stale.
+            var following = SelectedNodeInStop(render, stopKey);
+            if (following != null && following.Vtable.Selected != null && following.Vtable.OnSelect != null) return following;
             ControlId remembered;
             if (state.StopMemory.TryGetValue(stopKey, out remembered))
             {

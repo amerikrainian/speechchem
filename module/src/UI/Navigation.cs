@@ -13,6 +13,9 @@ namespace SpeechChem.UI
 
         public static void Attach(Screen screen) => Active?.Attach(screen);
 
+        /// <summary>Re-attach to a screen whose child closed — see <see cref="Navigator.Resume"/>.</summary>
+        public static void Resume(Screen screen) => Active?.Resume(screen);
+
         /// <summary>True when something is focused (the navigator owns the keys).</summary>
         public static bool HasFocus => Active != null && Active.HasFocus;
 

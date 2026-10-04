@@ -288,6 +288,31 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void ASelectionFollowingStripLandsOnTheSelectedTabOverAStaleMemory()
+        {
+            var state = new GraphState();
+            int shown = 1;
+            NodeVtable Tab(string label, int i) => new NodeVtable
+            {
+                Announcements = new[] { NodeAnnouncement.Static(label) },
+                Selected = () => shown == i,
+                OnSelect = () => shown = i,
+            };
+            var g = new KeyGraph(() => new GraphBuilder()
+                .AddItem(Id("a1"), Vt("A1"))
+                .BeginStop()
+                .AddItem(Id("t0"), Tab("T0", 0))
+                .AddItem(Id("t1"), Tab("T1", 1))
+                .AddItem(Id("t2"), Tab("T2", 2))
+                .Build(), state);
+
+            Assert.True(g.Rerender());
+            state.StopMemory[g.Current.Nodes[Id("t2")].StopKey] = Id("t2"); // stale: T1 is shown
+            var r = g.MoveStop(+1, wrap: false);
+            Assert.Equal(Id("t1"), r.To.Id);
+        }
+
+        [Fact]
         public void TabIntoStopLandsOnSelectedMemberWhenNoMemory()
         {
             var state = new GraphState();

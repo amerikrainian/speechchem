@@ -462,8 +462,24 @@ namespace SpeechChem.UI.Graph
         // the rows share a non-null key (column nav) and it exists there, else the first item.
         private static ControlId VerticalTarget(Row from, Row to, int pos)
         {
-            if (from.Key != null && to.Key != null && Equals(from.Key, to.Key) && pos < to.Items.Count)
-                return to.Items[pos].Id;
+            if (from.Key != null && to.Key != null && Equals(from.Key, to.Key))
+            {
+                // Rows whose cells declare logical columns match by column (a row may leave one
+                // out): the same column, else the nearest, the lower on a tie.
+                int col = from.Items[pos].Vtable.Column;
+                if (col >= 0)
+                {
+                    GraphNode best = null;
+                    foreach (var n in to.Items)
+                    {
+                        int c = n.Vtable.Column;
+                        if (c < 0) continue;
+                        if (best == null || Math.Abs(c - col) < Math.Abs(best.Vtable.Column - col)) best = n;
+                    }
+                    if (best != null) return best.Id;
+                }
+                if (pos < to.Items.Count) return to.Items[pos].Id;
+            }
             return to.Items[0].Id;
         }
     }

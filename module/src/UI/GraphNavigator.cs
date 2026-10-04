@@ -38,9 +38,22 @@ namespace SpeechChem.UI
         /// <summary>Focus = a focused NODE.</summary>
         public override bool HasFocus => _graph?.CurrentNode != null;
 
+        // The node each screen last spoke, kept when focus moves to a child (Resume restores it).
+        private readonly Dictionary<Screens.Screen, GraphNode> _lastNodeOf = new Dictionary<Screens.Screen, GraphNode>();
+
+        public override void Resume(Screens.Screen screen)
+        {
+            Attach(screen);
+            GraphNode last;
+            // The differ re-reads the control (its key is unset) against the node it last spoke, so
+            // unchanged parent contexts (a page title, a row name) are not repeated.
+            if (screen != null && _lastNodeOf.TryGetValue(screen, out last)) _lastSpokenNode = last;
+        }
+
         public override void Attach(Screens.Screen screen)
         {
             bool same = ReferenceEquals(screen, Screen);
+            if (!same && Screen != null) _lastNodeOf[Screen] = _lastSpokenNode;
             Screen = screen;
             if (!same)
             {
@@ -70,7 +83,7 @@ namespace SpeechChem.UI
 
         public override void ScreenClosed(Screens.Screen screen)
         {
-            if (screen != null) _states.Remove(screen);
+            if (screen != null) { _states.Remove(screen); _lastNodeOf.Remove(screen); }
         }
 
         public override void FocusNode(ControlId id, bool announce = true)

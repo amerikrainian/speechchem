@@ -173,7 +173,7 @@ namespace SpeechChem.Screens
             _focusedParent = cur?.ParentScreen;
             if (!returningFromChild)
                 Safe(() => cur?.OnFocus(), cur, "OnFocus"); // speaks the screen name
-            Navigation.Attach(cur);
+            if (returningFromChild) Navigation.Resume(cur); else Navigation.Attach(cur);
         }
 
         private static Screen _focusedParent; // the parent of the focused screen when it is a child

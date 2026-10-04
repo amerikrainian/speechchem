@@ -51,6 +51,20 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void DeclaredColumnsMatchAcrossRowsMissingOne()
+        {
+            NodeVtable C(string label, int col) { var v = Vt(label); v.Column = col; return v; }
+            var render = new GraphBuilder()
+                .StartRow("f").AddItem(Id("a0"), C("A0", 0)).AddItem(Id("a1"), C("A1", 1)).AddItem(Id("a2"), C("A2", 2)).AddItem(Id("a3"), C("A3", 3)).EndRow()
+                .StartRow("f").AddItem(Id("b0"), C("B0", 0)).AddItem(Id("b2"), C("B2", 2)).AddItem(Id("b3"), C("B3", 3)).EndRow()
+                .Build();
+
+            Assert.Equal(Id("b3"), render.Nodes[Id("a3")].Transitions[GraphDir.Down].Destination); // by column, not position
+            Assert.Equal(Id("b0"), render.Nodes[Id("a1")].Transitions[GraphDir.Down].Destination); // missing: nearest, lower on a tie
+            Assert.Equal(Id("a2"), render.Nodes[Id("b2")].Transitions[GraphDir.Up].Destination);
+        }
+
+        [Fact]
         public void UnkeyedRowsLandOnFirstItem()
         {
             var render = new GraphBuilder()

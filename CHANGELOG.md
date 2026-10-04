@@ -8,6 +8,7 @@
 - We now support output notes.
 - We now include inputs/outputs when browsing reactors on shelves.
 - First pass at the defense screen.
+- We now allow you to customize how events are spoken and give more keys for you to configure for stepping (see settings)
 
 ## V0.0.3
 

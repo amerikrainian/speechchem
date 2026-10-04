@@ -31,27 +31,194 @@ namespace SpeechChem.Screens.Pipeline
         private void BuildShelf(GraphBuilder b, PipelineEditor editor)
         {
             var templates = ShelfTemplates(editor);
-            if (templates.Count == 0) return;
+            var designs = SavedDesigns();
+            if (templates.Count == 0 && designs.Count == 0) return;
             b.BeginStop(ShelfStop);
+            // One list, counted as one (a design's row would count its Delete cell).
+            int total = templates.Count + designs.Count;
             for (int i = 0; i < templates.Count; i++)
             {
                 var template = templates[i];
-                b.AddItem(ControlId.Structural("pipeline.shelf." + i), new NodeVtable
+                int position = i + 1;
+                var vt = new NodeVtable
                 {
                     ControlType = ControlTypes.Button,
                     Announcements = new[]
                     {
                         new NodeAnnouncement(() => ShelfLabel(template), kind: AnnouncementKinds.Label),
                         new NodeAnnouncement(() => ReferenceEquals(_armed, template) ? Loc.T("reactor.armed") : null, kind: AnnouncementKinds.Selected),
+                        ShelfPosition(position, total),
                     },
+                    SpeaksOwnPosition = true,
                     OnActivate = () =>
                     {
                         _armed = template;
                         Speech.Tts.Speak(Loc.T("pipeline.armed"), interrupt: true); // the focused tile already names it (user rule)
                     },
                     OnTooltip = () => Speech.Tts.Speak(GameText.Speech(template.string_2) ?? Loc.T("nav.no_tooltip"), interrupt: true),
-                });
+                    OnSelect = () => ShowShelfPage(-1),
+                };
+                b.AddItem(ControlId.Structural("pipeline.shelf." + i), vt);
             }
+            for (int i = 0; i < designs.Count; i++)
+            {
+                var design = designs[i];
+                int index = i;
+                int position = templates.Count + i + 1;
+                b.StartRow("pipeline.shelf.design");
+                b.AddItem(DesignId(i), new NodeVtable
+                {
+                    ControlType = ControlTypes.Button,
+                    Announcements = new[]
+                    {
+                        new NodeAnnouncement(() => DesignLabel(design), kind: AnnouncementKinds.Label),
+                        new NodeAnnouncement(() => ReferenceEquals(_armed, design.Template) ? Loc.T("reactor.armed") : null, kind: AnnouncementKinds.Selected),
+                        ShelfPosition(position, total),
+                    },
+                    SpeaksOwnPosition = true,
+                    OnActivate = () =>
+                    {
+                        // A design the level can't use (its type isn't on the shelf, or the program
+                        // has members this level forbids) draws "(LOCKED)" and won't drag.
+                        if (design.Locked) { Speech.Tts.Speak(Loc.T("value.unavailable"), interrupt: true); return; }
+                        _armed = design.Template;
+                        Speech.Tts.Speak(Loc.T("pipeline.armed"), interrupt: true);
+                    },
+                    OnSecondary = () => DesignMenu(design),
+                    OnTooltip = () => Speech.Tts.Speak(GameText.Speech(design.Template.string_2) ?? Loc.T("nav.no_tooltip"), interrupt: true),
+                    OnSelect = () => ShowShelfPage(index / DesignsPerPage),
+                });
+                // The tile's red X (Class470), to its right — as the profile picker's delete.
+                var delete = ProfileUi.Button(() => GameText.T("Delete"), () => DeleteDesign(design));
+                delete.SpeaksOwnPosition = true;
+                delete.OnSelect = () => ShowShelfPage(index / DesignsPerPage);
+                b.AddItem(ControlId.Structural("pipeline.shelf.design.delete." + i), delete);
+                b.EndRow();
+            }
+        }
+
+        private static NodeAnnouncement ShelfPosition(int index, int count)
+            => new NodeAnnouncement(() => Loc.T("nav.position", new { index, count }), kind: AnnouncementKinds.Position);
+
+        // ---- saved reactor designs (the shelf's second tab, Class717.gclass11_1): every design of
+        // the profile, level-less Component rows, read 4 per page by SpaceChemUserWorker.method_60
+        // as locked templates (string_0 = the design's name, string_1 = the reactor type) — ONE list
+        // here, all pages, the game's tab and page following focus (the paged-list rule). Placing
+        // one is the stock tiles' drop (the template hands the pipeline an unlocked clone carrying
+        // its program and notes). Only in levels that allow saved designs (Class83.bool_0). ----
+
+        private const int DesignsPerPage = 4;
+
+        private sealed class Design
+        {
+            public Draggable Template;
+            public bool Locked;
+        }
+
+        private List<Design> _designs;
+        private object _designsPage; // the shelf's page widget (Class717.gclass10_1) the cache was read under
+
+        private static ControlId DesignId(int i) => ControlId.Structural("pipeline.shelf.design." + i);
+
+        private static bool DesignsAllowed => (Editor?.method_0() as Class83)?.bool_0 == true;
+
+        /// <summary>The saved designs, re-read whenever the game rebuilt the shelf's saved page (a
+        /// save or delete refreshes it — Class717.bool_0 — once the worker has written the row).</summary>
+        private List<Design> SavedDesigns()
+        {
+            var shelf = Class717.smethod_0();
+            if (!DesignsAllowed || shelf == null) return new List<Design>();
+            if (_designs != null && ReferenceEquals(_designsPage, shelf.gclass10_1)) return _designs;
+            _designsPage = shelf.gclass10_1;
+            var list = new List<Design>();
+            try
+            {
+                var worker = Locals.smethod_0().smethod_0();
+                int pages = worker.method_59();
+                for (int page = 0; page < pages; page++)
+                    foreach (var item in worker.method_60(shelf.pipeline_0, page))
+                        list.Add(new Design
+                        {
+                            Template = item.gparam_0,
+                            Locked = !item.gparam_1 || !shelf.hashSet_0.Contains(item.gparam_0.GetType()),
+                        });
+            }
+            catch (System.Exception ex) { Log.Error("[pipeline] reading saved designs failed", ex); }
+            _designs = list;
+            return list;
+        }
+
+        /// <summary>"Ethylene, Standard Reactor" (+ the tile's "(LOCKED)").</summary>
+        private static string DesignLabel(Design d)
+        {
+            string text = (d.Template.string_0 ?? "").Trim() + ", " + d.Template.string_1;
+            return d.Locked ? text + ", " + GameText.Speech(GameText.T("\n(LOCKED)")) : text;
+        }
+
+        /// <summary>Focus on the shelf shows the matching tab and page (stock: -1): Class717.method_3
+        /// switches tab, method_7 builds a saved page. The rebuild is ours, so the cache keeps it.</summary>
+        private void ShowShelfPage(int page)
+        {
+            try
+            {
+                var shelf = Class717.smethod_0();
+                if (shelf == null) return;
+                bool stockShown = shelf.gclass11_0.method_9();
+                if (page < 0) { if (!stockShown) shelf.method_3(bool_2: true); return; }
+                if (page >= shelf.int_1) return;
+                if (shelf.int_0 != page || stockShown)
+                {
+                    bool ours = ReferenceEquals(_designsPage, shelf.gclass10_1);
+                    shelf.int_0 = page;
+                    shelf.gclass10_1 = shelf.method_7(page);
+                    shelf.method_3(bool_2: false);
+                    if (ours) _designsPage = shelf.gclass10_1;
+                }
+            }
+            catch (System.Exception ex) { Log.Error("[pipeline] shelf page failed", ex); }
+        }
+
+        private void DesignMenu(Design d)
+        {
+            var items = new List<ActionListScreen.Item>
+            {
+                new ActionListScreen.Item { Label = () => GameText.T("Delete"), Run = () => DeleteDesign(d) },
+            };
+            PushChild(new ActionListScreen("pipeline.design.menu", DesignLabel(d), items));
+        }
+
+        /// <summary>The tile's red X: the game's own confirm box (Class470.vmethod_4) — Yes deletes
+        /// the design's rows (method_61) and refreshes the shelf; focus starts on No (irreversible).</summary>
+        private void DeleteDesign(Design d)
+        {
+            try
+            {
+                var box = new MessageBoxEditor(Struct7.struct7_0,
+                    GameText.T("Are you sure you want to delete this reactor design? This action cannot be undone."), Struct7.struct7_0,
+                    new Class392[2]
+                    {
+                        new Class392(GameText.T("Yes"), new Keys[0], () =>
+                        {
+                            Locals.smethod_0().smethod_0().method_61(d.Template); // synchronous
+                            _designs = null; // re-read now, not when the shelf next rebuilds
+                        }),
+                        new Class392(GameText.T("No"), new Keys[1] { Keys.Escape }, Class396.action_0),
+                    });
+                MessageBoxEditorScreen.StartOnLastFor = box;
+                if (ReferenceEquals(_armed, d.Template)) _armed = null;
+                Class53.smethod_1(box);
+            }
+            catch (System.Exception ex) { Log.Error("[pipeline] delete design failed", ex); }
+        }
+
+        /// <summary>The saved design under focus (its entry or its Delete cell), or null.</summary>
+        private Design FocusedDesign()
+        {
+            string key = Navigation.FocusedNodeId?.StructuralKey as string;
+            if (_designs == null || key == null || !key.StartsWith("pipeline.shelf.design.", System.StringComparison.Ordinal)) return null;
+            int i;
+            string tail = key.Substring(key.LastIndexOf('.') + 1);
+            return int.TryParse(tail, out i) && i < _designs.Count ? _designs[i] : null;
         }
 
         /// <summary>"Standard Reactor, 4 by 4": the name and the body's size in cells (Draggable
@@ -163,6 +330,7 @@ namespace SpeechChem.Screens.Pipeline
         // to the cell). Pipes move with it. A refused drop keeps it on the clipboard. ----
 
         private Draggable _cut;
+        private bool _copy; // the clipboard holds a copy (Ctrl+C): the paste duplicates, the source stays
 
         /// <summary>The component under focus: a Components entry, one of its port cells, or a map
         /// cell it occupies (pipe cells count as their owner's).</summary>
@@ -194,7 +362,25 @@ namespace SpeechChem.Screens.Pipeline
             if (!CanEdit()) return;
             if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
             _cut = d;
+            _copy = false;
             Speech.Tts.Speak(Loc.T("reactor.edit.cut", new { what = PipelineText.Name(p, d) }), interrupt: true);
+        }
+
+        /// <summary>Ctrl+C: the game's Ctrl-drag copy (training: "Copy reactors within a production
+        /// assignment by holding the control key and dragging the reactor"), split like the move —
+        /// the paste drops a duplicate (program, notes and pipe shapes; input links cleared) through
+        /// the same Pipeline.method_13 with Ctrl forced on, and the clipboard keeps the source for
+        /// more copies. Fixed components can't be copied, as the game refuses to drag them.</summary>
+        private void Copy()
+        {
+            var p = Model;
+            var d = FocusedComponent();
+            if (p == null || d == null) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (!CanEdit()) return;
+            if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
+            _cut = d;
+            _copy = true;
+            Speech.Tts.Speak(Loc.T("reactor.edit.copied", new { what = PipelineText.Name(p, d) }), interrupt: true);
         }
 
         private void Paste()
@@ -212,20 +398,28 @@ namespace SpeechChem.Screens.Pipeline
                 p.hashSet_0.Add(item);
                 p.vector2i_4 = p.method_9(item).Value;
                 p.method_1((Enum18)2);
-                using (Patches.ModifierMask.NoCtrl())
+                // A copy: Ctrl held makes method_13 clone each selected item (and counts the source
+                // as a blocker, so the copy can't overlap it).
+                using (_copy ? Patches.ModifierMask.ForceCtrl() : Patches.ModifierMask.NoCtrl())
                 {
                     p.vector2i_3 = at;
                     ok = p.method_13();
                 }
                 string why = ok ? null : Refusal(p, item, at);
+                Draggable placed = item;
+                if (ok && _copy) foreach (var d in p.hashSet_0) placed = d; // the selection is now the clone
                 p.method_23();
                 if (!ok)
                 {
                     Speech.Tts.Speak(Loc.T("pipeline.edit.nofit", new { what = PipelineText.Name(p, item), why }), interrupt: true);
                     return;
                 }
-                _cut = null;
-                Speech.Tts.Speak(Loc.T("reactor.edit.at", new { what = PipelineText.Name(p, item), cell = PipelineText.Cell(at) }), interrupt: true);
+                if (!_copy) _cut = null; // a copy stays on the clipboard for more
+                PipelineText.Sync(p); // number the new copy before it is named
+                string text = Loc.T("reactor.edit.at", new { what = PipelineText.Name(p, placed), cell = PipelineText.Cell(at) });
+                if (_copy && placed is ReactorDraggable && GoalTracker.int_0 > 0 && p.method_21() > GoalTracker.int_0)
+                    text += ", " + Loc.T("pipeline.quota.over");
+                Speech.Tts.Speak(text, interrupt: true);
             }
             catch (System.Exception ex) { Log.Error("[pipeline] move failed", ex); }
         }
@@ -272,10 +466,10 @@ namespace SpeechChem.Screens.Pipeline
             catch (System.Exception ex) { Log.Error("[pipeline] delete failed", ex); }
         }
 
-        /// <summary>Backspace: the game's right-click menu (Class82 / DraggableMenu) as a list —
-        /// "Reset Pipes" (a component with outputs and no locked pipe: every pipe back to its stub)
-        /// and "Delete" (unlocked components). The output notes and "Save to Toolbox" open game
-        /// screens not modeled yet, so they are left out for now.</summary>
+        /// <summary>Backspace: the game's right-click menu (Class82 / DraggableMenu) as a list, in its
+        /// order — "Reset Pipes" (a component with outputs and no locked pipe: every pipe back to its
+        /// stub); "Save to Toolbox" (an unlocked reactor in a level that allows saved designs, Class83.bool_0:
+        /// the name dialog, SaveDesignScreen); "Delete" (unlocked components).</summary>
         private void OpenMenu()
         {
             var p = Model;
@@ -294,6 +488,15 @@ namespace SpeechChem.Screens.Pipeline
                         Speech.Tts.Speak(Loc.T("pipeline.edit.reset", new { what = PipelineText.Name(p, d) }), interrupt: true);
                     },
                 });
+            if (d is ReactorDraggable rd)
+            {
+                if (!d.bool_0 && (Editor?.method_0() as Class83)?.bool_0 == true)
+                    items.Add(new ActionListScreen.Item
+                    {
+                        Label = () => GameText.T("Save to Toolbox"),
+                        Run = () => Editor?.method_3(new Class55(rd)),
+                    });
+            }
             bool fromList = ComponentsStop.Equals(Navigation.FocusedStopKey);
             if (!d.bool_0)
                 items.Add(new ActionListScreen.Item { Label = () => GameText.T("Delete"), Run = () => Delete(d, fromList, viaMenu: true) });

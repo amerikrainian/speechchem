@@ -57,8 +57,14 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.item.prev", () => StepItem(-1));
             yield return new ElementAction("screen.reactor.item.next", () => StepItem(1));
             yield return new ElementAction("screen.reactor.cut", Cut);
+            yield return new ElementAction("screen.reactor.copy", Copy);
             yield return new ElementAction("screen.reactor.paste", Paste);
-            yield return new ElementAction("screen.reactor.delete", () => Delete(FocusedComponent()));
+            yield return new ElementAction("screen.reactor.delete", () =>
+            {
+                var design = FocusedDesign();
+                if (design != null) DeleteDesign(design);
+                else Delete(FocusedComponent());
+            });
             yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
             yield return new ElementAction("screen.reactor.molecule", OpenFocusedMolecules); // M on a port cell
             yield return new ElementAction("screen.reactor.step", Patches.StepControl.Step); // 0, as in the reactor
@@ -125,6 +131,8 @@ namespace SpeechChem.Screens.Pipeline
             _category = _item = -1;
             _armed = null;
             _cut = null;
+            _copy = false;
+            _designs = null;
             _drawPipe = null;
         }
 

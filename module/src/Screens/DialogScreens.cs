@@ -23,6 +23,10 @@ namespace SpeechChem.Screens
     {
         public override string Key => "messageboxeditor";
 
+        /// <summary>A box the mod opened for an irreversible choice (deleting a saved reactor
+        /// design): focus starts on its LAST button (No), as the profile delete starts on Cancel.</summary>
+        internal static MessageBoxEditor StartOnLastFor;
+
         private static MessageBoxEditor Box => ProfileUi.Settled<MessageBoxEditor>();
 
         public override bool IsActive() => Box != null;
@@ -48,11 +52,12 @@ namespace SpeechChem.Screens
                 b.AddItem(ControlId.Structural("mbe.where"), ProfileUi.Text(true, () => Markers(DialogCapture.BoxOf(Box))));
             if (info.Buttons == null) return;
             ControlId first = null;
+            bool last = ReferenceEquals(box, StartOnLastFor);
             for (int i = 0; i < info.Buttons.Count; i++)
             {
                 var button = info.Buttons[i];
                 var id = ControlId.Structural("mbe.button." + i);
-                if (first == null) first = id;
+                if (first == null || last) first = id;
                 // The widget's own click path (MessageBoxEditor.Class555.method_0): close, then act.
                 var vt = ProfileUi.Button(() => button.string_0, () =>
                 {

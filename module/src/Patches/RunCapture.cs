@@ -7,12 +7,14 @@ using SpaceChem.Pipeline;
 using SpaceChem.Reactor;
 using SpeechChem.Game;
 using SpeechChem.Localization;
+using SpeechChem.Narration;
 using SpeechChem.UI;
 
 namespace SpeechChem.Patches
 {
     /// <summary>
-    /// Run events — only ones the game itself has (user rule): what each waldo's instruction did
+    /// Run events — only ones the game itself has (user rule), built as Narration events (parts,
+    /// formatted and routed by the player's narration settings — Narration/Narrator): what each waldo's instruction did
     /// this cycle, molecules leaving through outputs (with the output's progress), reaction errors,
     /// invalid molecules, completion, and run-state changes. Everything goes into the run log (a
     /// virtually limitless GroupedLog keyed by cycle, cleared when a stopped reactor starts);
@@ -97,60 +99,31 @@ namespace SpeechChem.Patches
             catch { }
         }
 
-        // Spoken at the slowest speed, and during a step at any speed (they queue after the step's
-        // "Cycle N") — inside a reactor only the events that concern it (user rule 2026-10-03),
-        // except during an all-events step (Ctrl+0).
-        private static bool SpeakEvents(bool concerns) => StepControl.Active
-            ? concerns || !StepControl.OwnOnly
-            : concerns && (int)Class258.smethod_16() == 1 && Class258.smethod_14() == SimulatorSpeed.Slow;
+        // ---- events as data (Narration/): every capture builds a NarrationEvent and hands it to
+        // the Narrator, which logs it, lets the step key stop on it and speaks it by the player's
+        // settings (defaults = the mod's original rules and wording). ----
 
-        private static void Add(string text, bool speak) => Add(text, speak, null, concerns: true);
-
-        /// <summary>A level-wide event (defense: the enemy, special buildings, the Control
-        /// Center) — it concerns every reactor, so it ends any step and is spoken inside any.
-        /// Spoken while running at play speeds 1-3, not only the slowest (user rule 2026-10-04:
-        /// defense levels are played at 2 or 3 — the play buttons' numbering, so the defense
-        /// remap of 3 to DefenseFast counts); <paramref name="fast"/> false keeps a frequent line
-        /// (a special building's every molecule) to speed 1.</summary>
-        internal static void AddLevelEvent(string text, bool fast = true)
+        /// <summary>A waldo's event: its reactor (named when the pipeline has several) and colour
+        /// as the common parts; it concerns the open reactor when that is its own (or none is open).</summary>
+        private static NarrationEvent WaldoEvent(Class188 w, string kind)
         {
-            if (string.IsNullOrEmpty(text)) return;
-            Log.Add(Cycle, text);
-            StepControl.OnEvent(Cycle, true);
-            if (StepControl.Active || SpeakLevelEvent(fast)) Speech.Tts.Speak(text);
+            var e = new NarrationEvent(kind);
+            bool red = (int)w.enum114_0 == ReactorText.Red;
+            e.CommonPart("reactor", ReactorName(w.reactor_0), ",");
+            e.CommonPart("waldo", Loc.T(red ? "reactor.red" : "reactor.blue"), ":");
+            e.Reactor = w.reactor_0;
+            e.Colour = red ? 0 : 1;
+            object open = Narrator.OpenReactor();
+            e.Concerns = open == null || ReferenceEquals(open, w.reactor_0);
+            return e;
         }
 
-        private static bool SpeakLevelEvent(bool fast)
-        {
-            if ((int)Class258.smethod_16() != 1) return false;
-            var speed = Class258.smethod_14();
-            return speed == SimulatorSpeed.Slow || fast && Screens.Common.ProgressSection.SpeedNumber(speed) <= 3;
-        }
+        private static NarrationEvent Bare(Class188 w, string label) => WaldoEvent(w, "waldo.instruction").Part("instruction", label);
 
-        /// <summary>Log <paramref name="text"/> (always, whoever it concerns); speak
-        /// <paramref name="spoken"/> when given (a waldo event of the reactor being edited drops
-        /// its "reactor 2, " — user rule), else the logged text. <paramref name="concerns"/>: the
-        /// event concerns the open reactor (always true with none open) — it may end a step, and
-        /// only such events are spoken inside a reactor.</summary>
-        private static void Add(string text, bool speak, string spoken, bool concerns)
-        {
-            if (string.IsNullOrEmpty(text)) return;
-            Log.Add(Cycle, text);
-            StepControl.OnEvent(Cycle, concerns); // a step ends with this event's cycle ("Cycle N" first)
-            if (speak && SpeakEvents(concerns)) Speech.Tts.Speak(spoken ?? text);
-        }
+        private static NarrationEvent Waiting(Class188 w, string label)
+            => WaldoEvent(w, "waldo.wait").Part("instruction", label, ",").Part("state", Loc.T("narr.t.waiting"));
 
-        /// <summary>A waldo event: logged with its reactor's number (several reactors), spoken
-        /// without it when that reactor is the one open (user rule 2026-10-01).</summary>
-        private static void AddWaldo(Class188 w, string text)
-        {
-            string colour = Loc.T((int)w.enum114_0 == ReactorText.Red ? "reactor.red" : "reactor.blue");
-            string full = WaldoName(w) + ": " + text;
-            Class77 open = null;
-            try { open = Class53.smethod_5<Class77>(); } catch { }
-            bool here = open != null && ReferenceEquals(open.reactor_0, w.reactor_0);
-            Add(full, speak: true, spoken: here ? colour + ": " + text : null, concerns: open == null || here);
-        }
+        private static NarrationEvent Nothing(Class188 w, string key) => WaldoEvent(w, "waldo.nothing").Part("action", Loc.T(key));
 
         /// <summary>An event of building <paramref name="d"/> concerns the open reactor when the
         /// reactor feeds it straight through a pipe, when the level has one reactor, or when no
@@ -239,13 +212,13 @@ namespace SpeechChem.Patches
                 bool nonArrowTurned = false;
                 if (i != null && !(i is StartInstruction))
                 {
-                    string text = InstructionEffect(__instance, __state, i, ref nonArrowTurned, turned);
-                    if (text != null) AddWaldo(__instance, text);
+                    var e = InstructionEffect(__instance, __state, i, ref nonArrowTurned, turned);
+                    if (e != null) Narrator.Emit(e);
                 }
                 // A turn the instruction above didn't already report (an arrow): the new heading.
                 // An arrow the waldo already follows changes nothing and logs nothing.
                 if (turned && !nonArrowTurned)
-                    AddWaldo(__instance, Loc.T("run.heading", new { dir = Heading(__instance.vector2i_1) }));
+                    Narrator.Emit(WaldoEvent(__instance, "waldo.heading").Part("heading", Loc.T("run.heading", new { dir = Heading(__instance.vector2i_1) })));
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] waldo step capture", ex); }
         }
@@ -286,38 +259,38 @@ namespace SpeechChem.Patches
                 var cell = __instance.method_0();
                 if (cell != __state.Cell) { Blocked.Remove(__instance); return; }
                 if (!__state.Moving || !Blocked.Add(__instance)) return;
-                AddWaldo(__instance, Loc.T("run.wall", new
-                {
-                    cell = Loc.T("reactor.cell", new { x = cell.int_0 + 1, y = cell.int_1 + 1 }),
-                }));
+                Narrator.Emit(WaldoEvent(__instance, "waldo.wall")
+                    .Part("action", Loc.T("narr.t.wall"))
+                    .Part("place", Loc.T("narr.t.at", new { cell = CellText(cell) })));
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] waldo move capture", ex); }
         }
 
         /// <summary>What the non-arrow instruction did, or null when nothing new happened (a wait that
         /// was already reported).</summary>
-        private static string InstructionEffect(Class188 w, WaldoState before, Instruction i, ref bool redirected, bool turned)
+        private static NarrationEvent InstructionEffect(Class188 w, WaldoState before, Instruction i, ref bool redirected, bool turned)
         {
             string label = ReactorText.Label(i);
             var r = w.reactor_0;
             if (i is InputInstruction)
             {
                 if (w.bool_0 && w.bool_2)
-                    return before.Waiting ? null : Loc.T("run.waiting", new { what = label });
+                    return before.Waiting ? null : Waiting(w, label);
                 if (r.class201_0.Count > before.Molecules)
                 {
                     // The input drops the molecule into its zone; no waldo touches it. Where it
                     // landed = its first atom in reading order.
                     var arrived = r.class201_0[r.class201_0.Count - 1];
-                    return Loc.T("run.input", new { what = label, molecule = MoleculeText.NameAndFormula(arrived.molecule_0), cell = CellText(FirstCell(arrived)) });
+                    return WaldoEvent(w, "waldo.input").Part("instruction", label, ",").Molecule(arrived.molecule_0)
+                        .Part("place", Loc.T("narr.t.at", new { cell = CellText(FirstCell(arrived)) }));
                 }
-                return label;
+                return Bare(w, label);
             }
             if (i is OutputInstruction)
             {
                 if (w.bool_0 && !w.bool_2)
-                    return before.Waiting ? null : Loc.T("run.waiting", new { what = label });
-                return label;
+                    return before.Waiting ? null : Waiting(w, label);
+                return Bare(w, label);
             }
             if (i is GrabInstruction)
             {
@@ -326,15 +299,15 @@ namespace SpeechChem.Patches
                 // (method_10) releases.
                 var after = w.moleculeSheet_0;
                 if (before.Held == null && after != null)
-                    return Loc.T("run.grabbed", new { molecule = MoleculeText.NameAndFormula(after.molecule_0) });
+                    return WaldoEvent(w, "waldo.grab").Part("action", Loc.T("narr.t.grabbed")).Molecule(after.molecule_0);
                 if (before.Held != null && after == null)
-                    return Loc.T("run.dropped", new { molecule = MoleculeText.NameAndFormula(before.Held.molecule_0) });
+                    return WaldoEvent(w, "waldo.drop").Part("action", Loc.T("narr.t.dropped")).Molecule(before.Held.molecule_0);
                 if (before.Held != null)
-                    return Loc.T("run.holding", new { molecule = MoleculeText.NameAndFormula(before.Held.molecule_0) });
-                return Loc.T(i.method_3() == 2 ? "run.drop.none" : "run.grab.none");
+                    return WaldoEvent(w, "waldo.holding").Part("action", Loc.T("narr.t.holding")).Molecule(before.Held.molecule_0);
+                return Nothing(w, i.method_3() == 2 ? "run.drop.none" : "run.grab.none");
             }
             if (i is BondInstruction && before.Bonds != null)
-                return BondEffect(r, before.Bonds, i.method_3() == 0);
+                return BondEffect(w, before.Bonds, i.method_3() == 0);
             if (i is RotateInstruction)
             {
                 // Two cycles (RotateInstruction.vmethod_7 toggles bool_3): the first sets it and the
@@ -342,40 +315,43 @@ namespace SpeechChem.Patches
                 // moves on — reported once, when it starts. Empty-handed it never sets.
                 if (before.Rotating) return null;
                 if (w.bool_3 && w.moleculeSheet_0 != null)
-                    return Loc.T("run.rotated", new { what = label, molecule = MoleculeText.NameAndFormula(w.moleculeSheet_0.molecule_0) });
-                return Loc.T("run.rotate.none");
+                    return WaldoEvent(w, "waldo.rotate").Part("instruction", label, ",").Part("action", Loc.T("narr.t.rotated")).Molecule(w.moleculeSheet_0.molecule_0);
+                return Nothing(w, "run.rotate.none");
             }
             if (i is Class663)
             {
-                if (w.bool_4) return before.Sync ? null : Loc.T("run.waiting", new { what = label });
-                return label;
+                if (w.bool_4) return before.Sync ? null : Waiting(w, label);
+                return Bare(w, label);
             }
-            if (i is Class662 && before.Lasers != null) return FusionEffect(r, before.Lasers);
-            if (i is Class664 && before.Lasers != null) return FissionEffect(r, before.Lasers);
-            if (i is Class666) return SwapEffect(before.Tunnels);
+            if (i is Class662 && before.Lasers != null) return FusionEffect(w, before.Lasers);
+            if (i is Class664 && before.Lasers != null) return FissionEffect(w, before.Lasers);
+            if (i is Class666) return SwapEffect(w, before.Tunnels);
             if (i is SensorInstruction sensor)
             {
                 // SensorInstruction.vmethod_7 branches when any sensor has the trigger element above
                 // it (method_10) and otherwise does nothing — so a match while already heading that
                 // way and a miss look alike on the waldo; say which it was.
                 redirected = true;
+                var e = WaldoEvent(w, "waldo.sensor").Part("action", Loc.T("narr.t.sensed"));
                 if (sensor.method_10())
-                    return Loc.T("run.sensed", new { atom = sensor.method_8().method_0(), dir = Heading(w.vector2i_1) });
-                return Loc.T("run.sensed.miss", new { atom = SensedAtom(r) ?? Loc.T("run.sensed.nothing") });
+                    return e.Part("atom", sensor.method_8().method_0(), ",").Part("heading", Loc.T("run.heading", new { dir = Heading(w.vector2i_1) }));
+                return e.Part("atom", SensedAtom(r) ?? Loc.T("run.sensed.nothing"));
             }
             if (i is ToggleInstruction flip)
             {
                 // ToggleInstruction.vmethod_7 alternates: with bool_3 set it branches and clears it,
                 // otherwise it only sets it — so after the step a clear bool_3 means it branched.
                 redirected = true;
-                return flip.bool_3 ? Loc.T("run.flipflop.pass") : Loc.T("run.flipflop.branch", new { dir = Heading(w.vector2i_1) });
+                var e = WaldoEvent(w, "waldo.flipflop");
+                if (flip.bool_3) return e.Part("action", Loc.T("run.flipflop.pass"));
+                return e.Part("action", Loc.T("run.flipflop.pass"), ",").Part("heading", Loc.T("run.heading", new { dir = Heading(w.vector2i_1) }));
             }
             if (turned && i.vmethod_5() != Enum153.None)
             {
                 redirected = true;
-                return Loc.T("run.turned", new { what = label, dir = Heading(w.vector2i_1) });
+                return WaldoEvent(w, "waldo.turn").Part("instruction", label, ",").Part("heading", Loc.T("run.heading", new { dir = Heading(w.vector2i_1) }));
             }
-            return label;
+            return Bare(w, label);
         }
 
         // ---- lasers: the instruction fires every laser of its kind in the reactor. Fusion
@@ -398,38 +374,40 @@ namespace SpeechChem.Patches
             return shots;
         }
 
-        private static string FusionEffect(SpaceChem.Reactor.Reactor r, List<LaserShot> shots)
+        private static NarrationEvent FusionEffect(Class188 w, List<LaserShot> shots)
         {
-            var parts = new List<string>();
+            var r = w.reactor_0;
+            var e = WaldoEvent(w, "waldo.fusion");
+            bool any = false;
             foreach (var shot in shots)
             {
                 var target = new Vector2i(shot.Left.int_0 + 1, shot.Left.int_1);
                 var now = AtomAt(r, target);
                 if (now == null || !shot.Before.HasValue || now.Value.element_0 == shot.Before.Value) continue;
-                parts.Add(Loc.T("run.fusion", new { cell = CellText(target), atom = now.Value.method_0() }));
+                e.NextItem().Part("action", Loc.T("run.fusion.none")).Part("place", CellText(target), ",").Part("atom", now.Value.method_0());
+                any = true;
             }
-            return parts.Count > 0 ? string.Join("; ", parts.ToArray()) : Loc.T("run.fusion.none");
+            return any ? e : e.Part("action", Loc.T("run.fusion.none"));
         }
 
         // Fission (Class667.method_7): the target atom is on the laser's LEFT cell; unless it is
         // hydrogen it becomes the upper half of its atomic number and a new lone atom of the lower
         // half appears on the right cell. So the left cell's element is diffed.
-        private static string FissionEffect(SpaceChem.Reactor.Reactor r, List<LaserShot> shots)
+        private static NarrationEvent FissionEffect(Class188 w, List<LaserShot> shots)
         {
-            var parts = new List<string>();
+            var r = w.reactor_0;
+            var e = WaldoEvent(w, "waldo.fission");
+            bool any = false;
             foreach (var shot in shots)
             {
                 var now = AtomAt(r, shot.Left);
                 if (now == null || !shot.Before.HasValue || now.Value.element_0 == shot.Before.Value) continue;
                 var split = AtomAt(r, new Vector2i(shot.Left.int_0 + 1, shot.Left.int_1));
-                parts.Add(Loc.T("run.fission", new
-                {
-                    cell = CellText(shot.Left),
-                    a = now.Value.method_0(),
-                    b = split?.method_0() ?? "?",
-                }));
+                e.NextItem().Part("action", Loc.T("run.fission.none")).Part("place", CellText(shot.Left), ",")
+                    .Part("atom", Loc.T("narr.t.and", new { a = now.Value.method_0(), b = split?.method_0() ?? "?" }));
+                any = true;
             }
-            return parts.Count > 0 ? string.Join("; ", parts.ToArray()) : Loc.T("run.fission.none");
+            return any ? e : e.Part("action", Loc.T("run.fission.none"));
         }
 
         // Swap (Class666 → Class671.smethod_1): only with exactly two tunnels; each tunnel's atom is
@@ -453,7 +431,7 @@ namespace SpeechChem.Patches
             return ends;
         }
 
-        private static string SwapEffect(List<TunnelEnd> ends)
+        private static NarrationEvent SwapEffect(Class188 w, List<TunnelEnd> ends)
         {
             var moves = new List<string>();
             if (ends != null && ends.Count == 2)
@@ -464,7 +442,9 @@ namespace SpeechChem.Patches
                     moves.Add(Loc.T(from.Bonded ? "run.swap.move.bonded" : "run.swap.move",
                         new { atom = from.Atom, cell = CellText(ends[1 - k].Cell) }));
                 }
-            return moves.Count > 0 ? Loc.T("run.swap", new { moves = string.Join("; ", moves.ToArray()) }) : Loc.T("run.swap.none");
+            var e = WaldoEvent(w, "waldo.swap");
+            if (moves.Count == 0) return e.Part("action", Loc.T("run.swap.none"));
+            return e.Part("action", Loc.T("run.swap.none"), ":").Part("moves", string.Join("; ", moves.ToArray()));
         }
 
         /// <summary>A molecule's first atom cell in reading order (top row first, then left).</summary>
@@ -531,10 +511,12 @@ namespace SpeechChem.Patches
             public string Atom(Vector2i c) { string a; return Atoms.TryGetValue(Cell(c), out a) ? a : null; }
         }
 
-        private static string BondEffect(SpaceChem.Reactor.Reactor r, BondBoard before, bool plus)
+        private static NarrationEvent BondEffect(Class188 w, BondBoard before, bool plus)
         {
+            var r = w.reactor_0;
             var after = BondBoard.Of(r);
-            var parts = new List<string>();
+            var e = WaldoEvent(w, "waldo.bond");
+            bool any = false;
             foreach (var pair in Class668.smethod_0(r, (Enum146)(plus ? 0 : 1)))
             {
                 var c1 = pair.vector2i_0;
@@ -543,25 +525,26 @@ namespace SpeechChem.Patches
                 string a = before.Atom(c1) ?? after.Atom(c1), b = before.Atom(c2) ?? after.Atom(c2);
                 if (a == null || b == null) continue; // an empty bonder: nothing to act on
                 int was = before.Order(c1, right), now = after.Order(c1, right);
-                var args = new
-                {
-                    a, b,
-                    c1 = Loc.T("reactor.cell", new { x = c1.int_0 + 1, y = c1.int_1 + 1 }),
-                    c2 = Loc.T("reactor.cell", new { x = c2.int_0 + 1, y = c2.int_1 + 1 }),
-                    kind = ReactorText.BondWord(now),
-                };
+                string action, result = null;
                 if (now == was)
                 {
                     // Bond plus on two atoms that didn't change: the game's failure flash (no free
                     // bonds, or already triple). Bond minus with no bond there does nothing.
-                    if (plus) parts.Add(Loc.T("run.bond.failed", args));
+                    if (!plus) continue;
+                    action = Loc.T("narr.t.bondfail");
                 }
-                else if (was == 0) parts.Add(Loc.T("run.bonded", args));
-                else if (now == 0) parts.Add(Loc.T("run.unbonded", args));
-                else parts.Add(Loc.T("run.bond.now", args));
+                else if (was == 0) { action = Loc.T("narr.t.bonded"); result = Loc.T("narr.t.bondkind", new { kind = ReactorText.BondWord(now) }); }
+                else if (now == 0) action = Loc.T("narr.t.unbonded");
+                else { action = null; result = Loc.T("narr.t.bondnow", new { kind = ReactorText.BondWord(now) }); }
+                var atoms = new Dictionary<string, string>
+                {
+                    { "cells", Loc.T("narr.t.atoms", new { a, b, c1 = CellText(c1), c2 = CellText(c2) }) },
+                    { "names", Loc.T("narr.t.and", new { a, b }) },
+                };
+                e.NextItem().Part("action", action).Part("atoms", atoms, atoms["cells"], result != null ? "," : null).Part("result", result);
+                any = true;
             }
-            if (parts.Count == 0) return Loc.T(plus ? "run.bond.none" : "run.unbond.none");
-            return string.Join("; ", parts.ToArray());
+            return any ? e : Nothing(w, plus ? "run.bond.none" : "run.unbond.none");
         }
 
         private static string Heading(Vector2i v)
@@ -621,9 +604,10 @@ namespace SpeechChem.Patches
                 {
                     int before;
                     if (kv.Value == null || !__state.TryGetValue(kv.Key, out before) || kv.Value.int_0 <= before) continue;
-                    string name = OutputLabel(__instance);
-                    Add(Loc.T("run.produced", new { output = name, molecule = MoleculeText.NameAndFormula(kv.Key), done = kv.Value.int_0, required = kv.Value.int_1 }),
-                        speak: true, spoken: null, concerns: ConcernsOpen(__instance));
+                    var e = new NarrationEvent("output.produced") { Concerns = ConcernsOpen(__instance) };
+                    e.Part("output", OutputLabel(__instance), ":").Molecule(kv.Key, ",")
+                     .Part("count", Loc.T("narr.t.count", new { done = kv.Value.int_0, required = kv.Value.int_1 }));
+                    Narrator.Emit(e);
                 }
             }
             catch (Exception ex) { SpeechChem.Log.Error("[run] output capture", ex); }
@@ -652,10 +636,16 @@ namespace SpeechChem.Patches
                 }
                 catch (Exception ex) { SpeechChem.Log.Error("[run] crash snapshot", ex); }
                 // Several reactors: say which one failed, as the waldo events do ("reactor 2, ...").
-                string text = GameText.T("Reaction Error") + ": " + GameText.Speech(__1);
-                string reactor = null;
-                try { reactor = ReactorName((__0.bool_0 ? __0.method_0() : Class53.smethod_5<Class77>())?.reactor_0); } catch { }
-                Log.Add(Cycle, reactor == null ? text : reactor + ", " + text, snapshot);
+                var e = new NarrationEvent("run.error") { Payload = snapshot };
+                try
+                {
+                    var failed = (__0.bool_0 ? __0.method_0() : Class53.smethod_5<Class77>())?.reactor_0;
+                    e.Reactor = failed;
+                    e.CommonPart("reactor", ReactorName(failed), ",");
+                }
+                catch { }
+                e.Part("label", GameText.T("Reaction Error"), ":").Part("message", GameText.Speech(__1));
+                Narrator.Emit(e);
             }
             catch { }
         }
@@ -664,9 +654,9 @@ namespace SpeechChem.Patches
         {
             try
             {
-                string target = OutputLabel(__instance);
-                Add(GameText.T("An invalid molecule was passed to") + " " + target + ": " + MoleculeText.NameAndFormula(__0),
-                    speak: false, spoken: null, concerns: ConcernsOpen(__instance));
+                var e = new NarrationEvent("output.invalid") { Concerns = ConcernsOpen(__instance) };
+                e.Part("action", GameText.T("An invalid molecule was passed to")).Part("target", OutputLabel(__instance), ":").Molecule(__0);
+                Narrator.Emit(e);
             }
             catch { }
         }
@@ -680,7 +670,7 @@ namespace SpeechChem.Patches
         private static void AfterComplete(bool __state)
         {
             // A defense level has no outputs: it is won by destroying the enemy.
-            if (__state) Add(Loc.T(DefenseText.IsDefense ? "run.completed.defense" : "run.completed"), speak: false);
+            if (__state) Narrator.Emit(new NarrationEvent("run.completed").Part("message", Loc.T(DefenseText.IsDefense ? "run.completed.defense" : "run.completed")));
         }
 
         // ---- run state ----
@@ -709,11 +699,11 @@ namespace SpeechChem.Patches
                 if (StepControl.Quiet) return;
                 if (StepControl.Active) StepControl.OnForeignStateChange();
                 int key = now == 0 && !Log.IsEmpty ? Log.Groups[Log.Groups.Count - 1] : Cycle;
-                Log.Add(key, Screens.Common.ProgressSection.RunState());
                 // Completing the level (GoalTracker.smethod_7: enum158_0 = 1, then pause) pauses
                 // the run; the completion screen that follows speaks for it (user rule).
                 bool completed = now == 2 && (int)GoalTracker.enum158_0 == 1;
-                if (_leaving == 0 && !completed) Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());
+                Narrator.Emit(new NarrationEvent("run.state").Part("state", Screens.Common.ProgressSection.RunState()),
+                    speakable: _leaving == 0 && !completed, cycle: key);
             }
             catch { }
         }
@@ -744,7 +734,7 @@ namespace SpeechChem.Patches
             {
                 // A speed change while running (a start is announced by the state hook).
                 if (__state.Key == 1 && (int)Class258.smethod_16() == 1 && Class258.smethod_14() != __state.Value)
-                    Speech.Tts.Speak(Screens.Common.ProgressSection.RunState());
+                    Narrator.Emit(new NarrationEvent("run.speed").Part("state", Screens.Common.ProgressSection.RunState()));
             }
             catch { }
         }

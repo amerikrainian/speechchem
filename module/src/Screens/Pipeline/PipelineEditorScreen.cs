@@ -69,8 +69,7 @@ namespace SpeechChem.Screens.Pipeline
             });
             yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
             yield return new ElementAction("screen.reactor.molecule", OpenFocusedMolecules); // M on a port cell
-            yield return new ElementAction("screen.reactor.step", Patches.StepControl.Step); // 0, as in the reactor
-            yield return new ElementAction("screen.reactor.step.all", Patches.StepControl.StepAll); // Ctrl+0: the same here (no reactor open)
+            foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
             yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipMapSideways(1));
             if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());
@@ -292,7 +291,9 @@ namespace SpeechChem.Screens.Pipeline
             _logView.Build(b, LogStop, Loc.T("run.log"), RunCapture.Log,
                 cycle => Loc.T("run.cycle", new { n = cycle }),
                 (Navigation.Active as GraphNavigator)?.FocusCursorId,
-                tag => tag is Reactor.ReactorSnapshot s ? () => PushChild(new Reactor.ReactorSnapshotScreen(s)) : (System.Action)null);
+                tag => tag is Narration.NarrationEvent e && e.Payload is Reactor.ReactorSnapshot s ? () => PushChild(new Reactor.ReactorSnapshotScreen(s)) : (System.Action)null,
+                // Entries are events: the log format, every reactor named (this is no reactor's view).
+                (text, tag) => tag is Narration.NarrationEvent e ? Narration.Formatter.Format(e, Narration.FormatLayer.Log, null) : text);
         }
 
         private void UpdateRunWatch()

@@ -20,17 +20,16 @@ namespace SpeechChem.Screens.Reactor
 
         private void BuildLog(GraphBuilder b)
         {
-            // This reactor's own entries read without their "reactor 2, " (user rule 2026-10-01:
-            // the number only names the OTHER reactors); the pipeline's view keeps every number.
-            string own = RunCapture.ReactorName(Model);
-            string prefix = own == null ? null : own + ", ";
+            // Entries are events, formatted for this view: this reactor's own read without their
+            // "reactor 2" (user rule 2026-10-01; the reactor part's "unnamed" variant), the log
+            // format re-applied so a settings change re-renders old entries.
+            var reactor = Model;
             _logView.Build(b, LogStop, Loc.T("run.log"), RunCapture.Log,
                 cycle => Loc.T("run.cycle", new { n = cycle }),
                 (Navigation.Active as GraphNavigator)?.FocusCursorId,
                 // A reaction error's entry opens the crash snapshot (Enter).
-                tag => tag is ReactorSnapshot s ? () => PushChild(new ReactorSnapshotScreen(s)) : (System.Action)null,
-                prefix == null ? (System.Func<string, string>)null
-                    : text => text.StartsWith(prefix, System.StringComparison.Ordinal) ? text.Substring(prefix.Length) : text);
+                tag => tag is Narration.NarrationEvent e && e.Payload is ReactorSnapshot s ? () => PushChild(new ReactorSnapshotScreen(s)) : (System.Action)null,
+                (text, tag) => tag is Narration.NarrationEvent e ? Narration.Formatter.Format(e, Narration.FormatLayer.Log, reactor) : text);
         }
 
         /// <summary>A new run cleared the store: the window goes back to following the tail.</summary>

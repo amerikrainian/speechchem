@@ -7,6 +7,7 @@ using SpaceChem;
 using SpaceChem.Levels;
 using SpaceChem.Pipeline;
 using SpeechChem.Localization;
+using SpeechChem.Narration;
 
 namespace SpeechChem.Game
 {
@@ -65,7 +66,8 @@ namespace SpeechChem.Game
 
         private sealed class EventSpec
         {
-            public string Key;       // "{building} exploded"
+            public string Key;       // the action: "exploded"
+            public string Suffix;    // after the building's name ("Thruster Controls: left")
             public bool Weapon;      // an attack on the enemy: report hit / missed
             public bool Continuous;  // raised every cycle while it lasts (a beam): logged once per
                                      // burst, "hit" once per burst, never "missed"
@@ -77,15 +79,15 @@ namespace SpeechChem.Game
         /// (its method_13 registration) does with them.</summary>
         private static readonly Dictionary<KeyValuePair<Type, int>, EventSpec> Events = new Dictionary<KeyValuePair<Type, int>, EventSpec>
         {
-            { Code(typeof(Class605), Class605.int_1), new EventSpec { Key = "defense.event.exploded", Weapon = true } },
-            { Code(typeof(Class599), Class599.int_1), new EventSpec { Key = "defense.event.fired", Weapon = true } },
-            { Code(typeof(Class600), Class600.int_1), new EventSpec { Key = "defense.event.firing", Weapon = true, Continuous = true } },
-            { Code(typeof(ParticleAcceleratorDraggable), ParticleAcceleratorDraggable.int_1), new EventSpec { Key = "defense.event.fired", Weapon = true } },
-            { Code(typeof(Class601), 0), new EventSpec { Key = "defense.event.launched" } },
-            { Code(typeof(Class603), 0), new EventSpec { Key = "defense.event.left" } },
-            { Code(typeof(Class603), 1), new EventSpec { Key = "defense.event.right" } },
-            { Code(typeof(Class604), 0), new EventSpec { Key = "defense.event.missile" } }, // hits later: the enemy's damage reports it
-            { Code(typeof(Class607), 0), new EventSpec { Key = "defense.event.launched" } },
+            { Code(typeof(Class605), Class605.int_1), new EventSpec { Key = "defense.act.exploded", Weapon = true } },
+            { Code(typeof(Class599), Class599.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true } },
+            { Code(typeof(Class600), Class600.int_1), new EventSpec { Key = "defense.act.firing", Weapon = true, Continuous = true } },
+            { Code(typeof(ParticleAcceleratorDraggable), ParticleAcceleratorDraggable.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true } },
+            { Code(typeof(Class601), 0), new EventSpec { Key = "defense.act.launched" } },
+            { Code(typeof(Class603), 0), new EventSpec { Key = "defense.act.left", Suffix = ":" } },
+            { Code(typeof(Class603), 1), new EventSpec { Key = "defense.act.right", Suffix = ":" } },
+            { Code(typeof(Class604), 0), new EventSpec { Key = "defense.act.missile" } }, // hits later: the enemy's damage reports it
+            { Code(typeof(Class607), 0), new EventSpec { Key = "defense.act.launched" } },
         };
 
         /// <summary>Where an enemy's BODY is drawn (pipeline pixels), when its drawing also holds
@@ -339,17 +341,18 @@ namespace SpeechChem.Game
             return new Vector2i(Math.Max(0, Math.Min(MapColumns - 1, x0)) + 1, Math.Max(0, Math.Min(MapRows - 1, y0)) + 1);
         }
 
-        /// <summary>A movement line, as terse as the grid readouts (user design 2026-10-04): the
+        /// <summary>A movement event, as terse as the grid readouts (user design 2026-10-04): the
         /// enemy's name, then only what changed — "Isambard MMD 21" (column), "… row 5" (row),
-        /// "… 21, 5" (both, or on coming into sight), "… off the map".</summary>
-        public static string MoveText(string name, Vector2i? before, Vector2i? now)
+        /// "… 21, 5" (both, or on coming into sight), "… off the map". Null when nothing changed.</summary>
+        public static NarrationEvent MoveEvent(string name, Vector2i? before, Vector2i? now)
         {
-            if (now == null) return before == null ? null : Loc.T("defense.move.gone", new { name });
+            var e = new NarrationEvent("defense.move").Part("enemy", name);
+            if (now == null) return before == null ? null : e.Part("column", Loc.T("defense.offmap"));
             var n = now.Value;
             if (before == null || (before.Value.int_0 != n.int_0 && before.Value.int_1 != n.int_1))
-                return Loc.T("defense.move.both", new { name, col = n.int_0, row = n.int_1 });
-            if (before.Value.int_0 != n.int_0) return Loc.T("defense.move.col", new { name, col = n.int_0 });
-            if (before.Value.int_1 != n.int_1) return Loc.T("defense.move.row", new { name, row = n.int_1 });
+                return e.Part("column", n.int_0.ToString(), ",").Part("row", n.int_1.ToString());
+            if (before.Value.int_0 != n.int_0) return e.Part("column", n.int_0.ToString());
+            if (before.Value.int_1 != n.int_1) return e.Part("row", Loc.T("defense.row", new { row = n.int_1 }));
             return null;
         }
 
@@ -386,19 +389,20 @@ namespace SpeechChem.Game
         /// <summary>"Oxygen Tank 2 exploded", or "Oxygen Tank 2, event 3" for a code not in the
         /// table; <paramref name="weapon"/> = the event attacks the enemy, <paramref name="continuous"/>
         /// = raised every cycle while it lasts.</summary>
-        public static string EventText(Class598 b, int code, out bool weapon, out bool continuous)
+        public static NarrationEvent BuildingEvent(Class598 b, int code, out bool weapon, out bool continuous)
         {
             weapon = false;
             continuous = false;
+            var e = new NarrationEvent("defense.event");
             string name = PipelineText.Name(b.pipeline_0, b);
             EventSpec spec;
             if (Events.TryGetValue(Code(b.GetType(), code), out spec))
             {
                 weapon = spec.Weapon;
                 continuous = spec.Continuous;
-                return Loc.T(spec.Key, new { building = name });
+                return e.Part("building", name, spec.Suffix).Part("action", Loc.T(spec.Key));
             }
-            return Loc.T("defense.event", new { building = name, code });
+            return e.Part("building", name, ",").Part("action", Loc.T("defense.act.code", new { code }));
         }
 
         // ---- the enemy graph (the Reactor Controls panel, while running) ----

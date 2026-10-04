@@ -65,8 +65,7 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
             yield return new ElementAction("screen.reactor.molecule", OpenZoneMolecules);
-            yield return new ElementAction("screen.reactor.step", Patches.StepControl.Step);
-            yield return new ElementAction("screen.reactor.step.all", Patches.StepControl.StepAll);
+            foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
             yield return new ElementAction("screen.reactor.skip.left", () => SkipSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipSideways(1));
             foreach (var a in EditActions()) yield return a;

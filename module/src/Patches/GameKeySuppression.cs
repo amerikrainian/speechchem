@@ -59,6 +59,9 @@ namespace SpeechChem.Patches
         };
 
         private const int EscapeScancode = 41;
+        private const int Numrow1 = 30, Numrow4 = 33;
+
+        private static bool CtrlHeld() => Input.SdlKeyboard.Held(224) || Input.SdlKeyboard.Held(228); // LCtrl, RCtrl
         private const int BackspaceScancode = 42;
         private const int PasteKey = 515; // Impeller.Keys.Paste, the engine's Ctrl+V
 
@@ -103,6 +106,9 @@ namespace SpeechChem.Patches
                 if (cur == null || cur.CapturesRawInput) return false;
                 if (scancode == EscapeScancode) return _escapeLatched || cur.ModalCapturesEscape;
                 if (scancode == BackspaceScancode && UI.Navigation.TextEntryFocused) return false;
+                // Ctrl+1..4 are step keys (assignable, a no-op when not): the game reads 1-4 as its
+                // play speeds whatever the modifiers.
+                if (scancode >= Numrow1 && scancode <= Numrow4 && CtrlHeld()) return true;
                 return Keys.Contains(scancode) && !cur.PassKeyToGame(scancode);
             }
             catch { return false; }

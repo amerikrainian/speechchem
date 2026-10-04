@@ -9,15 +9,15 @@ using SpaceChem.Levels;
 using SpaceChem.Pipeline;
 using SpeechChem.Game;
 using SpeechChem.Localization;
+using SpeechChem.Narration;
 
 namespace SpeechChem.Patches
 {
     /// <summary>
     /// Defense levels, GENERICALLY (every enemy and special building; the only per-type pieces are
-    /// the meaning tables in Game/DefenseText). Run events go to the run log as level-wide events
-    /// (RunCapture.AddLevelEvent: they end any step and are spoken inside any reactor at play
-    /// speeds 1-3 — user, 2026-10-04: log every molecule and every move, then judge the noise; the
-    /// per-molecule lines are spoken at speed 1 only):
+    /// the meaning tables in Game/DefenseText). Run events are Narration events (level-wide: they
+    /// concern every reactor), routed by the player's settings — defaults: logged, spoken at play
+    /// speeds 1-3, the per-molecule line at 1 (user, 2026-10-04):
     ///   every Class598 subclass's vmethod_23 (a special building took a molecule):
     ///       "Oxygen Tank 2 took Methane, Pressure 37 percent" (the building's run meter after it);
     ///   Class598.method_15     a special building's event: "Oxygen Tank 2 exploded" (the table) or
@@ -127,14 +127,14 @@ namespace SpeechChem.Patches
         // molecule sets off an event inside: then the intake line goes first, before the event's
         // (and without the meter — the event says what happened).
         private static Class598 _intakeBuilding;
-        private static string _intakeMolecule;
+        private static Molecule _intakeMoleculeObject;
 
         private static void BeforeIntake(Class598 __instance, Molecule __0)
         {
             try
             {
                 _intakeBuilding = __instance;
-                _intakeMolecule = MoleculeText.NameAndFormula(__0);
+                _intakeMoleculeObject = __0;
             }
             catch { }
         }
@@ -149,13 +149,14 @@ namespace SpeechChem.Patches
         private static void FlushIntake(bool withMeter)
         {
             var b = _intakeBuilding;
-            string molecule = _intakeMolecule;
+            var molecule = _intakeMoleculeObject;
             _intakeBuilding = null;
-            _intakeMolecule = null;
+            _intakeMoleculeObject = null;
             if (b == null) return;
-            string text = Loc.T("defense.took", new { building = PipelineText.Name(b.pipeline_0, b), molecule });
             string meter = withMeter ? DefenseText.Meter(b) : null;
-            RunCapture.AddLevelEvent(meter == null ? text : text + ", " + meter, fast: false); // every molecule: speed 1 only
+            var e = new NarrationEvent("defense.took").Part("building", PipelineText.Name(b.pipeline_0, b)).Part("action", Loc.T("defense.act.took"))
+                .Molecule(molecule, meter != null ? "," : null);
+            Narrator.Emit(e.Part("meter", meter));
         }
 
         private struct EnemySnapshot
@@ -172,7 +173,7 @@ namespace SpeechChem.Patches
         private static readonly ConditionalWeakTable<Class598, int[]> Bursts = new ConditionalWeakTable<Class598, int[]>();
 
         private static int _inEvent;
-        private static string _pendingDestroyed;
+        private static NarrationEvent _pendingDestroyed;
 
         private static void BeforeEvent(Class598 __instance, int __0, out EnemySnapshot __state)
         {
@@ -182,7 +183,7 @@ namespace SpeechChem.Patches
                 // Inside the building's intake (its 35th methane): the intake line goes first.
                 if (ReferenceEquals(_intakeBuilding, __instance)) FlushIntake(withMeter: false);
                 bool weapon, continuous;
-                string text = DefenseText.EventText(__instance, __0, out weapon, out continuous);
+                var text = DefenseText.BuildingEvent(__instance, __0, out weapon, out continuous);
                 var enemy = DefenseText.Enemy(Level);
                 __state = new EnemySnapshot
                 {
@@ -202,7 +203,7 @@ namespace SpeechChem.Patches
                     if (same) return;
                     burst[1] = 0;
                 }
-                RunCapture.AddLevelEvent(text);
+                Narrator.Emit(text);
             }
             catch (Exception ex) { Log.Error("[defense] building event", ex); }
         }
@@ -216,23 +217,23 @@ namespace SpeechChem.Patches
                 if (enemy != null)
                 {
                     int parts = DefenseText.Intact(DefenseText.PartFlags(enemy));
-                    if (parts < __state.Parts) RunCapture.AddLevelEvent(PartLostText(enemy));
+                    if (parts < __state.Parts) Narrator.Emit(PartLost(enemy));
                     else if (__state.Continuous)
                     {
                         int[] burst;
                         if (enemy.float_0 < __state.Health && __instance != null && Bursts.TryGetValue(__instance, out burst) && burst[1] == 0)
                         {
                             burst[1] = 1;
-                            RunCapture.AddLevelEvent(Loc.T("defense.hit", new { name = EnemyName }));
+                            Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
                         }
                     }
-                    else if (enemy.float_0 < __state.Health) RunCapture.AddLevelEvent(Loc.T("defense.hit", new { name = EnemyName }));
-                    else if (__state.Weapon) RunCapture.AddLevelEvent(Loc.T("defense.miss"));
+                    else if (enemy.float_0 < __state.Health) Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                    else if (__state.Weapon) Narrator.Emit(Effect(null, "defense.miss"));
                     RememberParts(enemy);
                 }
                 if (_pendingDestroyed != null && _inEvent == 0)
                 {
-                    RunCapture.AddLevelEvent(_pendingDestroyed);
+                    Narrator.Emit(_pendingDestroyed);
                     _pendingDestroyed = null;
                 }
             }
@@ -241,8 +242,12 @@ namespace SpeechChem.Patches
         }
 
         /// <summary>"Isambard MMD: motor destroyed, 2 of 3 motors intact".</summary>
-        private static string PartLostText(Class310 enemy)
-            => Loc.T("defense.part.lost", new { name = EnemyName, part = DefenseText.PartLost(enemy), parts = DefenseText.PartsText(enemy) });
+        private static NarrationEvent PartLost(Class310 enemy)
+            => new NarrationEvent("defense.effect").Part("enemy", EnemyName, ":").Part("result", DefenseText.PartLost(enemy), ",").Part("parts", DefenseText.PartsText(enemy));
+
+        /// <summary>"Isambard MMD hit", "missed" (no enemy name: what the blast did).</summary>
+        private static NarrationEvent Effect(string enemy, string resultKey)
+            => new NarrationEvent("defense.effect").Part("enemy", enemy).Part("result", Loc.T(resultKey));
 
         // ---- the enemy: damage, parts, attacks ----
 
@@ -258,12 +263,12 @@ namespace SpeechChem.Patches
             {
                 if (!__state.Key && __instance.method_1())
                 {
-                    string text = Loc.T("defense.destroyed", new { name = EnemyName });
+                    var text = new NarrationEvent("defense.destroyed").Part("enemy", EnemyName).Part("result", Loc.T("defense.state.destroyed"));
                     if (_inEvent > 0) _pendingDestroyed = text; // after the hit that caused it
-                    else RunCapture.AddLevelEvent(text);
+                    else Narrator.Emit(text);
                 }
                 else if (_inEvent == 0 && __instance.float_0 < __state.Value)
-                    RunCapture.AddLevelEvent(Loc.T("defense.hit", new { name = EnemyName }));
+                    Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
             }
             catch (Exception ex) { Log.Error("[defense] enemy damage", ex); }
         }
@@ -296,7 +301,7 @@ namespace SpeechChem.Patches
                 {
                     int now = DefenseText.Intact(DefenseText.PartFlags(__instance));
                     var box = LastParts.GetValue(__instance, _ => new[] { now });
-                    if (now < box[0] && _inEvent == 0) RunCapture.AddLevelEvent(PartLostText(__instance));
+                    if (now < box[0] && _inEvent == 0) Narrator.Emit(PartLost(__instance));
                     box[0] = now;
                 }
                 var level = Level;
@@ -310,10 +315,11 @@ namespace SpeechChem.Patches
                 {
                     if (!Equals(at, watch.At))
                     {
-                        string move = DefenseText.MoveText(EnemyName, watch.At, at);
-                        if (move != null) RunCapture.AddLevelEvent(move);
+                        var move = DefenseText.MoveEvent(EnemyName, watch.At, at);
+                        if (move != null) Narrator.Emit(move);
                     }
-                    if (state != null && state != watch.State) RunCapture.AddLevelEvent(Loc.T("defense.enemy.state", new { name = EnemyName, state }));
+                    if (state != null && state != watch.State)
+                        Narrator.Emit(new NarrationEvent("defense.state").Part("enemy", EnemyName, ":").Part("state", state));
                 }
                 watch.At = at;
                 watch.State = state;
@@ -323,7 +329,7 @@ namespace SpeechChem.Patches
 
         private static void AfterAttack()
         {
-            try { RunCapture.AddLevelEvent(Loc.T("defense.attack", new { name = EnemyName })); }
+            try { Narrator.Emit(new NarrationEvent("defense.attack").Part("enemy", EnemyName).Part("action", Loc.T("defense.act.attacks"))); }
             catch { }
         }
 
@@ -481,9 +487,8 @@ namespace SpeechChem.Patches
                 int now = GoalTracker.int_1;
                 if (now >= __state) return;
                 string name = DefenseText.BaseName();
-                RunCapture.AddLevelEvent(now <= 0
-                    ? Loc.T("defense.base.destroyed", new { name })
-                    : Loc.T("defense.base.damage", new { name, percent = now }));
+                Narrator.Emit(new NarrationEvent("defense.base").Part("base", name)
+                    .Part("result", now <= 0 ? Loc.T("defense.state.destroyed") : Loc.T("run.percent", new { percent = now })));
             }
             catch (Exception ex) { Log.Error("[defense] base damage", ex); }
         }

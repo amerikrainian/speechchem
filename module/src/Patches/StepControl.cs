@@ -5,6 +5,7 @@ using SpaceChem.Pipeline;
 using SpaceChem.UI;
 using SpeechChem.Game;
 using SpeechChem.Localization;
+using SpeechChem.Narration;
 
 namespace SpeechChem.Patches
 {
@@ -28,14 +29,16 @@ namespace SpeechChem.Patches
     /// reaction error or a completion ends it normally. With no event for
     /// <see cref="MaxCycles"/> cycles (both waldos stuck in a sync, say) it pauses and says so.
     ///
-    /// Two kinds (user rule 2026-10-03): 0 stops only on an event that concerns the open reactor
-    /// (its waldos, a building it feeds straight — RunCapture decides) and speaks only those;
-    /// Ctrl+0 stops on any event and speaks the cycle's events from every reactor. With no
-    /// reactor open (the pipeline screen) the two are the same. Everything is logged either way.
+    /// Step KEYS (user design 2026-10-04, Narration/StepKeys): 0, Ctrl+0, 5-9 and Ctrl+1 to Ctrl+9,
+    /// each with its own rules from the Settings dialog — unassigned does nothing; which event
+    /// types stop it and which it speaks (separate sets); its scope (the open reactor's events, or
+    /// every reactor's — an event "concerns" the open reactor as RunCapture decides); whether it
+    /// says "Cycle N"; how many event-less cycles before it gives up. Defaults reproduce the
+    /// original two: 0 = the open reactor's events, Ctrl+0 = every reactor's. Everything is logged
+    /// by the events' own Log settings either way.
     /// </summary>
     internal static class StepControl
     {
-        public const int MaxCycles = 1000;
         private const int Searching = int.MaxValue;
 
         private static int _target = -1;
@@ -43,7 +46,7 @@ namespace SpeechChem.Patches
         private static bool _starting, _pausing;
         private static DateTime _found;
         private static SimulatorSpeed? _restore;
-        private static bool _ownOnly;
+        private static string _key;
 
         /// <summary>A step is in progress (its events are spoken).</summary>
         public static bool Active => _target >= 0;
@@ -52,9 +55,13 @@ namespace SpeechChem.Patches
         /// not announced or logged. Any other change during a step ends the step.</summary>
         public static bool Quiet => _starting || _pausing;
 
-        /// <summary>The step in progress is 0's: only events concerning the open reactor end it or
-        /// are spoken.</summary>
-        public static bool OwnOnly => Active && _ownOnly;
+        /// <summary>The step key's scope admits this event (its reactor's, or every reactor's).</summary>
+        private static bool InScope(NarrationEvent e)
+            => e.Concerns || StepKeys.Scope(_key) == EventSettings.ScopeAll;
+
+        /// <summary>During a step: whether the step key speaks this event.</summary>
+        public static bool Speaks(NarrationEvent e)
+            => Active && _key != null && StepKeys.Speaks(_key, e.Kind) && InScope(e);
 
         public static void Apply(Harmony harmony)
         {
@@ -67,17 +74,32 @@ namespace SpeechChem.Patches
             catch (Exception ex) { Log.Error("[patch] step control failed to apply", ex); }
         }
 
-        /// <summary>The 0 key / the toolbar's Step button: to the next event of the open reactor.</summary>
-        public static void Step() => Step(ownOnly: true);
+        /// <summary>The 0 key / the toolbar's Step button.</summary>
+        public static void Step() => Step("0");
 
-        /// <summary>Ctrl+0: to the next event of any reactor.</summary>
-        public static void StepAll() => Step(ownOnly: false);
+        /// <summary>Ctrl+0.</summary>
+        public static void StepAll() => Step("c0");
 
-        private static void Step(bool ownOnly)
+        /// <summary>The step keys' screen actions (0, Ctrl+0 and the configurable rest), for the
+        /// reactor and pipeline editors.</summary>
+        public static System.Collections.Generic.IEnumerable<UI.ElementAction> Actions()
+        {
+            yield return new UI.ElementAction("screen.reactor.step", Step);
+            yield return new UI.ElementAction("screen.reactor.step.all", StepAll);
+            foreach (var id in StepKeys.Ids)
+            {
+                if (id == "0" || id == "c0") continue;
+                string key = id;
+                yield return new UI.ElementAction("screen.reactor.step.key." + id, () => Step(key));
+            }
+        }
+
+        /// <summary>A step key: its rules, or nothing when it is unassigned.</summary>
+        public static void Step(string key)
         {
             try
             {
-                if (Active) return; // one at a time
+                if (Active || !StepKeys.Assigned(key)) return; // one at a time; an unassigned key is a no-op
                 if (GoalTracker.bool_0)
                 {
                     // The enemy is destroyed: the game freezes every waldo until it declares the
@@ -86,7 +108,7 @@ namespace SpeechChem.Patches
                     Speech.Tts.Speak(Loc.T("run.step.frozen", new { name = DefenseText.EnemyName(DefenseText.Level) }), interrupt: true);
                     return;
                 }
-                _ownOnly = ownOnly;
+                _key = key;
                 int state = (int)Class258.smethod_16();
                 int tick = state == 0 ? 0 : Class258.int_2;
                 _startTick = tick % 10 == 0 ? tick : (tick / 10 + 1) * 10;
@@ -112,18 +134,17 @@ namespace SpeechChem.Patches
             }
         }
 
-        /// <summary>RunCapture logged an event under <paramref name="cycle"/> (its log group);
-        /// <paramref name="concerns"/>: it concerns the open reactor (true with none open). The
-        /// step's first qualifying one says the cycle and sets the pause at the end of the cycle
-        /// the clock is in.</summary>
-        public static void OnEvent(int cycle, bool concerns)
+        /// <summary>The Narrator saw an event (filed under its cycle). The step's first one that its
+        /// key stops on (in its scope) says the cycle (when the key does) and sets the pause at the
+        /// end of the cycle the clock is in.</summary>
+        public static void OnEvent(NarrationEvent e)
         {
             try
             {
-                if (_target != Searching || (_ownOnly && !concerns)) return;
+                if (_target != Searching || _key == null || !StepKeys.Stops(_key, e.Kind) || !InScope(e)) return;
                 _target = Class258.int_2 / 10 * 10 + 9;
                 _found = DateTime.UtcNow;
-                Speech.Tts.Speak(Loc.T("run.cycle", new { n = cycle }), interrupt: true);
+                if (StepKeys.SayCycle(_key)) Speech.Tts.Speak(Loc.T("run.cycle", new { n = e.Cycle }), interrupt: true);
             }
             catch { }
         }
@@ -140,11 +161,12 @@ namespace SpeechChem.Patches
             catch { }
         }
 
-        /// <summary>No event in <see cref="MaxCycles"/> cycles: say so (the caller pauses).</summary>
+        /// <summary>No event in the key's give-up cycles: say so (the caller pauses).</summary>
         private static bool GaveUp()
         {
-            if (Class258.int_2 - _startTick < MaxCycles * 10) return false;
-            Speech.Tts.Speak(Loc.T("run.step.none", new { n = MaxCycles }), interrupt: true);
+            int cycles = _key != null ? StepKeys.GiveUp(_key) : StepKeys.GiveUpDefault;
+            if (Class258.int_2 - _startTick < cycles * 10) return false;
+            Speech.Tts.Speak(Loc.T("run.step.none", new { n = cycles }), interrupt: true);
             return true;
         }
 

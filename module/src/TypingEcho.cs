@@ -29,6 +29,14 @@ namespace SpeechChem
             Speech.Tts.Speak(Loc.T(_enabled.Value ? "text.echo.on" : "text.echo.off"), interrupt: true);
         }
 
+        /// <summary>Set it quietly (the Settings dialog's General tab, on Save Changes).</summary>
+        public static void Set(bool on)
+        {
+            if (on == Enabled) return;
+            _enabled = on;
+            HostConfig.SetBool(Key, on);
+        }
+
         /// <summary>Test seam: pin the flag without touching settings.json (null = re-read it on
         /// next use) — echo tests must not depend on the machine's saved F6 choice.</summary>
         internal static void ResetForTests(bool? enabled) => _enabled = enabled;

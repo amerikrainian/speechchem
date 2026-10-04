@@ -74,6 +74,52 @@ namespace SpeechChem.Dev
                 case "pipemap": return PipeMap();
                 case "focus": return Focus(argument);
                 case "runlog": return RunLog(argument);
+                case "optionstab":
+                {
+                    // Settings dialog tabs: "game", "mod", or a Mod sub-tab "general" / "events" / "keys".
+                    string a = (argument ?? "").Trim();
+                    if (a == "game") SpeechChem.Screens.Settings.ModSettingsUi.ShowTab(SpeechChem.Screens.Settings.ModSettingsUi.Tab.Game);
+                    else
+                    {
+                        SpeechChem.Screens.Settings.ModSettingsUi.ShowTab(SpeechChem.Screens.Settings.ModSettingsUi.Tab.Mod);
+                        if (a == "events") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.Events);
+                        else if (a == "keys") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.Keys);
+                        else if (a == "general") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.General);
+                    }
+                    return "tab requested" + (char)10;
+                }
+                case "settingsrow":
+                {
+                    // Activate a row (or a compound row's cell) of the shown Mod page by id, as a click would.
+                    string id = (argument ?? "").Trim();
+                    var page = SpeechChem.Screens.Settings.ModSettingsUi.Current();
+                    SpeechChem.Screens.Settings.SRow hit = null;
+                    foreach (var r in page.Rows)
+                    {
+                        if (r.Id == id) hit = r;
+                        if (r is SpeechChem.Screens.Settings.SCompound k) foreach (var c in k.Cells) if (c.Id == id) hit = c;
+                    }
+                    switch (hit)
+                    {
+                        case SpeechChem.Screens.Settings.SLink l: SpeechChem.Screens.Settings.ModSettingsUi.Push(l.Open, l.Id); break;
+                        case SpeechChem.Screens.Settings.SAction a: a.Run(); break;
+                        case SpeechChem.Screens.Settings.SToggle t: t.Set(!t.Get()); break;
+                        case SpeechChem.Screens.Settings.SChoice c: c.Set((c.Get() + 1) % c.Options().Length); break;
+                        default:
+                            var ids = new System.Collections.Generic.List<string>();
+                            foreach (var r in page.Rows) ids.Add(r.Id);
+                            return "[no row " + id + "] rows: " + string.Join(" ", ids.ToArray()) + (char)10;
+                    }
+                    SpeechChem.Screens.Settings.ModSettingsUi.Dirty = true;
+                    return "activated " + id + (char)10;
+                }
+                case "settingspage":
+                {
+                    int delta; int.TryParse((argument ?? "").Trim(), out delta);
+                    if (delta == 0) { SpeechChem.Screens.Settings.ModSettingsUi.Pop(); return "back" + (char)10; }
+                    SpeechChem.Screens.Settings.ModSettingsUi.TurnPage(delta);
+                    return "page" + (char)10;
+                }
                 case "blast": return Blast(argument);
                 case "profile": return LiveAudit.Profile(argument);
                 case "openlevel": return LiveAudit.OpenLevel(argument);

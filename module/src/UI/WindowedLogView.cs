@@ -66,11 +66,11 @@ namespace SpeechChem.UI
         /// <summary>Declare the log's stop (nothing while the store is empty).</summary>
         /// <param name="open">Turns an entry's tag into its Enter action (null = tags ignored); a
         /// tagged entry reads as a button.</param>
-        /// <param name="render">Rewrites an entry's text for this view only (null = as stored) —
-        /// the store keeps one text for every view.</param>
+        /// <param name="render">An entry's text for this view (null = as stored), from its stored
+        /// text and its tag — the store keeps one text for every view.</param>
         public void Build(GraphBuilder b, object stopKey, string title, GroupedLog<TKey> log,
             Func<TKey, string> groupLabel, ControlId focusCursor, Func<object, Action> open = null,
-            Func<string, string> render = null)
+            Func<string, object, string> render = null)
         {
             if (log == null || log.IsEmpty) return;
 
@@ -95,9 +95,9 @@ namespace SpeechChem.UI
                 var entries = log.Entries(key);
                 for (int i = 0; i < entries.Count; i++)
                 {
-                    string text = render != null ? render(entries[i]) : entries[i];
-                    var tag = open != null ? log.TagAt(key, i) : null;
-                    var action = tag != null ? open(tag) : null;
+                    var tag = log.TagAt(key, i);
+                    string text = render != null ? render(entries[i], tag) ?? entries[i] : entries[i];
+                    var action = open != null && tag != null ? open(tag) : null;
                     b.AddItem(RowId(key, i), new NodeVtable
                     {
                         ControlType = action != null ? ControlTypes.Button : ControlTypes.Text,

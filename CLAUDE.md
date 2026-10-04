@@ -411,13 +411,60 @@ change; Left/Right on the box do nothing. Implemented as `Screens/ChoiceListScre
 CHILD sub-screen (Screen.PushChild; ModalCapturesEscape keeps Escape from the game; Back action =
 close). Language commits the way the button's clicks would leave it (`int_0` + `Class203.smethod_6`
 relabel). Returning from a child re-reads the focused control without re-speaking the screen name
-(ScreenManager.SyncFocus remembers the child's parent). Nothing applies before Save; the
+(ScreenManager.SyncFocus remembers the child's parent) or the contexts around it (a page title, a
+row name): `Navigator.Resume` restores the node the parent last spoke as the differ's baseline. Nothing applies before Save; the
 dialog previews volumes live itself (`vmethod_6`). Escape native (Cancel); the dialog's Enter (Save)
 is suppressed while modeled. Verified: every value reads as drawn (screenshot), Cancel discards,
 Save with no change rewrites config.ini identically.
 UNTESTED: saving a CHANGED LANGUAGE — `Class184.method_13()` ends the main loop with "restart", so
 Program.Main unloads SANDBOX and runs a new one: the mod's per-domain reboot path (§1), never yet
 exercised live. Fullscreen/aspect changes re-create the window (`method_3`).
+
+## 14a. Narration settings — the Settings dialog's Mod tab (verified live 2026-10-04)
+User design 2026-10-04 (say-the-spire2's event/announcement model as the bar). Defaults reproduce the
+pre-settings behaviour exactly; only changed values are stored.
+- STORE (`Narration/NarrationStore`): `%LOCALAPPDATA%\SpeechChem\narration.json`, a flat sorted
+  key → string map + "version" (migrations hook in `Migrate`); a missing key = the registry default.
+  The dialog edits a DRAFT (Open on the dialog's first build); Save Changes (`Class74.method_19`
+  prefix) commits, Cancel / Escape (`method_20`) discards — the game tab's semantics. An unreadable
+  file is never overwritten. Typing echo (General tab) is drafted the same way, saved via HostConfig.
+- REGISTRY (`Narration/EventKinds`): 32 kinds in groups waldo / outputs / run / defense; each lists
+  its PARTS in default order (some with detail variants: molecule name/formula/both, bond atoms with
+  cells / names, reactor "not in its own" / always), Waldo (red/blue filters), ReactorScoped (scope),
+  and defaults (log, speak level, step stops/speaks). Adding a kind = one entry; pages follow.
+- EVENTS (`NarrationEvent` + `Formatter`): capture patches build parts (common parts — reactor,
+  waldo — plus items joined "; "); `Narrator.Emit` = source filter → log (Log format, the event as
+  the tag; views re-format it) → step → speech (Speech format). Formats: a Default layer and Log /
+  Speech overrides that inherit until set; parts on/off, order (stored order merged with newer
+  parts), variant. A part keeps its suffix only before its registry successor, else a comma.
+- SETTINGS PER EVENT (same rows on every page, inapplicable rows omitted — user choice B): Log;
+  Speak at (ONE ROW of checkboxes: Speed 1-4, Paused or stopped — user rule 2026-10-04; keys
+  `event.K.speak.1..4|idle`); In a reactor (its own events / all reactors) when ReactorScoped; Red /
+  Blue waldo when Waldo; Format / Log format / Speech format pages (one row per part: Included,
+  Detail combo, Up, Down — Move speaks "moved between A and B"); Reset this event.
+- STEP KEYS (`Narration/StepKeys`, `Patches/StepControl.Step(id)`): ids 0, c0, 5-9, c1-c9 (bindings
+  `screen.reactor.step.key.*`, Repeating). Per key: Assigned, Events of (scope), Stops on / Speaks
+  per group (checkbox = whole group, "(some)" drawn / "partly on" spoken, Customize = per kind),
+  Say the cycle number, Give up after (100-10000 cycles), Reset. Ctrl+1..4 are suppressed from the
+  game while modeled (`GameKeySuppression`: the toolbar reads 1-4 with no modifier check).
+- WIDGETS (`Patches/OptionsInjection`): a postfix on Class74's vmethod_8 rebuilds the widget tree:
+  Game / Mod tab buttons; Game = the game's own layout over its widgets; Mod = sub-tabs General /
+  Events / Step keys, a breadcrumb, the page's rows in visual pages of 4 (the box is fixed; game
+  widgets can't be subclassed — a module subclass of GClass10 fails to load), Back / Prev / n/m /
+  Next / Save / Cancel. Checkboxes = Class475, choices = cycling buttons, links / actions = buttons;
+  any change sets `ModSettingsUi.Dirty` and the dialog rebuilds next update (`vmethod_5`), carrying
+  the game tab's unsaved values. Mouse-clicked checkboxes are polled (skipped while a rebuild is
+  pending — a spoken change would otherwise be reverted).
+- SPEECH (`OptionsScreen`, the same page model `Screens/Settings/ModSettingsUi`): opens on the tab
+  strip (user rule 2026-10-04). Stops: Game/Mod tabs; then Game = the old list, or Mod = sub-tabs,
+  the WHOLE page as one list (own "n of m"; a compound row counts once; its name is a context,
+  cells in a row with logical columns so Up/Down keep the column — GraphBuilder matches
+  `NodeVtable.Column` across rows missing one), Back / Save Changes / Cancel. The drawn visual page
+  follows focus. Choices are combo boxes (ChoiceListScreen). Tab strips land on the SELECTED tab
+  (KeyGraph.StopLanding: a Selected + OnSelect stop ignores stop memory — a page swap's reconcile
+  fallback parked focus on the Step keys tab for a frame and Shift+Tab then landed there). Escape on a sub-page = Back
+  (ModalCapturesEscape), at the top = the game's Cancel. Probes: `optionstab`, `settingsrow <id>`,
+  `settingspage <delta|0=back>`.
 
 ## 15. In-level dialogs (`Screens/DialogScreens.cs`, `Patches/DialogCapture.cs`) — verified live 2026-09-27
 MessageBoxEditor (Reaction Error, the exit prompt) and Class69 (the wrong-molecule dialog) as one
@@ -484,7 +531,8 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   1000 cycles (a deadlocked sync) pauses with "No events in 1000 cycles"; FrameLoop "step" is the
   safety net (overshoot or 10 s after the event). Verified live 2026-10-03 on Sleepless on
   Sernimir IV: from stopped, Cycle 1 (the waits), then Cycle 5, 6, 7 (2-4 silent).
-  TWO KINDS (user rule 2026-10-03): 0 (and the toolbar button) stops only on an event that CONCERNS
+  STEP KEYS ARE SETTINGS now (§14a): the defaults below are keys 0 and Ctrl+0; 5-9 and Ctrl+1..9 are
+  unassigned (a no-op) until set up. TWO KINDS (user rule 2026-10-03): 0 (and the toolbar button) stops only on an event that CONCERNS
   THE OPEN REACTOR and speaks only those; Ctrl+0 stops on any event and speaks the cycle's events of
   every reactor. With no reactor open (pipeline screen) they are the same. RunCapture.Add decides
   `concerns`: a waldo event of the open reactor; an output / invalid molecule of a building that
@@ -817,7 +865,7 @@ waldo's "red: pause" is logged, just after it) — verified live on a test puzzl
 (Class188.method_4: moved zero cells because method_1 clamps to the grid; "hit the wall at x, y",
 once until it moves again), outputs (Class578.vmethod_11 counter
 diffs, "Research Output ψ: Oxygen, O2, 1 of 10"), reaction errors, invalid molecules, completion,
-run state / speed changes. ALWAYS logged; SPOKEN only while running at the slowest speed, and inside
+run state / speed changes. Where each goes is a SETTING per event kind (§14a); the defaults: ALWAYS logged; SPOKEN only while running at the slowest speed, and inside
 a reactor only the events that concern it (user rule 2026-10-03; the step's `concerns`, §16) (run state
 changes always, except the "Stopped" of leaving the level: Class53.smethod_8 / smethod_9 stop the
 run first — Continue after a completion, the exit prompt's Yes — user rule). The log is

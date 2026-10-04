@@ -35,6 +35,11 @@ namespace SpeechChem.Dev
     ///   pipemap            the open pipeline as text (0-based cells): '#' blocked, a letter per
     ///                      component body, '+' pipe, '*' crossing, '.' free; then each component's
     ///                      origin, ports, and every pipe's end and link
+    ///   runlog [n]         the last n (default 40) cycle groups of the run log, as logged
+    ///   blast &lt;x&gt;          defense level 1 (Class144): the Oxygen Tank at map column x
+    ///                      (0-based: 12, 18, 24) raises its blast event (method_15) without
+    ///                      being filled — the level's handler then hits or misses the robot;
+    ///                      during a run only
     ///   focus &lt;stop&gt; &lt;id&gt;  focus a stop, then a node by structural id (e.g. "pipeline.map
     ///                      pipeline.cell.4.7"), as the navigator's own jumps do
     /// </summary>
@@ -62,6 +67,8 @@ namespace SpeechChem.Dev
                 case "custom": return CustomPuzzle.Run(argument);
                 case "pipemap": return PipeMap();
                 case "focus": return Focus(argument);
+                case "runlog": return RunLog(argument);
+                case "blast": return Blast(argument);
                 case "switchprofile":
                 {
                     // The main menu's "Switch Profile" button handler (the picker only shows at boot
@@ -73,6 +80,40 @@ namespace SpeechChem.Dev
                 }
                 default: return "commands: screens | push shiplost|credits|epilogue | pop | key <action id> | click | type <text> | profiles\n";
             }
+        }
+
+        private static string RunLog(string argument)
+        {
+            int n;
+            if (!int.TryParse((argument ?? "").Trim(), out n) || n <= 0) n = 40;
+            var log = Patches.RunCapture.Log;
+            var sb = new StringBuilder();
+            int start = Math.Max(0, log.Groups.Count - n);
+            for (int g = start; g < log.Groups.Count; g++)
+            {
+                int key = log.Groups[g];
+                sb.Append("Cycle ").Append(key).Append('\n');
+                foreach (var line in log.Entries(key)) sb.Append("  ").Append(line).Append('\n');
+            }
+            return sb.Length == 0 ? "[run log empty]\n" : sb.ToString();
+        }
+
+        private static string Blast(string argument)
+        {
+            var level = Class53.smethod_5<Class144>();
+            if (level == null) return "[not in the first defense level]\n";
+            if ((int)Class258.smethod_16() == 0) return "[run stopped]\n";
+            int x;
+            if (!int.TryParse((argument ?? "").Trim(), out x)) return "[usage: blast <tank column 12|18|24>]\n";
+            foreach (var tank in level.list_1)
+            {
+                var at = level.pipeline_0.method_9(tank);
+                if (!at.HasValue || at.Value.int_0 != x) continue;
+                tank.method_15(Class605.int_1, null); // the tank's own event, as its 35th methane raises it
+                var robot = level.class313_0;
+                return "blast from column " + x + "; robot x " + robot.vector2i_0.int_0 + ", " + Game.DefenseText.PartsText(robot) +"\n";
+            }
+            return "[no tank at column " + x + "]\n";
         }
 
         private static string Focus(string argument)

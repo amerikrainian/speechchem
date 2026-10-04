@@ -6,7 +6,8 @@
 - 0 always steps by the fastest possible speed so we get instant feedback when tracing.
 - 0 Respects your currently open reactor. Ctrl+0 steps by any event, regardless of reactor.
 - We now support output notes.
-- Include inputs/outputs when browsing reactors on shelves.
+- We now include inputs/outputs when browsing reactors on shelves.
+- First pass at the defense screen.
 
 ## V0.0.3
 

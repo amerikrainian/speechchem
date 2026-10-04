@@ -158,6 +158,7 @@ namespace SpeechChem
                 Patches.DialogCapture.Apply(_harmony);      // in-level message boxes + the wrong-molecule dialog
                 Patches.TooltipCapture.Apply(_harmony);     // hover tooltip text (palette slots, reactor hardware, pipeline pieces)
                 Patches.RunCapture.Apply(_harmony);         // run events -> the run log (spoken at the slowest speed)
+                Patches.DefenseCapture.Apply(_harmony);     // defense run events (tanks, the enemy, the Control Center) + F1-F4
                 Patches.StoryCapture.Apply(_harmony);       // training captions + the story screen's current tab
                 Patches.UndoCapture.Apply(_harmony);        // what an undo / redo changed in the open reactor
                 Patches.StepControl.Apply(_harmony);        // step to the next event: pause at the end of its cycle

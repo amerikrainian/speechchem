@@ -17,7 +17,8 @@ namespace SpeechChem.Screens.Pipeline
     /// and printers — and each output's pipe. Research levels never show it: their pipeline editor
     /// opens its single reactor at once (PipelineEditor.vmethod_2), so they are skipped here.
     ///
-    /// Tab stops (user-approved layout, 2026-09-27): Components (initial) → map → shelf → molecules → status (the shared
+    /// Tab stops (user-approved layout, 2026-09-27): Components (initial) → map → (defense levels:
+    /// the enemy) → shelf (a defense run: Reactor Controls in its place) → status (the shared
     /// ProgressSection, then the reactor quota) → tools (the shared ToolbarSection) → run log.
     /// Reactors are named "Assembly Reactor 2", numbered in reading order (Game/PipelineText, shared
     /// with the run log). Escape stays native (the exit prompt; the game polls it itself).
@@ -27,6 +28,7 @@ namespace SpeechChem.Screens.Pipeline
         private const string ComponentsStop = "pipeline.components";
         private const string StatusStop = "pipeline.status";
         private const string ToolsStop = "pipeline.tools";
+        private const string ControlsStop = "pipeline.controls";
 
         public override string Key => "pipeline";
         public override string ScreenName => Loc.T("screen.PipelineEditor");
@@ -84,7 +86,10 @@ namespace SpeechChem.Screens.Pipeline
 
             BuildComponents(b, pipeline);
             BuildMap(b, pipeline);
-            BuildShelf(b, editor);
+            BuildEnemy(b);
+            // A defense run shows Reactor Controls where the shelf was (PipelineEditor.method_5).
+            if (DefenseText.ControlsShown) ReactorControlsSection.Build(b, ControlsStop, "pipeline.controls");
+            else BuildShelf(b, editor);
             ProgressSection.Build(b, StatusStop, "pipeline.status");
             b.AddItem(ControlId.Structural("pipeline.status.quota"), ProfileUi.Text(true, () => QuotaText(Model)));
             ToolbarSection.Build(b, ToolsStop, "pipeline.tools");
@@ -238,6 +243,8 @@ namespace SpeechChem.Screens.Pipeline
             var at = p?.method_9(d);
             string name = PipelineText.Name(p, d);
             string text = at.HasValue ? name + ", " + PipelineText.Cell(at.Value) : name;
+            string meter = DefenseText.Meter(d); // a building's run meter ("Pressure 12 of 35")
+            if (meter != null) text += ", " + meter;
             if ((int)Class258.smethod_16() != 0 && d is ReactorDraggable rd && rd.class77_0?.reactor_0 != null)
             {
                 var waldos = rd.class77_0.reactor_0.dictionary_2;

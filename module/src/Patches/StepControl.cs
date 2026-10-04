@@ -77,7 +77,15 @@ namespace SpeechChem.Patches
         {
             try
             {
-                if (Active || GoalTracker.bool_0) return; // one at a time; nothing after a completion
+                if (Active) return; // one at a time
+                if (GoalTracker.bool_0)
+                {
+                    // The enemy is destroyed: the game freezes every waldo until it declares the
+                    // win 700 cycles later (Class310.method_4, Class188), so there is nothing to
+                    // step to — say so instead of doing nothing.
+                    Speech.Tts.Speak(Loc.T("run.step.frozen", new { name = DefenseText.EnemyName(DefenseText.Level) }), interrupt: true);
+                    return;
+                }
                 _ownOnly = ownOnly;
                 int state = (int)Class258.smethod_16();
                 int tick = state == 0 ? 0 : Class258.int_2;

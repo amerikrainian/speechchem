@@ -80,7 +80,9 @@ namespace SpeechChem.Screens.Reactor
             EnsureReactor(reactor);
 
             BuildGrid(b, reactor);
-            BuildPalette(b, editor);
+            // A defense run shows Reactor Controls where the palette was (Class77.method_5).
+            if (DefenseText.ControlsShown) ReactorControlsSection.Build(b, "reactor.controls", "reactor.controls");
+            else BuildPalette(b, editor);
             BuildLayers(b, editor);
             ToolbarSection.Build(b, ToolsStop, "reactor.tools");
             BuildMolecules(b, editor);

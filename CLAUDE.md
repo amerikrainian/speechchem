@@ -184,6 +184,10 @@ open, stopped reactor for the read, then removed and forgotten),
 component's ports, pipe ends and links), `focus <stop> <id>` (focus a node by structural id, e.g.
 `focus pipeline.map pipeline.cell.15.11`; with `key` it drives the pipeline editor's cut / paste /
 menu / drawing exactly as the keys do — how a layout was rebuilt 2026-10-04),
+`runlog [n]` (the last n cycle groups of the run log as text), `blast <x>` (first defense level only,
+during a run: the Oxygen Tank at map column x — 12, 18, 24 — raises its blast event (`method_15`)
+without being filled, so the level's handler hits or misses the robot exactly as a real blast; destroying all 3 motors starts the 700-cycle win timer, so STOP
+the run right after — never let a test win the level),
 `custom <json>` / `custom clean` (Dev/CustomPuzzle — THE MECHANICS TEST BENCH: opens a research
 puzzle from a journal.json-style level object, e.g. `has-fuser`, `bonder-count`, input/output molecule
 strings `name;formula;` + one `x y Z right down` token per atom, under the fixed id
@@ -681,6 +685,70 @@ defense-style levels, GoalTracker.int_1 percent; Class148's own measure).
   keyboard focus whatever the mod's is, so typing on a dialog's button used to change the name
   silently (verified: "z" typed on Okay dropped).
 
+## 16c. Defense levels (`Game/DefenseText.cs`, `Patches/DefenseCapture.cs`) — verified live 2026-10-04
+DefenseLevelEditor levels are pipeline levels (the PipelineEditor screen above) with an enemy (a
+Class310), special buildings (Class598: Control Center Class606, weapons such as the Oxygen Tank
+Class605) and the Reactor Controls panel. GENERIC BY DESIGN (user direction 2026-10-04: no bespoke
+work per enemy beyond naming): everything reads what all enemies / buildings share; the only
+per-type pieces are three MEANING tables in DefenseText — Parts (an enemy's part flags: Class313
+bool_0 = "motors"), Events (a building's event codes: Class605 code 0 = "exploded", a weapon) and
+States (a sprite-only state: Class605 bool_3 = "exploded"). A new enemy / weapon works at once
+("…, event 3", health "hit"), and gets a table line when its meaning is known. Verified on the first
+level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types it patched
+("10 special buildings, 7 enemies").
+- THE ENEMY: the Class310 among the level's fields (by type, no names); name / title = the level's
+  `vmethod_6` / `vmethod_7` (the intro card). POSITION = its FOOTPRINT: the rectangles its own draw
+  (each subclass's `vmethod_3`, run by the pipeline's frame draw) passes to `SpriteBatch.method_8`
+  (every sprite overload funnels there), particle effects (Class190.method_2/3) excluded — spoken as
+  map cells ("columns 27 to 32, rows 3 to 11": the robot's body, wheels and its tracks to the edge);
+  the map names the enemy on every covered cell. Captured only when the pipeline is drawn (not
+  inside a reactor — the game shows no map there either). Enemy health and attack timers are drawn
+  nowhere but the graph, so they are not spoken as numbers (health drops log "{enemy} hit").
+- ENEMY stop (pipeline, after the map): name + title (+ "destroyed"), the span (live), the parts
+  row when the Parts table knows the enemy ("2 of 3 motors intact", live).
+- RUN EVENTS (level-wide: RunCapture.AddLevelEvent — logged always, spoken at the slowest speed,
+  end any step; user asked to log every molecule and every move and judge the noise):
+  "Oxygen Tank 1 took Methane, CH4, Pressure 37 percent" (every Class598 subclass's `vmethod_23`
+  override; the meter after it; before an event it sets off the line comes first, without meter);
+  "Oxygen Tank 3 exploded" (Class598.method_15 + the Events table); for a weapon event its effect
+  on the enemy measured across the event: "Isambard MMD: motor destroyed, 1 of 3 motors intact"
+  (Parts), "Isambard MMD hit" (health only), or "missed"; "Isambard MMD destroyed" (Class310.method_4,
+  held until after the hit that caused it); "{enemy} attacks" (each subclass's `vmethod_2` override
+  that has a body — the robot's is empty); "Isambard MMD at columns 22 to 32, rows 3 to 11" (a
+  footprint change while running: ~every 110 cycles for the robot at full health); "Control Center
+  95 percent" / "destroyed" (GoalTracker.smethod_10). Completion logs "Level complete.". The Class144
+  pump emits a methane every 10 cycles (35 to a blast); a spent tank keeps taking methane ("…,
+  exploded" every 10 cycles — the noisiest line).
+- BUILDING METERS (`DefenseText.Meter`): the bubble every building draws while running
+  (`vmethod_19`, a picture) is rebuilt under capture — the bar's fraction (`Class45.smethod_0`) and
+  its label (`Scene.smethod_4`): "Pressure 37 percent", "Status 100 percent", "Capacity 12 percent"
+  (the bar, not counts — what the game shows); States override ("exploded"). In the Components
+  table's component cell and the building's map cells.
+- REACTOR CONTROLS (`Screens/Common/ReactorControlsSection`): while a defense run is not stopped the
+  game draws Class710 instead of the shelf (PipelineEditor.method_5) and the reactor palette
+  (Class77.method_5); the mod swaps the same stop for four toggles "control A, F1" .. D / F4 (state
+  `Class710.method_6`, Enter = `method_7`, the F key's flip + click), then THE GRAPH: one row per
+  labelled range of the level's `vmethod_9` (brackets `Class377.smethod_1`, labels `smethod_2`,
+  captured; paired in build order) over the current waveform (`Class710.struct116_0`, 100
+  normalised samples; x = 3 + 393 i / 100), read as its peaks (prominence ≥ 0.08 — the waveform
+  carries ±0.05 noise): "ELECTRIC MOTORS: 100, 94, 27 percent" after one motor is lost. The game
+  refreshes it only while running (every 1.5 s, 0.3 s at ≥ 50 cycles/s). F1-F4 reach the game
+  natively; a postfix on `method_7` speaks the new state (quiet when the mod's own node flips it).
+  Every toggle turns off when the run stops. Control instruction cells add "on" / "off" during a
+  run. Test F keys with PostMessage WM_KEYDOWN VK_F1 (`rawkey` does not reach Class259).
+- MAP: Class144 lays its terrain AFTER the Control Center, so `Pipeline.method_7` maps the CC's
+  cells to terrain; CellContents falls back to the named building whose footprint covers the cell.
+  The [ ] categories add "Defenses" (Class598 buildings) in defense levels.
+- INTRO CARD: StoryTrainingPerformanceEditor.method_28 builds the enemy card (a Class152) from two
+  Scenes; GateTextCapture records its lines after method_28 → "Isambard MMD", "Fully Automated
+  Mining Robot". Shown on every entry of the level (the story screen only when unseen).
+- The tank callout "Fill with Methane to detonate." (CustomDraggableAnnotation, where the level
+  made it visible, `bool_1`, while stopped) is read after the molecule in the tank's input cell.
+- Step (0) after the enemy's destruction (GoalTracker.bool_0 freezes the waldos for 700 cycles
+  before the win) says "{enemy} destroyed, waldos stopped".
+- NOT DONE: undo inside a defense level (untested); table lines for later enemies / weapons as
+  they are met (their events read "…, event N" until then).
+
 ## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
 Only events the game has (user rule), worded as what HAPPENED ("grabbed Oxygen", "nothing to drop"):
 waldo steps (Class188.method_3: input, grab/drop, waits reported once, sync, rotation reported once;
@@ -796,9 +864,9 @@ dismiss with `pop` — Continue would leave the level).
 4. (done) Profile flow (§10), main menu (§11), level select + Australium sites + 63 Corvi (§12),
    ResearchNet journal (§12a), challenges (§13), options (§14), in-level dialogs (§15), reactor editor
    (§16) + run log (§17), periodic table (§18), Story / Training / Performance (§19).
-5. (done) the pipeline editor (§16a), saved designs, notes, copy (§16b). Next: defense levels (the
-   sandbox reaches the DefenseLevelEditor screen through the `custom` probe), the ResearchNet
-   builders (they reuse the note editor's pieces: Class286 palettes, Class420.smethod_1/2 grids).
+5. (done) the pipeline editor (§16a), saved designs, notes, copy (§16b); the first defense level
+   (§16c). Next: the enemy graph, later defense levels' enemies and weapons as they come, the
+   ResearchNet builders (they reuse the note editor's pieces: Class286 palettes, Class420.smethod_1/2 grids).
 6. (done) The Rust installer (§5).
 7. (done for profiles, Save to Toolbox) Text entry over GClass16 (§16b); reuse for ResearchNet fields
    (several fields per screen: arm on landing via Class56.method_14).

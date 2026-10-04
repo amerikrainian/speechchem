@@ -64,7 +64,12 @@ namespace SpeechChem.Game
                 return Loc.T("instr.sense", new { element, dir });
             }
             if (i is ToggleInstruction) return Loc.T("instr.flipflop", new { dir });
-            if (i is ControlInstruction) return Loc.T("instr.control", new { letter = (char)('A' + Math.Max(0, Math.Min(3, v))), dir });
+            if (i is ControlInstruction)
+            {
+                // During a defense run the game dims a control instruction whose toggle is off.
+                string label = Loc.T("instr.control", new { letter = (char)('A' + Math.Max(0, Math.Min(3, v))), dir });
+                return DefenseText.ControlsShown ? label + ", " + DefenseText.OnOff(DefenseText.ControlOn(Math.Max(0, Math.Min(3, v)))) : label;
+            }
             if (i is Class662) return Loc.T("instr.fuse");
             if (i is Class664) return Loc.T("instr.fission");
             if (i is Class665) return Loc.T("instr.pause");

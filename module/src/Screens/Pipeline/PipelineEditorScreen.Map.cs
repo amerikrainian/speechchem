@@ -118,9 +118,35 @@ namespace SpeechChem.Screens.Pipeline
         /// <summary>What occupies a map cell, as spoken phrases (no coordinates).</summary>
         internal static List<string> CellContents(SpaceChem.Pipeline.Pipeline p, Vector2i cell)
         {
+            var parts = CellContentsCore(p, cell);
+            // A defense level's enemy is drawn over the map (Game/DefenseText): name it on the cells
+            // its drawing covers, after whatever lies beneath.
+            var level = DefenseText.Level;
+            if (level != null && DefenseText.Covers(DefenseText.Enemy(level), cell)) parts.Add(DefenseText.EnemyName(level));
+            return parts;
+        }
+
+        /// <summary>A named building whose footprint covers <paramref name="cell"/> although the
+        /// cell maps to terrain: a level that lays its terrain after a building overwrites the
+        /// building's cells (Pipeline.method_8; Class144's Control Center).</summary>
+        private static Draggable BuildingUnderTerrain(SpaceChem.Pipeline.Pipeline p, Vector2i cell)
+        {
+            foreach (var kv in p.dictionary_1)
+            {
+                var d = kv.Key;
+                if (d is Class612 || d is PipeDraggable || string.IsNullOrEmpty(d.string_1?.Trim())) continue;
+                foreach (Vector2i local in d)
+                    if (kv.Value + local == cell) return d;
+            }
+            return null;
+        }
+
+        private static List<string> CellContentsCore(SpaceChem.Pipeline.Pipeline p, Vector2i cell)
+        {
             var parts = new List<string>();
             var d = p.method_7(cell);
             if (d == null) return parts;
+            if (d is Class612) d = BuildingUnderTerrain(p, cell) ?? d;
             var origin = p.method_9(d);
             if (d is Class612 || !origin.HasValue) { parts.Add(Loc.T("pipeline.blocked")); return parts; }
             var local = cell - origin.Value;
@@ -157,6 +183,8 @@ namespace SpeechChem.Screens.Pipeline
                 if (kv.Value.vector2i_0 == local) { parts.Add(InputName(d, inIndex)); break; }
                 inIndex++;
             }
+            string meter = DefenseText.Meter(d); // a building's run meter ("Pressure 12 of 35")
+            if (meter != null) parts.Add(meter);
             return parts;
         }
 
@@ -200,11 +228,19 @@ namespace SpeechChem.Screens.Pipeline
 
         private int _category = -1, _item = -1;
 
-        private static readonly string[] CategoryNames =
-            { "pipeline.cat.reactors", "pipeline.cat.inputs", "pipeline.cat.outputs", "pipeline.cat.other", "pipeline.cat.ends" };
+        // Roles: 0 reactors, 1 inputs, 2 outputs, 3 other, 4 open pipe ends, 5 defenses (the
+        // special buildings, Class598: the Control Center, weapons — defense levels only; an
+        // Oxygen Tank has only an input, which made it an "Output").
+        private static readonly string[] RoleNames =
+            { "pipeline.cat.reactors", "pipeline.cat.inputs", "pipeline.cat.outputs", "pipeline.cat.other", "pipeline.cat.ends", "pipeline.cat.defenses" };
+
+        private static int[] Categories => DefenseText.IsDefense ? new[] { 0, 1, 2, 5, 3, 4 } : new[] { 0, 1, 2, 3, 4 };
+
+        private static string CategoryName(int category) => RoleNames[Categories[category]];
 
         private static List<Vector2i> CategoryCells(SpaceChem.Pipeline.Pipeline p, int category)
         {
+            category = Categories[category];
             var cells = new List<Vector2i>();
             if (category == 4)
             {
@@ -222,7 +258,7 @@ namespace SpeechChem.Screens.Pipeline
             {
                 var d = kv.Key;
                 bool reactor = d is ReactorDraggable, ins = d.class485_0.Count > 0, outs = d.class485_1.Count > 0;
-                int role = reactor ? 0 : outs && !ins ? 1 : ins && !outs ? 2 : 3;
+                int role = reactor ? 0 : d is Class598 && DefenseText.IsDefense ? 5 : outs && !ins ? 1 : ins && !outs ? 2 : 3;
                 if (role == category) cells.Add(kv.Value);
             }
             return cells;
@@ -232,10 +268,10 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null || _drawPipe != null) return;
-            int n = CategoryNames.Length;
+            int n = Categories.Length;
             _category = _category < 0 ? (delta > 0 ? 0 : n - 1) : ((_category + delta) % n + n) % n;
             _item = -1;
-            Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryNames[_category]), n = CategoryCells(p, _category).Count }), interrupt: true);
+            Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryName(_category)), n = CategoryCells(p, _category).Count }), interrupt: true);
         }
 
         private void StepItem(int delta)
@@ -246,7 +282,7 @@ namespace SpeechChem.Screens.Pipeline
             var cells = CategoryCells(p, _category);
             if (cells.Count == 0)
             {
-                Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryNames[_category]), n = 0 }), interrupt: true);
+                Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryName(_category)), n = 0 }), interrupt: true);
                 return;
             }
             _item = _item < 0 ? (delta > 0 ? 0 : cells.Count - 1) : ((_item + delta) % cells.Count + cells.Count) % cells.Count;

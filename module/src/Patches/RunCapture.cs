@@ -106,6 +106,10 @@ namespace SpeechChem.Patches
 
         private static void Add(string text, bool speak) => Add(text, speak, null, concerns: true);
 
+        /// <summary>A level-wide event (defense: the enemy, special buildings, the Control
+        /// Center) — it concerns every reactor, so it ends any step and is spoken inside any.</summary>
+        internal static void AddLevelEvent(string text) => Add(text, speak: true, spoken: null, concerns: true);
+
         /// <summary>Log <paramref name="text"/> (always, whoever it concerns); speak
         /// <paramref name="spoken"/> when given (a waldo event of the reactor being edited drops
         /// its "reactor 2, " — user rule), else the logged text. <paramref name="concerns"/>: the
@@ -658,7 +662,8 @@ namespace SpeechChem.Patches
 
         private static void AfterComplete(bool __state)
         {
-            if (__state) Add(Loc.T("run.completed"), speak: false);
+            // A defense level has no outputs: it is won by destroying the enemy.
+            if (__state) Add(Loc.T(DefenseText.IsDefense ? "run.completed.defense" : "run.completed"), speak: false);
         }
 
         // ---- run state ----

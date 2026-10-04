@@ -1,0 +1,449 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using HarmonyLib;
+using Impeller;
+using SpaceChem;
+using SpaceChem.Levels;
+using SpaceChem.Pipeline;
+using SpeechChem.Game;
+using SpeechChem.Localization;
+
+namespace SpeechChem.Patches
+{
+    /// <summary>
+    /// Defense levels, GENERICALLY (every enemy and special building; the only per-type pieces are
+    /// the meaning tables in Game/DefenseText). Run events go to the run log as level-wide events
+    /// (RunCapture.AddLevelEvent: they end any step and are spoken inside any reactor at the
+    /// slowest speed — user, 2026-10-04: log every molecule and every move, then judge the noise):
+    ///   every Class598 subclass's vmethod_23 (a special building took a molecule):
+    ///       "Oxygen Tank 2 took Methane, Pressure 37 percent" (the building's run meter after it);
+    ///   Class598.method_15     a special building's event: "Oxygen Tank 2 exploded" (the table) or
+    ///                          "…, event 3"; for a weapon event, its effect on the enemy right
+    ///                          after: a part lost ("Isambard MMD: motor destroyed, 2 of 3 motors
+    ///                          intact"), "Isambard MMD hit" (health only), or "missed";
+    ///   Class310.method_4      enemy damage outside such an event ("… hit"), and its destruction
+    ///                          ("Isambard MMD destroyed", after the hit that caused it);
+    ///   Class310.method_3      the enemy's per-cycle step: a part lost by any other cause;
+    ///   every Class310 subclass's vmethod_2 with a body: "{enemy} attacks" (its attack timer);
+    ///   every Class310 subclass's vmethod_3 (its draw): the rectangles it draws through
+    ///       SpriteBatch.method_8 (every sprite overload funnels there), minus particle effects
+    ///       (Class190) — the enemy's FOOTPRINT on the map; a change of its span while running is
+    ///       "Isambard MMD at columns 21 to 32, rows 3 to 11";
+    ///   GoalTracker.smethod_10 damage to the Control Center: "Control Center 95 percent";
+    ///   Class710.method_7      an F1-F4 toggle: spoken at once.
+    /// Captures run under flags set only around the mod's own calls: a building's run meter
+    /// (vmethod_19's bar Class45.smethod_0 + label Scene.smethod_4) and the graph's labelled
+    /// ranges (the level's vmethod_9: Class377.smethod_1 brackets, smethod_2 labels).
+    /// Overrides are patched per declaring type (Expr.OverrideOf, CLAUDE.md §17).
+    /// </summary>
+    internal static class DefenseCapture
+    {
+        public static void Apply(Harmony harmony)
+        {
+            try
+            {
+                var self = typeof(DefenseCapture);
+                Type[] types;
+                try { types = typeof(Class598).Assembly.GetTypes(); }
+                catch (ReflectionTypeLoadException ex) { types = ex.Types; }
+
+                var intake = Expr.MethodOf(() => default(Class598).vmethod_23(null, 0));
+                var attack = Expr.MethodOf(() => default(Class310).vmethod_2(0));
+                var draw = Expr.MethodOf(() => default(Class310).vmethod_3(null));
+                int buildings = 0, enemies = 0;
+                foreach (var t in types)
+                {
+                    if (t == null || t.IsAbstract) continue;
+                    if (t.IsSubclassOf(typeof(Class598)) && Declares(t, intake))
+                    {
+                        harmony.Patch(Expr.OverrideOf(t, intake), prefix: new HarmonyMethod(self, nameof(BeforeIntake)), finalizer: new HarmonyMethod(self, nameof(AfterIntake)));
+                        buildings++;
+                    }
+                    if (t.IsSubclassOf(typeof(Class310)))
+                    {
+                        if (Declares(t, draw))
+                            harmony.Patch(Expr.OverrideOf(t, draw), prefix: new HarmonyMethod(self, nameof(BeforeDraw)), finalizer: new HarmonyMethod(self, nameof(AfterDraw)));
+                        if (Declares(t, attack) && HasBody(Expr.OverrideOf(t, attack)))
+                            harmony.Patch(Expr.OverrideOf(t, attack), postfix: new HarmonyMethod(self, nameof(AfterAttack)));
+                        enemies++;
+                    }
+                }
+
+                harmony.Patch(Expr.MethodOf(() => default(Class598).method_15(0, null)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeEvent)), finalizer: new HarmonyMethod(self, nameof(AfterEvent)));
+                harmony.Patch(Expr.MethodOf(() => default(Class310).method_4(0f)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeEnemyDamage)), postfix: new HarmonyMethod(self, nameof(AfterEnemyDamage)));
+                harmony.Patch(Expr.MethodOf(() => default(Class310).method_3()),
+                    postfix: new HarmonyMethod(self, nameof(AfterEnemyCycle)));
+                harmony.Patch(Expr.MethodOf(() => default(SpriteBatch).method_8(null, default(Rectangle), null, default(Struct104), default(Struct100), default(Vector2i), default(Enum86), 0f)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeSprite)));
+                harmony.Patch(Expr.MethodOf(() => default(Class190).method_2(null, default(Vector2i), 0f)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeParticles)), finalizer: new HarmonyMethod(self, nameof(AfterParticles)));
+                harmony.Patch(Expr.MethodOf(() => default(Class190).method_3(null)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeParticles)), finalizer: new HarmonyMethod(self, nameof(AfterParticles)));
+                harmony.Patch(Expr.MethodOf(() => Class45.smethod_0(0f, false)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeBar)));
+                harmony.Patch(Expr.MethodOf(() => Scene.smethod_4(null, null, default(Struct104))),
+                    prefix: new HarmonyMethod(self, nameof(BeforeText)));
+                harmony.Patch(Expr.MethodOf(() => Class377.smethod_1(0, 0)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeBracket)));
+                harmony.Patch(Expr.MethodOf(() => Class377.smethod_2(null, 0, 0)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeGraphLabel)));
+                harmony.Patch(Expr.MethodOf(() => GoalTracker.smethod_10(0)),
+                    prefix: new HarmonyMethod(self, nameof(BeforeBaseDamage)), postfix: new HarmonyMethod(self, nameof(AfterBaseDamage)));
+                harmony.Patch(Expr.MethodOf(() => default(Class710).method_7(default(Enum111))),
+                    postfix: new HarmonyMethod(self, nameof(AfterToggle)));
+                Log.Info("[patch] defense capture armed (" + buildings + " special buildings, " + enemies + " enemies)");
+            }
+            catch (Exception ex) { Log.Error("[patch] defense capture failed to apply", ex); }
+        }
+
+        private static bool Declares(Type t, MethodInfo virtualMethod)
+        {
+            try { Expr.OverrideOf(t, virtualMethod); return true; }
+            catch (MissingMethodException) { return false; }
+        }
+
+        /// <summary>An override that does something (an empty body is a single ret, or nop + ret).</summary>
+        private static bool HasBody(MethodInfo m)
+        {
+            try { var il = m.GetMethodBody()?.GetILAsByteArray(); return il != null && il.Length > 2; }
+            catch { return true; }
+        }
+
+        private static DefenseLevelEditor Level => DefenseText.Level;
+
+        private static string EnemyName => DefenseText.EnemyName(Level);
+
+        // ---- special buildings: molecules taken, events ----
+
+        // A building's intake is logged after it (with the meter it leaves), except when the
+        // molecule sets off an event inside: then the intake line goes first, before the event's
+        // (and without the meter — the event says what happened).
+        private static Class598 _intakeBuilding;
+        private static string _intakeMolecule;
+
+        private static void BeforeIntake(Class598 __instance, Molecule __0)
+        {
+            try
+            {
+                _intakeBuilding = __instance;
+                _intakeMolecule = MoleculeText.NameAndFormula(__0);
+            }
+            catch { }
+        }
+
+        private static Exception AfterIntake(Class598 __instance, Exception __exception)
+        {
+            try { if (ReferenceEquals(_intakeBuilding, __instance)) FlushIntake(withMeter: true); }
+            catch (Exception ex) { Log.Error("[defense] intake", ex); }
+            return __exception;
+        }
+
+        private static void FlushIntake(bool withMeter)
+        {
+            var b = _intakeBuilding;
+            string molecule = _intakeMolecule;
+            _intakeBuilding = null;
+            _intakeMolecule = null;
+            if (b == null) return;
+            string text = Loc.T("defense.took", new { building = PipelineText.Name(b.pipeline_0, b), molecule });
+            string meter = withMeter ? DefenseText.Meter(b) : null;
+            RunCapture.AddLevelEvent(meter == null ? text : text + ", " + meter);
+        }
+
+        private struct EnemySnapshot
+        {
+            public Class310 Enemy;
+            public int Parts;
+            public float Health;
+            public bool Weapon;
+        }
+
+        private static int _inEvent;
+        private static string _pendingDestroyed;
+
+        private static void BeforeEvent(Class598 __instance, int __0, out EnemySnapshot __state)
+        {
+            __state = default(EnemySnapshot);
+            try
+            {
+                // Inside the building's intake (its 35th methane): the intake line goes first.
+                if (ReferenceEquals(_intakeBuilding, __instance)) FlushIntake(withMeter: false);
+                bool weapon;
+                string text = DefenseText.EventText(__instance, __0, out weapon);
+                var enemy = DefenseText.Enemy(Level);
+                __state = new EnemySnapshot
+                {
+                    Enemy = enemy,
+                    Parts = DefenseText.Intact(DefenseText.PartFlags(enemy)),
+                    Health = enemy?.float_0 ?? 0f,
+                    Weapon = weapon,
+                };
+                _inEvent++;
+                RunCapture.AddLevelEvent(text);
+            }
+            catch (Exception ex) { Log.Error("[defense] building event", ex); }
+        }
+
+        private static Exception AfterEvent(Exception __exception, EnemySnapshot __state)
+        {
+            try
+            {
+                if (_inEvent > 0) _inEvent--;
+                var enemy = __state.Enemy;
+                if (enemy != null)
+                {
+                    int parts = DefenseText.Intact(DefenseText.PartFlags(enemy));
+                    if (parts < __state.Parts) RunCapture.AddLevelEvent(PartLostText(enemy));
+                    else if (enemy.float_0 < __state.Health) RunCapture.AddLevelEvent(Loc.T("defense.hit", new { name = EnemyName }));
+                    else if (__state.Weapon) RunCapture.AddLevelEvent(Loc.T("defense.miss"));
+                    RememberParts(enemy);
+                }
+                if (_pendingDestroyed != null && _inEvent == 0)
+                {
+                    RunCapture.AddLevelEvent(_pendingDestroyed);
+                    _pendingDestroyed = null;
+                }
+            }
+            catch (Exception ex) { Log.Error("[defense] building event effect", ex); }
+            return __exception;
+        }
+
+        /// <summary>"Isambard MMD: motor destroyed, 2 of 3 motors intact".</summary>
+        private static string PartLostText(Class310 enemy)
+            => Loc.T("defense.part.lost", new { name = EnemyName, part = DefenseText.PartLost(enemy), parts = DefenseText.PartsText(enemy) });
+
+        // ---- the enemy: damage, parts, attacks ----
+
+        private static void BeforeEnemyDamage(Class310 __instance, out KeyValuePair<bool, float> __state)
+        {
+            __state = new KeyValuePair<bool, float>(true, 0f);
+            try { __state = new KeyValuePair<bool, float>(__instance.method_1(), __instance.float_0); } catch { }
+        }
+
+        private static void AfterEnemyDamage(Class310 __instance, KeyValuePair<bool, float> __state)
+        {
+            try
+            {
+                if (!__state.Key && __instance.method_1())
+                {
+                    string text = Loc.T("defense.destroyed", new { name = EnemyName });
+                    if (_inEvent > 0) _pendingDestroyed = text; // after the hit that caused it
+                    else RunCapture.AddLevelEvent(text);
+                }
+                else if (_inEvent == 0 && __instance.float_0 < __state.Value)
+                    RunCapture.AddLevelEvent(Loc.T("defense.hit", new { name = EnemyName }));
+            }
+            catch (Exception ex) { Log.Error("[defense] enemy damage", ex); }
+        }
+
+        private static readonly ConditionalWeakTable<Class310, int[]> LastParts = new ConditionalWeakTable<Class310, int[]>();
+
+        private static void RememberParts(Class310 enemy)
+        {
+            var box = LastParts.GetValue(enemy, _ => new int[1]);
+            box[0] = DefenseText.Intact(DefenseText.PartFlags(enemy));
+        }
+
+        /// <summary>Per cycle: a part lost outside a building's event.</summary>
+        private static void AfterEnemyCycle(Class310 __instance)
+        {
+            try
+            {
+                if (DefenseText.PartFlags(__instance) == null) return;
+                int now = DefenseText.Intact(DefenseText.PartFlags(__instance));
+                var box = LastParts.GetValue(__instance, _ => new[] { now });
+                if (now < box[0] && _inEvent == 0) RunCapture.AddLevelEvent(PartLostText(__instance));
+                box[0] = now;
+            }
+            catch { }
+        }
+
+        private static void AfterAttack()
+        {
+            try { RunCapture.AddLevelEvent(Loc.T("defense.attack", new { name = EnemyName })); }
+            catch { }
+        }
+
+        // ---- the enemy's footprint (what its own draw puts on the pipeline) ----
+
+        private static List<Rectangle> _sprites;
+        private static int _particles;
+        private static readonly ConditionalWeakTable<Class310, List<Rectangle>> Footprints = new ConditionalWeakTable<Class310, List<Rectangle>>();
+        private static readonly ConditionalWeakTable<Class310, string[]> LastSpan = new ConditionalWeakTable<Class310, string[]>();
+
+        /// <summary>The rectangles (pipeline pixels) of the enemy's last draw, or null.</summary>
+        public static List<Rectangle> Footprint(Class310 enemy)
+        {
+            if (enemy == null) return null;
+            List<Rectangle> rects;
+            return Footprints.TryGetValue(enemy, out rects) ? rects : null;
+        }
+
+        private static void BeforeDraw(out List<Rectangle> __state)
+        {
+            __state = _sprites;
+            _sprites = new List<Rectangle>();
+        }
+
+        private static Exception AfterDraw(Class310 __instance, List<Rectangle> __state, Exception __exception)
+        {
+            var rects = _sprites;
+            _sprites = __state;
+            try
+            {
+                if (rects == null) return __exception;
+                Footprints.Remove(__instance);
+                Footprints.Add(__instance, rects);
+                string span = DefenseText.Span(__instance);
+                var last = LastSpan.GetValue(__instance, _ => new string[1]);
+                if (span == last[0]) return __exception;
+                last[0] = span;
+                // A move while running is an event; a reset (stop) or a static first draw is not.
+                if ((int)Class258.smethod_16() == 1 && !DefenseText.Defeated(__instance))
+                    RunCapture.AddLevelEvent(Loc.T("defense.enemy.at", new { name = EnemyName, span }));
+            }
+            catch (Exception ex) { Log.Error("[defense] enemy footprint", ex); }
+            return __exception;
+        }
+
+        private static void BeforeSprite(Rectangle __1)
+        {
+            if (_sprites != null && _particles == 0) _sprites.Add(__1);
+        }
+
+        private static void BeforeParticles() => _particles++;
+
+        private static Exception AfterParticles(Exception __exception)
+        {
+            if (_particles > 0) _particles--;
+            return __exception;
+        }
+
+        // ---- building run meters (the bubble's bar + label, rebuilt under capture) ----
+
+        private static bool _meterCapture;
+        private static float? _bar;
+        private static string _barLabel;
+
+        /// <summary>The run meter of a building (label, fraction), or null when it draws none.</summary>
+        public static KeyValuePair<string, float>? CaptureMeter(Draggable d)
+        {
+            _meterCapture = true;
+            _bar = null;
+            _barLabel = null;
+            try { d.vmethod_19(); }
+            catch { return null; }
+            finally { _meterCapture = false; }
+            if (!_bar.HasValue) return null;
+            return new KeyValuePair<string, float>(GameText.Speech(_barLabel), _bar.Value);
+        }
+
+        private static void BeforeBar(float __0)
+        {
+            if (_meterCapture && !_bar.HasValue) _bar = __0;
+        }
+
+        private static void BeforeText(string __1)
+        {
+            if (_meterCapture && _barLabel == null) _barLabel = __1;
+        }
+
+        // ---- the graph's labelled ranges (the level's vmethod_9, rebuilt under capture) ----
+
+        internal struct GraphMark
+        {
+            public string Label;
+            public int X0, X1;
+        }
+
+        private static List<KeyValuePair<int, int>> _graphCapture;
+        private static List<KeyValuePair<string, int>> _graphLabels;
+
+        /// <summary>The graph's labelled ranges, in the level's order, or null.</summary>
+        public static List<GraphMark> CaptureGraphLabels(DefenseLevelEditor level)
+        {
+            _graphCapture = new List<KeyValuePair<int, int>>();
+            _graphLabels = new List<KeyValuePair<string, int>>();
+            List<KeyValuePair<int, int>> brackets;
+            List<KeyValuePair<string, int>> labels;
+            try { level.vmethod_9(); }
+            catch { return null; }
+            finally
+            {
+                brackets = _graphCapture;
+                labels = _graphLabels;
+                _graphCapture = null;
+                _graphLabels = null;
+            }
+            var marks = new List<GraphMark>();
+            if (brackets.Count == 0) return marks;
+            // Brackets and labels are built in step (vmethod_9: every bracket, then every label,
+            // in the same order); when the counts differ, each label takes the nearest bracket.
+            for (int i = 0; i < labels.Count; i++)
+            {
+                KeyValuePair<int, int> range;
+                if (labels.Count == brackets.Count) range = brackets[i];
+                else
+                {
+                    range = brackets[0];
+                    foreach (var b in brackets)
+                        if (Math.Abs((b.Key + b.Value) / 2 - labels[i].Value) < Math.Abs((range.Key + range.Value) / 2 - labels[i].Value)) range = b;
+                }
+                marks.Add(new GraphMark { Label = GameText.Speech(labels[i].Key), X0 = range.Key, X1 = range.Value });
+            }
+            return marks;
+        }
+
+        private static void BeforeBracket(int __0, int __1)
+        {
+            _graphCapture?.Add(new KeyValuePair<int, int>(__0, __1));
+        }
+
+        private static void BeforeGraphLabel(string __0, int __1)
+        {
+            _graphLabels?.Add(new KeyValuePair<string, int>(__0, __1));
+        }
+
+        // ---- the Control Center ----
+
+        private static void BeforeBaseDamage(out int __state)
+        {
+            __state = GoalTracker.int_1;
+        }
+
+        private static void AfterBaseDamage(int __state)
+        {
+            try
+            {
+                int now = GoalTracker.int_1;
+                if (now >= __state) return;
+                string name = DefenseText.BaseName();
+                RunCapture.AddLevelEvent(now <= 0
+                    ? Loc.T("defense.base.destroyed", new { name })
+                    : Loc.T("defense.base.damage", new { name, percent = now }));
+            }
+            catch (Exception ex) { Log.Error("[defense] base damage", ex); }
+        }
+
+        // ---- Reactor Controls (F1-F4 reach the game's own key path; say the new state) ----
+
+        /// <summary>Set while the mod's own Reactor Controls node flips a toggle: the navigator
+        /// speaks the node's new state itself.</summary>
+        internal static bool QuietToggle;
+
+        private static void AfterToggle(Enum111 __0)
+        {
+            try
+            {
+                if (QuietToggle) return;
+                int i = (int)__0;
+                Speech.Tts.Speak(DefenseText.ControlName(i) + ", " + DefenseText.OnOff(DefenseText.ControlOn(i)), interrupt: true);
+            }
+            catch { }
+        }
+    }
+}

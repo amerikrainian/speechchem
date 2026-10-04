@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using SpeechChem.Game;
 using HarmonyLib;
 using Impeller;
+using SpaceChem;
 
 namespace SpeechChem.Patches
 {
@@ -44,6 +45,8 @@ namespace SpeechChem.Patches
                 var self = typeof(GateTextCapture);
                 harmony.Patch(Expr.MethodOf(() => Class152.smethod_11(null, null, 0, default(Enum98), 0)),
                     postfix: new HarmonyMethod(self, nameof(AfterCard)));
+                harmony.Patch(Expr.MethodOf(() => default(StoryTrainingPerformanceEditor).method_28()),
+                    postfix: new HarmonyMethod(self, nameof(AfterEnemyCard)));
                 harmony.Patch(Expr.MethodOf(() => Class81.smethod_13()),
                     prefix: new HarmonyMethod(self, nameof(BeforeEpilogue)),
                     postfix: new HarmonyMethod(self, nameof(AfterEpilogue)));
@@ -84,6 +87,28 @@ namespace SpeechChem.Patches
                 Cards.Add(__result, lines);
             }
             catch (Exception ex) { Log.Error("[capture] credit card", ex); }
+        }
+
+        /// <summary>A defense level's enemy card (StoryTrainingPerformanceEditor.method_28): a
+        /// Class152 built straight from two Scenes, the level's title (vmethod_7, large, y 550) and
+        /// name (vmethod_6, small, y 250) — not through smethod_11, so captured here; the card it
+        /// just pushed is the top screen.</summary>
+        private static void AfterEnemyCard(StoryTrainingPerformanceEditor __instance)
+        {
+            try
+            {
+                var card = Class53.smethod_0() as Class152;
+                var level = __instance.struct116_5.bool_0 ? __instance.struct116_5.method_0() : null;
+                if (card == null || level == null) return;
+                var lines = new List<CardLine>
+                {
+                    new CardLine { Text = GameText.Speech(level.vmethod_6()), Y = 250 },
+                    new CardLine { Text = GameText.Speech(level.vmethod_7()), Y = 550 },
+                };
+                Cards.Remove(card);
+                Cards.Add(card, lines);
+            }
+            catch (Exception ex) { Log.Error("[capture] enemy card", ex); }
         }
 
         private static void BeforeEpilogue()

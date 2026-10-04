@@ -75,7 +75,7 @@ namespace SpeechChem.Screens.Common
         /// <summary>The panel's title, as Class709.vmethod_2 picks it: "Current Progress", or in
         /// defense-style levels (GoalTracker.enum93_0 == 2, the sandbox included) "Control Center"
         /// ("The Prometheus" in End of the Line, Class150).</summary>
-        private static string ProgressLabel()
+        internal static string ProgressLabel()
         {
             try
             {

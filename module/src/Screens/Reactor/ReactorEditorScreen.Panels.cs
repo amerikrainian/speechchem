@@ -407,6 +407,20 @@ namespace SpeechChem.Screens.Reactor
             else if (a != null)
             {
                 var names = MoleculeText.JoinNames(a.vmethod_6());
+                // A defense building's callout (CustomDraggableAnnotation) adds its hint text
+                // ("Fill with Methane to detonate.") where the game draws it: beside the one
+                // building the level made it visible on (bool_1), while stopped.
+                if (a is CustomDraggableAnnotation custom && custom.bool_1 && (int)Class258.smethod_16() == 0
+                    && custom.draggable_0 is Class598 special)
+                {
+                    var hints = new List<string>();
+                    foreach (var accepted in special.list_0)
+                    {
+                        string hint = GameText.Speech(accepted.string_0);
+                        if (!string.IsNullOrEmpty(hint) && !hints.Contains(hint)) hints.Add(hint);
+                    }
+                    if (hints.Count > 0) names = (string.IsNullOrEmpty(names) ? "" : names + ", ") + string.Join(" ", hints.ToArray());
+                }
                 if (!string.IsNullOrEmpty(names)) return names;
             }
             return Loc.T("reactor.mol.none");

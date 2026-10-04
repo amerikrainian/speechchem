@@ -15,8 +15,9 @@ namespace SpeechChem.Patches
     /// <summary>
     /// Defense levels, GENERICALLY (every enemy and special building; the only per-type pieces are
     /// the meaning tables in Game/DefenseText). Run events go to the run log as level-wide events
-    /// (RunCapture.AddLevelEvent: they end any step and are spoken inside any reactor at the
-    /// slowest speed — user, 2026-10-04: log every molecule and every move, then judge the noise):
+    /// (RunCapture.AddLevelEvent: they end any step and are spoken inside any reactor at play
+    /// speeds 1-3 — user, 2026-10-04: log every molecule and every move, then judge the noise; the
+    /// per-molecule lines are spoken at speed 1 only):
     ///   every Class598 subclass's vmethod_23 (a special building took a molecule):
     ///       "Oxygen Tank 2 took Methane, Pressure 37 percent" (the building's run meter after it);
     ///   Class598.method_15     a special building's event: "Oxygen Tank 2 exploded" (the table) or
@@ -26,7 +27,8 @@ namespace SpeechChem.Patches
     ///   Class310.method_4      enemy damage outside such an event ("… hit"), and its destruction
     ///                          ("Isambard MMD destroyed", after the hit that caused it);
     ///   Class310.method_3      the enemy's per-cycle step: a part lost by any other cause, a
-    ///                          move (its span on the map changed), a change of its visible state
+    ///                          move (its top-left cell changed: "Isambard MMD 21", "… row 5",
+    ///                          "… 21, 5", "… off the map"), a change of its visible state
     ///                          (DefenseText's EnemyStates table: "Xothothor: eye open, red");
     ///   every Class310 subclass's vmethod_2 with a body: "{enemy} attacks" (its attack timer);
     ///   every Class310 subclass's vmethod_3 (its draw): the rectangles it draws through
@@ -153,7 +155,7 @@ namespace SpeechChem.Patches
             if (b == null) return;
             string text = Loc.T("defense.took", new { building = PipelineText.Name(b.pipeline_0, b), molecule });
             string meter = withMeter ? DefenseText.Meter(b) : null;
-            RunCapture.AddLevelEvent(meter == null ? text : text + ", " + meter);
+            RunCapture.AddLevelEvent(meter == null ? text : text + ", " + meter, fast: false); // every molecule: speed 1 only
         }
 
         private struct EnemySnapshot
@@ -277,7 +279,8 @@ namespace SpeechChem.Patches
         private sealed class Watch
         {
             public int Cycle = -1;
-            public string Span, State;
+            public Vector2i? At;
+            public string State;
         }
 
         private static readonly ConditionalWeakTable<Class310, Watch> Watches = new ConditionalWeakTable<Class310, Watch>();
@@ -298,16 +301,21 @@ namespace SpeechChem.Patches
                 }
                 var level = Level;
                 var watch = Watches.GetValue(__instance, _ => new Watch());
-                string span = DefenseText.Span(__instance), state = DefenseText.EnemyState(level, __instance);
+                var at = DefenseText.Anchor(__instance);
+                string state = DefenseText.EnemyState(level, __instance);
                 int cycle = Class258.int_1;
                 bool fresh = watch.Cycle < 0 || cycle < watch.Cycle;
                 watch.Cycle = cycle;
                 if (!fresh && (int)Class258.smethod_16() == 1 && !DefenseText.Defeated(__instance))
                 {
-                    if (span != null && span != watch.Span) RunCapture.AddLevelEvent(Loc.T("defense.enemy.at", new { name = EnemyName, span }));
+                    if (!Equals(at, watch.At))
+                    {
+                        string move = DefenseText.MoveText(EnemyName, watch.At, at);
+                        if (move != null) RunCapture.AddLevelEvent(move);
+                    }
                     if (state != null && state != watch.State) RunCapture.AddLevelEvent(Loc.T("defense.enemy.state", new { name = EnemyName, state }));
                 }
-                watch.Span = span;
+                watch.At = at;
                 watch.State = state;
             }
             catch { }

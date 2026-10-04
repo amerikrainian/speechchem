@@ -315,6 +315,44 @@ namespace SpeechChem.Game
             return Loc.T("defense.span", new { x0 = ax0 + 1, x1 = ax1 + 1, y0 = ay0 + 1, y1 = ay1 + 1 });
         }
 
+        /// <summary>The enemy's position for movement events: the map cell (1-based, clamped to
+        /// the map) of the top-left corner of its body — the corner the Components table gives for
+        /// buildings, and the leading edge of an enemy moving left or up. Null when no part of it is
+        /// on the map (not in sight, or before its first draw).</summary>
+        public static Vector2i? Anchor(Class310 enemy)
+        {
+            var rects = Shape(enemy);
+            if (rects == null) return null;
+            int x0 = int.MaxValue, y0 = int.MaxValue;
+            bool onMap = false;
+            foreach (var r in rects)
+            {
+                if (Empty(r)) continue;
+                int ax0, ax1, ay0, ay1;
+                CellsOf(r, out ax0, out ax1, out ay0, out ay1);
+                if (ax1 < 0 || ay1 < 0 || ax0 >= MapColumns || ay0 >= MapRows) continue;
+                onMap = true;
+                x0 = Math.Min(x0, ax0);
+                y0 = Math.Min(y0, ay0);
+            }
+            if (!onMap) return null;
+            return new Vector2i(Math.Max(0, Math.Min(MapColumns - 1, x0)) + 1, Math.Max(0, Math.Min(MapRows - 1, y0)) + 1);
+        }
+
+        /// <summary>A movement line, as terse as the grid readouts (user design 2026-10-04): the
+        /// enemy's name, then only what changed — "Isambard MMD 21" (column), "… row 5" (row),
+        /// "… 21, 5" (both, or on coming into sight), "… off the map".</summary>
+        public static string MoveText(string name, Vector2i? before, Vector2i? now)
+        {
+            if (now == null) return before == null ? null : Loc.T("defense.move.gone", new { name });
+            var n = now.Value;
+            if (before == null || (before.Value.int_0 != n.int_0 && before.Value.int_1 != n.int_1))
+                return Loc.T("defense.move.both", new { name, col = n.int_0, row = n.int_1 });
+            if (before.Value.int_0 != n.int_0) return Loc.T("defense.move.col", new { name, col = n.int_0 });
+            if (before.Value.int_1 != n.int_1) return Loc.T("defense.move.row", new { name, row = n.int_1 });
+            return null;
+        }
+
         // ---- buildings' run meters ----
 
         /// <summary>A building's run meter ("Pressure 37 percent", "exploded"), or null when it has

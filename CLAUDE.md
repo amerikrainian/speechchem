@@ -706,7 +706,7 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   nowhere but the graph, so they are not spoken as numbers (health drops log "{enemy} hit").
 - ENEMY stop (pipeline, after the map): name + title (+ "destroyed"), the span (live), the parts
   row when the Parts table knows the enemy ("2 of 3 motors intact", live).
-- RUN EVENTS (level-wide: RunCapture.AddLevelEvent — logged always, spoken at the slowest speed,
+- RUN EVENTS (level-wide: RunCapture.AddLevelEvent — logged always, spoken at play speeds 1-3 (user rule 2026-10-04; per-molecule lines speed 1 only),
   end any step; user asked to log every molecule and every move and judge the noise):
   "Oxygen Tank 1 took Methane, CH4, Pressure 37 percent" (every Class598 subclass's `vmethod_23`
   override; the meter after it; before an event it sets off the line comes first, without meter);
@@ -714,8 +714,11 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   on the enemy measured across the event: "Isambard MMD: motor destroyed, 1 of 3 motors intact"
   (Parts), "Isambard MMD hit" (health only), or "missed"; "Isambard MMD destroyed" (Class310.method_4,
   held until after the hit that caused it); "{enemy} attacks" (each subclass's `vmethod_2` override
-  that has a body — the robot's is empty); "Isambard MMD at columns 22 to 32, rows 3 to 11" (a
-  footprint change while running: ~every 110 cycles for the robot at full health); "Control Center
+  that has a body — the robot's is empty); a move (user design 2026-10-04, terse like the grid
+  readouts: the enemy's TOP-LEFT cell — the Components table's corner for buildings, and the
+  leading edge moving left or up — clamped to the map; "Isambard MMD 21" when only the column
+  changed, "… row 5" when only the row did, "… 21, 5" for both or on coming into sight, "… off the
+  map"; one line per column — every ~110 cycles for the robot at full health); "Control Center
   95 percent" / "destroyed" (GoalTracker.smethod_10). Completion logs "Level complete.". The Class144
   pump emits a methane every 10 cycles (35 to a blast); a spent tank keeps taking methane ("…,
   exploded" every 10 cycles — the noisiest line).

@@ -107,8 +107,25 @@ namespace SpeechChem.Patches
         private static void Add(string text, bool speak) => Add(text, speak, null, concerns: true);
 
         /// <summary>A level-wide event (defense: the enemy, special buildings, the Control
-        /// Center) — it concerns every reactor, so it ends any step and is spoken inside any.</summary>
-        internal static void AddLevelEvent(string text) => Add(text, speak: true, spoken: null, concerns: true);
+        /// Center) — it concerns every reactor, so it ends any step and is spoken inside any.
+        /// Spoken while running at play speeds 1-3, not only the slowest (user rule 2026-10-04:
+        /// defense levels are played at 2 or 3 — the play buttons' numbering, so the defense
+        /// remap of 3 to DefenseFast counts); <paramref name="fast"/> false keeps a frequent line
+        /// (a special building's every molecule) to speed 1.</summary>
+        internal static void AddLevelEvent(string text, bool fast = true)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            Log.Add(Cycle, text);
+            StepControl.OnEvent(Cycle, true);
+            if (StepControl.Active || SpeakLevelEvent(fast)) Speech.Tts.Speak(text);
+        }
+
+        private static bool SpeakLevelEvent(bool fast)
+        {
+            if ((int)Class258.smethod_16() != 1) return false;
+            var speed = Class258.smethod_14();
+            return speed == SimulatorSpeed.Slow || fast && Screens.Common.ProgressSection.SpeedNumber(speed) <= 3;
+        }
 
         /// <summary>Log <paramref name="text"/> (always, whoever it concerns); speak
         /// <paramref name="spoken"/> when given (a waldo event of the reactor being edited drops

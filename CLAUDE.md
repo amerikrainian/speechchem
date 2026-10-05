@@ -496,7 +496,7 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   atom across stops the run with the game's own reaction error ("Atoms may only be teleported across
   the quantum junction …", marked at the last cell before it) — verified live on QT-1 2026-09-27.
   C reads coordinates. Ctrl+arrows skip cells that read the same as the current one (UI/GridSkip:
-  contents without coordinates; land on the first that differs, else the edge — user request; Up/Down
+  contents without coordinates, plus the region — a zone boundary stops a skip, user rule 2026-10-05; land on the first that differs, else the edge — user request; Up/Down
   through the cells' OnRegionJump, Left/Right = screen.reactor.skip.*, also on the pipeline map). Shift+Backspace = the cell's details (`CellDetailsOf`), most useful first:
   each waldo's state beyond facing (holding / empty, the game's WAITING text, syncing, rotating, at
   the wall — `WaldoState`, shared with Shift+R), the atom info box, then the game's tooltip text

@@ -100,14 +100,16 @@ namespace SpeechChem.Screens.Reactor
             return true;
         }
 
-        /// <summary>Ctrl+arrows: past the cells that hold the same as this one (UI/GridSkip).</summary>
+        /// <summary>Ctrl+arrows: past the cells that hold the same as this one (UI/GridSkip). The
+        /// region (a zone, or the chamber) counts as part of what a cell holds, so a skip stops on
+        /// entering or leaving a zone.</summary>
         private bool SkipCells(int x, int y, int dx, int dy)
         {
             var r = Model;
             if (r == null) return false;
             var size = r.method_1();
             GridSkip.Target(x, y, dx, dy, size.int_0, size.int_1,
-                (cx, cy) => string.Join(", ", CellContents(r, cx, cy).ToArray()), out int tx, out int ty);
+                (cx, cy) => RegionAt(r, cx, cy) + "|" + string.Join(", ", CellContents(r, cx, cy).ToArray()), out int tx, out int ty);
             if (tx == x && ty == y) Speech.Tts.Speak(CellReadout(x, y), interrupt: true);
             else FocusCell(tx, ty);
             return true;

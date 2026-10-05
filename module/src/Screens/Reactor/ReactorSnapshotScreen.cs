@@ -21,7 +21,7 @@ namespace SpeechChem.Screens.Reactor
         public int Width, Height, Cycle;
         public string[,] Contents; // spoken cell contents, "" when empty
         public string[,] Details;  // Shift+Backspace: waldo state, atom info, tooltips
-        public string[,] Zones;    // zone name or null
+        public string[,] Zones;    // region name (a zone or the reaction zone)
         public bool[,] Marked;     // the error box's markers
 
         /// <summary>Every cell's full contents — instructions on every layer (hidden ones too),
@@ -46,7 +46,7 @@ namespace SpeechChem.Screens.Reactor
                 {
                     s.Contents[x, y] = string.Join(", ", ReactorEditorScreen.CellContents(r, x, y, allLayers: true).ToArray());
                     s.Details[x, y] = ReactorEditorScreen.CellDetailsOf(r, x, y, allLayers: true);
-                    s.Zones[x, y] = ReactorEditorScreen.ZoneAt(r, x, y);
+                    s.Zones[x, y] = ReactorEditorScreen.RegionAt(r, x, y);
                 }
             if (markers != null)
                 foreach (var p in markers)
@@ -71,9 +71,7 @@ namespace SpeechChem.Screens.Reactor
     internal sealed class ReactorSnapshotScreen : Screen
     {
         private readonly ReactorSnapshot _s;
-        private string _lastZone;
-        private bool _zoneInit;
-        private int _zoneX = -1, _zoneY = -1;
+        private readonly ZoneCrossing _zones = new ZoneCrossing();
 
         public ReactorSnapshotScreen(ReactorSnapshot snapshot) => _s = snapshot;
 
@@ -117,24 +115,13 @@ namespace SpeechChem.Screens.Reactor
         }
 
         /// <summary>Note a zone crossing, so the zone is read once on entering it (as the grid does).</summary>
-        private void Land(int x, int y)
-        {
-            string zone = _s.Zones[x, y];
-            if (zone != null && zone != _lastZone) { _zoneX = x; _zoneY = y; }
-            else _zoneX = _zoneY = -1;
-            _lastZone = zone;
-        }
+        private void Land(int x, int y) => _zones.Land(x, y, _s.Zones[x, y]);
 
         private string Readout(int x, int y)
         {
             var parts = new List<string> { Loc.T("reactor.cell", new { x = x + 1, y = y + 1 }) };
-            if (!_zoneInit)
-            {
-                _zoneInit = true;
-                _lastZone = _s.Zones[x, y];
-                if (_lastZone != null) parts.Add(_lastZone);
-            }
-            else if (x == _zoneX && y == _zoneY) parts.Add(_s.Zones[x, y]);
+            string region = _zones.Announce(x, y, _s.Zones[x, y]);
+            if (region != null) parts.Add(region);
             if (!string.IsNullOrEmpty(_s.Contents[x, y])) parts.Add(_s.Contents[x, y]);
             if (_s.Marked[x, y]) parts.Add(Loc.T("snapshot.marked"));
             return string.Join(", ", parts.ToArray());

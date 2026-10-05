@@ -15,15 +15,14 @@ namespace SpeechChem.Screens.Reactor
     {
         // ---- the grid stop: one node per cell, rows sharing a key so Up/Down keep the column.
         // A cell reads "x, y" FIRST (1-based column, row from the top — user rule), then the zone
-        // name when the cursor has just crossed into a different zone, then its contents: visible
+        // name when the cursor has just crossed into a different zone (the reaction zone too: leaving
+        // an input or output is announced — user request), then its contents: visible
         // instructions per colour (non-arrow, then arrow), hardware, waldos and atoms while a run is
         // live, and "highlighted" on the tutorial's target cell. An empty cell is just its
         // coordinates (user rule). ----
 
         private int _cursorX, _cursorY;
-        private string _lastZone;
-        private Vector2i? _zoneFor; // the cell whose readout carries the zone name just crossed into
-        private bool _zoneInit;     // the first readout names its zone (no crossing precedes it)
+        private readonly ZoneCrossing _zones = new ZoneCrossing();
         private Vector2i? _junctionFor; // the cell whose readout says the quantum junction was just crossed
 
         // A quantum reactor's junction (Reactor.bool_1): the line at 395 px, between columns 5 and 6
@@ -71,10 +70,7 @@ namespace SpeechChem.Screens.Reactor
             _junctionFor = crossed ? new Vector2i(x, y) : (Vector2i?)null;
             _cursorX = x;
             _cursorY = y;
-            string zone = ZoneAt(Model, x, y);
-            if (zone != null && zone != _lastZone) _zoneFor = new Vector2i(x, y);
-            else _zoneFor = null;
-            _lastZone = zone;
+            if (model != null) _zones.Land(x, y, RegionAt(model, x, y));
         }
 
         /// <summary>Keep the cursor in step with focus that arrived another way (Tab landing, a
@@ -147,6 +143,11 @@ namespace SpeechChem.Screens.Reactor
             return Loc.T(input ? (index == 0 ? "zone.alpha" : "zone.beta") : (index == 0 ? "zone.psi" : "zone.omega"));
         }
 
+        /// <summary>The region a cell lies in for crossing announcements: its zone, or "chamber" (a
+        /// mod name — the game draws the middle unlabelled) outside every zone.</summary>
+        internal static string RegionAt(ReactorModel reactor, int x, int y)
+            => ZoneAt(reactor, x, y) ?? Loc.T("zone.reaction");
+
         /// <summary>Which zone a cell lies in: an input (0 = α, 1 = β) or an output (0 = ψ, 1 = ω) —
         /// the same indices as the side panels' ports. False outside every zone.</summary>
         internal static bool ZoneOf(ReactorModel reactor, int x, int y, out bool input, out int index)
@@ -192,14 +193,8 @@ namespace SpeechChem.Screens.Reactor
             var r = Model;
             if (r == null) return null;
             var parts = new List<string> { Loc.T("reactor.cell", new { x = x + 1, y = y + 1 }) };
-            if (!_zoneInit)
-            {
-                _zoneInit = true;
-                _lastZone = ZoneAt(r, x, y);
-                if (_lastZone != null) parts.Add(_lastZone);
-            }
-            else if (_zoneFor.HasValue && _zoneFor.Value.int_0 == x && _zoneFor.Value.int_1 == y)
-                parts.Add(ZoneAt(r, x, y));
+            string region = _zones.Announce(x, y, RegionAt(r, x, y));
+            if (region != null) parts.Add(region);
             if (_junctionFor.HasValue && _junctionFor.Value.int_0 == x && _junctionFor.Value.int_1 == y)
                 parts.Add(Loc.T("reactor.junction.crossed"));
             parts.AddRange(CellContents(r, x, y));

@@ -68,7 +68,7 @@ namespace SpeechChem.Screens.Reactor
             _item = _item < 0 ? (delta > 0 ? 0 : items.Count - 1) : ((_item + delta) % items.Count + items.Count) % items.Count;
             var item = items[_item];
             if (item.Run != null) { item.Run(); return; }
-            if (item.Zone) _lastZone = null; // the landing names the zone
+            if (item.Zone) _zones.Forget(); // the landing names the zone
             if (item.X == _cursorX && item.Y == _cursorY && Equals(Navigation.FocusedNodeId, CellId(item.X, item.Y)))
             {
                 LandOnCell(item.X, item.Y);

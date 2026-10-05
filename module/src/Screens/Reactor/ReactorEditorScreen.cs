@@ -107,9 +107,7 @@ namespace SpeechChem.Screens.Reactor
             _reactor = reactor;
             _cursorX = 0;
             _cursorY = 0;
-            _lastZone = null;
-            _zoneFor = null;
-            _zoneInit = false;
+            _zones.Reset();
             _lastStep = null;
             _armedKey = -1;
             _pendingJump = null;

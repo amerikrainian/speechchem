@@ -76,6 +76,7 @@
   "zone.beta": "beta input",
   "zone.psi": "psi output",
   "zone.omega": "omega output",
+  "zone.reaction": "chamber",
   "dir.up": "up",
   "dir.down": "down",
   "dir.left": "left",

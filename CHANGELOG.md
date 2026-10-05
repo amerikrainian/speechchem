@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.0.5
+
+- We now announce when you're leaving an input/output zone.
+
 ## V0.0.4
 
 - 0 no longer steps by cycles, but rather by an event(s) we log.

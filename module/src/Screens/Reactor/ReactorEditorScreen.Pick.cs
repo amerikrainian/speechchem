@@ -16,19 +16,22 @@ namespace SpeechChem.Screens.Reactor
     {
         // ---- the instruction picker (user design 2026-10-05): a cell's instructions edited in
         // place, without the context menu.
-        //   Shift+Up / Down     the active colour's instructions in the cell (non-arrow, then arrow;
+        //   Shift+Up / Down     the picker colour's instructions in the cell (non-arrow, then arrow;
         //                       wraps), spoken without the colour
-        //   Shift+Left / Right  switch the active colour (the L key), then the new colour's first
-        //                       instruction as a separate, queued line
+        //   Shift+Left / Right  switch the picker colour FOR THIS CELL ONLY (it starts as the active
+        //                       colour on every cell; the game's active layer never changes), then
+        //                       the new colour's first instruction as a separate, queued line
         //   Alt+Up / Down       the picked instruction's parameters — its context menu's radio
         //                       groups (Colour, Direction, ...); wraps; "Direction, up"
         //   Alt+Left / Right    that parameter's next / previous value (wraps): the menu item's own
         //                       click, so a colour change really moves the instruction.
-        // The pick belongs to the cell: landing elsewhere drops it. Alt with nothing picked takes
-        // the active colour's first instruction. ----
+        // The pick and the picker colour belong to the cell: landing elsewhere drops them. Alt with
+        // nothing picked takes the picker colour's first instruction. Every key is a silent no-op
+        // when the colour it would act on has no instruction in the cell (user rule). ----
 
         private Instruction _pick;
         private int _param = -1;
+        private bool? _pickRed; // the picker colour switched on this cell; null = the active colour
 
         private IEnumerable<ElementAction> PickActions()
         {
@@ -48,12 +51,21 @@ namespace SpeechChem.Screens.Reactor
             _param = -1;
         }
 
-        /// <summary>The active colour's visible instructions in the cursor's cell, in reading order
-        /// (the instruction, then the arrow).</summary>
-        private List<Instruction> ActiveInstructionsHere(ReactorModel r)
+        /// <summary>Landing on another cell: the picker colour goes back to the active one.</summary>
+        private void LeavePickCell()
+        {
+            DropPick();
+            _pickRed = null;
+        }
+
+        private bool PickRed => _pickRed ?? RedActive;
+
+        /// <summary>A colour's visible instructions in the cursor's cell, in reading order (the
+        /// instruction, then the arrow).</summary>
+        private List<Instruction> InstructionsHere(ReactorModel r, bool red)
         {
             var list = new List<Instruction>();
-            foreach (int layer in ActiveLayers())
+            foreach (int layer in red ? new[] { ReactorText.Red, ReactorText.RedArrow } : new[] { ReactorText.Blue, ReactorText.BlueArrow })
             {
                 if (!Visible(r, layer)) continue;
                 var i = InstructionAt(r, _cursorX, _cursorY, layer);
@@ -79,16 +91,13 @@ namespace SpeechChem.Screens.Reactor
             return _pick;
         }
 
-        private string NoInstructions()
-            => Loc.T("reactor.pick.none", new { colour = Loc.T(RedActive ? "reactor.red" : "reactor.blue") });
-
         private void StepPick(int dir)
         {
             if (!OnGrid) return;
             var r = Model;
             if (r == null) return;
-            var list = ActiveInstructionsHere(r);
-            if (list.Count == 0) { DropPick(); Speech.Tts.Speak(NoInstructions(), interrupt: true); return; }
+            var list = InstructionsHere(r, PickRed);
+            if (list.Count == 0) return;
             int at = list.IndexOf(CurrentPick(r));
             int next = at < 0 ? (dir > 0 ? 0 : list.Count - 1) : ((at + dir) % list.Count + list.Count) % list.Count;
             _pick = list[next];
@@ -101,21 +110,24 @@ namespace SpeechChem.Screens.Reactor
             if (!OnGrid) return;
             var r = Model;
             if (r == null) return;
-            ToggleActiveLayer(); // speaks the colour
-            var list = ActiveInstructionsHere(r);
+            bool red = !PickRed;
+            var list = InstructionsHere(r, red);
+            if (list.Count == 0) return;
+            _pickRed = red;
+            _pick = list[0];
             _param = -1;
-            _pick = list.Count > 0 ? list[0] : null;
-            Speech.Tts.Speak(_pick != null ? ReactorText.Label(_pick) : Loc.T("reactor.pick.empty"));
+            Speech.Tts.Speak(Loc.T(red ? "reactor.red" : "reactor.blue"), interrupt: true);
+            Speech.Tts.Speak(ReactorText.Label(_pick));
         }
 
-        /// <summary>The picked instruction, or the active colour's first one in the cell (which then
-        /// becomes the pick). Speaks why when there is none.</summary>
+        /// <summary>The picked instruction, or the picker colour's first one in the cell (which then
+        /// becomes the pick). Null (silently) when there is none.</summary>
         private Instruction PickOrFirst(ReactorModel r)
         {
             var pick = CurrentPick(r);
             if (pick != null) return pick;
-            var list = ActiveInstructionsHere(r);
-            if (list.Count == 0) { Speech.Tts.Speak(NoInstructions(), interrupt: true); return null; }
+            var list = InstructionsHere(r, PickRed);
+            if (list.Count == 0) return null;
             _pick = list[0];
             _param = -1;
             return _pick;

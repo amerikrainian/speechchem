@@ -243,8 +243,6 @@
   "reactor.mark.first": "Corner {cell}",
   "reactor.mark.rect": "{w} by {h} from {from} to {to}",
   "reactor.marked": "Marked",
-  "reactor.pick.none": "No {colour} instructions",
-  "reactor.pick.empty": "none",
   "reactor.pick.noparams": "No parameters",
   "reactor.pick.blocked": "{what} in the way",
   "text.na": "N/A",

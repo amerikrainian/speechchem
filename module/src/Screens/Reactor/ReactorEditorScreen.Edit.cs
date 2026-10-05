@@ -57,7 +57,7 @@ namespace SpeechChem.Screens.Reactor
         {
             _markFirst = _markSecond = null;
             _clip.Clear();
-            DropPick();
+            LeavePickCell();
         }
 
         private static bool OnGrid => GridStop.Equals(Navigation.FocusedStopKey);

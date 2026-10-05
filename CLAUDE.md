@@ -519,16 +519,18 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   the cursor's cell; it survives edits. Shift+Space is kept from the game (the toolbar reads Space
   as play / pause whatever the modifiers). Posted keys can't test Shift: SDL unsticks a Shift that
   GetKeyState says is up on every pump (posted Alt chords do work). THE INSTRUCTION PICKER
-  (`ReactorEditorScreen.Pick.cs`, user design 2026-10-05): Shift+Up/Down pick among the ACTIVE
-  colour's visible instructions in the cell (instruction, then arrow; wraps; no colour word);
-  Shift+Left/Right = L (switch the active colour, spoken) then the new colour's first instruction
-  as a queued line ("none"). Alt+Up/Down walk the pick's parameters = its context menu's radio
+  (`ReactorEditorScreen.Pick.cs`, user design 2026-10-05): Shift+Up/Down pick among the PICKER
+  colour's visible instructions in the cell (instruction, then arrow; wraps; no colour word); the
+  picker colour starts as the active colour on every cell and Shift+Left/Right switch it FOR THAT
+  CELL ONLY (the game's active layer is untouched — user rule 2026-10-05), spoken, then the new
+  colour's first instruction as a queued line. Every picker key is a SILENT NO-OP when the colour
+  it would act on has no instruction in the cell (user rule). Alt+Up/Down walk the pick's parameters = its context menu's radio
   groups ("Direction, up"; wraps); Alt+Left/Right step the value (wraps) by RUNNING THE MENU ITEM
   (RunMenuItem), so a colour change really moves it (the pick follows it; the active colour's
   Shift+Up/Down no longer finds it). The colour item silently does nothing when the other colour's
   slot is taken (InstructionMenu's Class723) — the mod says "red grab drop in the way". Values:
   colour word, direction word, control letter, else the choice's label. The pick is the cell's:
-  landing elsewhere drops it; Alt with no pick takes the first. Verified live on a tutorial level
+  landing elsewhere drops it and the picker colour; Alt with no pick takes the first. Verified live on a tutorial level
   2026-10-05 (grab type cycle, colour moves both ways, the refusal), program restored. Backspace (ui.secondary) = the context menu (the
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
   `Screens/ActionListScreen`; the layer and icon-variant items are RADIO GROUPS (families share one

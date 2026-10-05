@@ -511,7 +511,14 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   instructions); it stays put until the paste, which checks every covered cell (in the grid, no
   other hardware) and moves it with the game's drop (method_18 + vmethod_1); a REFUSED piece stays
   on the clipboard for another try and is named ("Sensor did not fit") — verified live for bonders,
-  sensor, both lasers (off the right edge refused) and tunnels, with 0 / 4 / 8 bonder puzzles; Shift+arrows = rectangular selection; Backspace (ui.secondary) = the context menu (the
+  sensor, both lasers (off the right edge refused) and tunnels, with 0 / 4 / 8 bonder puzzles; THE MARKED RECTANGLE (user design 2026-10-05, replacing Shift+arrows):
+  Shift+Space marks one corner ("Corner 2, 2"), the next the opposite one ("4 by 2 from 2, 2 to 5, 3",
+  always top-left to bottom-right), a third starts over (one rectangle). Independent of the cursor;
+  its cells read "Marked" BEFORE the coordinates (the first corner alone while the second is to
+  come); Delete / Ctrl+X / Ctrl+C act on the whole rectangle while the cursor is inside it, else on
+  the cursor's cell; it survives edits. Shift+Space is kept from the game (the toolbar reads Space
+  as play / pause whatever the modifiers). Posted keys can't test Shift: SDL unsticks a Shift that
+  GetKeyState says is up on every pump. Backspace (ui.secondary) = the context menu (the
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
   `Screens/ActionListScreen`; the layer and icon-variant items are RADIO GROUPS (families share one
   `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant

@@ -129,12 +129,9 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.cut", "Cut", Input.InputCategory.UI).AddBinding(Input.Scancode.X, ctrl: true);
             Input.InputManager.Register("screen.reactor.copy", "Copy", Input.InputCategory.UI).AddBinding(Input.Scancode.C, ctrl: true);
             Input.InputManager.Register("screen.reactor.paste", "Paste", Input.InputCategory.UI).AddBinding(Input.Scancode.V, ctrl: true);
-            Input.InputManager.Register("screen.reactor.select.up", "Extend selection up", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, shift: true).Repeating();
-            Input.InputManager.Register("screen.reactor.select.down", "Extend selection down", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, shift: true).Repeating();
+            Input.InputManager.Register("screen.reactor.mark", "Mark a rectangle corner", Input.InputCategory.UI).AddBinding(Input.Scancode.Space, shift: true);
             Input.InputManager.Register("screen.reactor.skip.left", "Skip identical cells left", Input.InputCategory.UI).AddBinding(Input.Scancode.Left, ctrl: true).Repeating();
             Input.InputManager.Register("screen.reactor.skip.right", "Skip identical cells right", Input.InputCategory.UI).AddBinding(Input.Scancode.Right, ctrl: true).Repeating();
-            Input.InputManager.Register("screen.reactor.select.left", "Extend selection left", Input.InputCategory.UI).AddBinding(Input.Scancode.Left, shift: true).Repeating();
-            Input.InputManager.Register("screen.reactor.select.right", "Extend selection right", Input.InputCategory.UI).AddBinding(Input.Scancode.Right, shift: true).Repeating();
             // Context menus live on ui.secondary (Backspace, the right-click key) — user rule, 2026-09-27.
 
             Input.InputManager.ActiveCategoriesProvider = () =>

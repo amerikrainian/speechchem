@@ -49,7 +49,7 @@ namespace SpeechChem.Screens.Reactor
                         ControlType = ControlTypes.Text,
                         Announcements = new[] { new NodeAnnouncement(() => CellReadout(cx, cy), kind: AnnouncementKinds.Label) },
                         SpeaksOwnPosition = true,
-                        OnSelect = () => { ClearSelection(); LandOnCell(cx, cy); },
+                        OnSelect = () => LandOnCell(cx, cy),
                         OnActivate = () => ActivateCell(cx, cy),
                         OnSecondary = OpenContextMenu,
                         OnTooltip = () => Speech.Tts.Speak(CellDetails(cx, cy), interrupt: true),
@@ -106,7 +106,6 @@ namespace SpeechChem.Screens.Reactor
             var size = r.method_1();
             GridSkip.Target(x, y, dx, dy, size.int_0, size.int_1,
                 (cx, cy) => string.Join(", ", CellContents(r, cx, cy).ToArray()), out int tx, out int ty);
-            ClearSelection();
             if (tx == x && ty == y) Speech.Tts.Speak(CellReadout(x, y), interrupt: true);
             else FocusCell(tx, ty);
             return true;
@@ -192,14 +191,15 @@ namespace SpeechChem.Screens.Reactor
         {
             var r = Model;
             if (r == null) return null;
-            var parts = new List<string> { Loc.T("reactor.cell", new { x = x + 1, y = y + 1 }) };
+            var parts = new List<string>();
+            if (IsMarked(x, y)) parts.Add(Loc.T("reactor.marked")); // first, before the coordinates (user rule)
+            parts.Add(Loc.T("reactor.cell", new { x = x + 1, y = y + 1 }));
             string region = _zones.Announce(x, y, RegionAt(r, x, y));
             if (region != null) parts.Add(region);
             if (_junctionFor.HasValue && _junctionFor.Value.int_0 == x && _junctionFor.Value.int_1 == y)
                 parts.Add(Loc.T("reactor.junction.crossed"));
             parts.AddRange(CellContents(r, x, y));
             if (IsTutorialTarget(x, y)) parts.Add(Loc.T("reactor.highlighted"));
-            if (InSelection(x, y)) parts.Add(Loc.T("text.selectedword"));
             return string.Join(", ", parts.ToArray());
         }
 

@@ -27,7 +27,7 @@ namespace SpeechChem.Screens.Reactor
         // Keys: a palette letter places that instruction at the cursor in the active colour
         // (replacing what occupies that slot — user rule); Enter places the ARMED palette slot (one
         // shot); Delete removes the active colour's instructions in the cell or selection; Ctrl+X /
-        // Ctrl+C / Ctrl+V cut, copy and paste them; Shift+arrows extend a rectangular selection;
+        // Ctrl+C / Ctrl+V cut, copy and paste them; Shift+Space marks a rectangle's corners;
         // Backspace on a grid cell (the secondary action, the right-click key) opens the context
         // menu: the cell's instruction menu (the game's right-click menu, item by item) or, on an
         // empty cell, the Reactor Grid menu. ----
@@ -49,15 +49,12 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.cut", () => CopyAtCursor(cut: true));
             yield return new ElementAction("screen.reactor.copy", () => CopyAtCursor(cut: false));
             yield return new ElementAction("screen.reactor.paste", Paste);
-            yield return new ElementAction("screen.reactor.select.up", () => ExtendSelection(0, -1));
-            yield return new ElementAction("screen.reactor.select.down", () => ExtendSelection(0, 1));
-            yield return new ElementAction("screen.reactor.select.left", () => ExtendSelection(-1, 0));
-            yield return new ElementAction("screen.reactor.select.right", () => ExtendSelection(1, 0));
+            yield return new ElementAction("screen.reactor.mark", MarkCorner);
         }
 
         private void ResetEditState()
         {
-            _selAnchor = null;
+            _markFirst = _markSecond = null;
             _clip.Clear();
         }
 
@@ -140,45 +137,62 @@ namespace SpeechChem.Screens.Reactor
             return true;
         }
 
-        // ---- selection (Shift+arrows) ----
+        // ---- the marked rectangle (Shift+Space; user design 2026-10-05). The first press marks one
+        // corner, the second the opposite one; a third starts a new rectangle (there is only one).
+        // It is independent of the cursor: cells inside read "Marked" first, and the edit keys act on
+        // the whole rectangle while the cursor is inside it, else on the cursor's cell alone. Spoken
+        // top-left to bottom-right whichever corners were marked. ----
 
-        private Vector2i? _selAnchor;
+        private Vector2i? _markFirst, _markSecond;
 
-        private void ExtendSelection(int dx, int dy)
+        private void MarkCorner()
         {
             if (!OnGrid) return;
-            var r = Model;
-            if (r == null) return;
-            var size = r.method_1();
-            if (!_selAnchor.HasValue) _selAnchor = new Vector2i(_cursorX, _cursorY);
-            int x = Math.Max(0, Math.Min(size.int_0 - 1, _cursorX + dx));
-            int y = Math.Max(0, Math.Min(size.int_1 - 1, _cursorY + dy));
-            _cursorX = x;
-            _cursorY = y;
-            Navigation.FocusNode(CellId(x, y), announce: false);
-            int w = Math.Abs(x - _selAnchor.Value.int_0) + 1, h = Math.Abs(y - _selAnchor.Value.int_1) + 1;
-            Speech.Tts.Speak(CellReadout(x, y) + ", " + Loc.T("reactor.selection", new { w, h }), interrupt: true);
+            var here = new Vector2i(_cursorX, _cursorY);
+            if (!_markFirst.HasValue || _markSecond.HasValue)
+            {
+                _markFirst = here;
+                _markSecond = null;
+                Speech.Tts.Speak(Loc.T("reactor.mark.first", new { cell = CellName(_cursorX, _cursorY) }), interrupt: true);
+                return;
+            }
+            _markSecond = here;
+            MarkBounds(out int x0, out int y0, out int x1, out int y1);
+            Speech.Tts.Speak(Loc.T("reactor.mark.rect", new
+            {
+                w = x1 - x0 + 1,
+                h = y1 - y0 + 1,
+                from = CellName(x0, y0),
+                to = CellName(x1, y1),
+            }), interrupt: true);
         }
 
-        /// <summary>Plain navigation drops the selection.</summary>
-        private void ClearSelection() => _selAnchor = null;
+        private static string CellName(int x, int y) => Loc.T("reactor.cell", new { x = x + 1, y = y + 1 });
 
-        private bool InSelection(int x, int y)
+        /// <summary>The marked cells' bounds: the rectangle, or the first corner alone while the
+        /// second is still to come. False when nothing is marked.</summary>
+        private bool MarkBounds(out int x0, out int y0, out int x1, out int y1)
         {
-            if (!_selAnchor.HasValue) return false;
-            int x0 = Math.Min(_selAnchor.Value.int_0, _cursorX), x1 = Math.Max(_selAnchor.Value.int_0, _cursorX);
-            int y0 = Math.Min(_selAnchor.Value.int_1, _cursorY), y1 = Math.Max(_selAnchor.Value.int_1, _cursorY);
-            return x >= x0 && x <= x1 && y >= y0 && y <= y1;
+            x0 = y0 = x1 = y1 = 0;
+            if (!_markFirst.HasValue) return false;
+            var a = _markFirst.Value;
+            var b = _markSecond ?? a;
+            x0 = Math.Min(a.int_0, b.int_0); x1 = Math.Max(a.int_0, b.int_0);
+            y0 = Math.Min(a.int_1, b.int_1); y1 = Math.Max(a.int_1, b.int_1);
+            return true;
         }
 
-        /// <summary>The cells an edit applies to: the selection, else the cursor's cell.</summary>
+        private bool IsMarked(int x, int y)
+            => MarkBounds(out int x0, out int y0, out int x1, out int y1) && x >= x0 && x <= x1 && y >= y0 && y <= y1;
+
+        /// <summary>The cells an edit applies to: the whole marked rectangle while the cursor is in
+        /// it, else the cursor's cell.</summary>
         private List<Vector2i> TargetCells()
         {
             var cells = new List<Vector2i>();
-            if (_selAnchor.HasValue)
+            if (_markSecond.HasValue && IsMarked(_cursorX, _cursorY))
             {
-                int x0 = Math.Min(_selAnchor.Value.int_0, _cursorX), x1 = Math.Max(_selAnchor.Value.int_0, _cursorX);
-                int y0 = Math.Min(_selAnchor.Value.int_1, _cursorY), y1 = Math.Max(_selAnchor.Value.int_1, _cursorY);
+                MarkBounds(out int x0, out int y0, out int x1, out int y1);
                 for (int y = y0; y <= y1; y++)
                     for (int x = x0; x <= x1; x++) cells.Add(new Vector2i(x, y));
             }
@@ -223,7 +237,6 @@ namespace SpeechChem.Screens.Reactor
                     Forget(i);
                 }
             }
-            ClearSelection();
             Speech.Tts.Speak(Loc.T("reactor.edit.deleted", new { what = string.Join(", ", labels.ToArray()) }), interrupt: true);
         }
 
@@ -317,7 +330,6 @@ namespace SpeechChem.Screens.Reactor
                     }
                 }
             }
-            ClearSelection();
             var names = new List<string>();
             foreach (var e in entries) names.Add(ClipLabel(e));
             Speech.Tts.Speak(Loc.T(cut ? "reactor.edit.cut" : "reactor.edit.copied", new { what = Summary(names) }), interrupt: true);

@@ -68,6 +68,7 @@ namespace SpeechChem.Screens.Reactor
             var model = Model;
             bool crossed = model != null && model.bool_1 && (_cursorX < JunctionColumn) != (x < JunctionColumn);
             _junctionFor = crossed ? new Vector2i(x, y) : (Vector2i?)null;
+            if (x != _cursorX || y != _cursorY) DropPick(); // the pick belongs to its cell
             _cursorX = x;
             _cursorY = y;
             if (model != null) _zones.Land(x, y, RegionAt(model, x, y));

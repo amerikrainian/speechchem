@@ -50,12 +50,14 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.copy", () => CopyAtCursor(cut: false));
             yield return new ElementAction("screen.reactor.paste", Paste);
             yield return new ElementAction("screen.reactor.mark", MarkCorner);
+            foreach (var a in PickActions()) yield return a;
         }
 
         private void ResetEditState()
         {
             _markFirst = _markSecond = null;
             _clip.Clear();
+            DropPick();
         }
 
         private static bool OnGrid => GridStop.Equals(Navigation.FocusedStopKey);

@@ -51,11 +51,18 @@ This is work-in-progress. Pipeline and research have been verified and are at le
 | Enter | Palette | Arm the instruction |
 | Enter | Grid | Place the armed instruction |
 | L | anywhere | Switch the active colour |
-| Shift+arrows | Grid | Extend a rectangular selection |
-| Delete | Grid | Remove the active colour's instructions in the cell or selection |
-| Ctrl+X / Ctrl+C / Ctrl+V | Grid | Cut / copy / paste the active colour's instructions. Start markers move only by cut and paste and are never deleted or copied. Hardware (bonders, sensors, tunnels, lasers) moves only by cut and paste: Ctrl+X takes it when the active colour has nothing there (lock a layer to reach hardware under instructions); a paste that doesn't fit stays on the clipboard |
+| Shift+Space | Grid | Mark a rectangle's first corner; press again on the opposite corner to finish it ("3 by 2 from 2, 2 to 4, 3", always top-left to bottom-right). Marking again starts a new rectangle; there is only one. Its cells read "Marked" first |
+| Ctrl+Space | Grid | Clear the marked rectangle, or a first corner still waiting for its pair; silent when nothing is marked |
+| Shift+Up / Shift+Down | Grid | Pick among the cell's instructions of the picker colour (wraps). The picker colour starts as the active colour on every cell |
+| Shift+Left / Shift+Right | Grid | Switch the picker colour for this cell only (the active colour stays) and name its first instruction |
+| Alt+Up / Alt+Down | Grid | The picked instruction's parameters: colour, direction, grab type and so on (wraps) |
+| Alt+Left / Alt+Right | Grid | Change that parameter's value (wraps), exactly as the context menu would; a colour change moves the instruction to the other colour |
+| Delete | Grid | Remove the active colour's instructions in the cell, or in the whole marked rectangle while the cursor is inside it |
+| Ctrl+X / Ctrl+C / Ctrl+V | Grid | Cut / copy / paste the active colour's instructions (cut and copy take the whole marked rectangle while the cursor is inside it; a paste keeps the layout with its top-left at the cursor). Start markers move only by cut and paste and are never deleted or copied. Hardware (bonders, sensors, tunnels, lasers) moves only by cut and paste: Ctrl+X takes it when the active colour has nothing there (lock a layer to reach hardware under instructions); a paste that doesn't fit stays on the clipboard |
 | Backspace | Grid | Context menu: the instruction's right-click menu, or the grid menu on an empty cell. Colour and icon-variant items apply on Enter and leave the menu open |
 | Ctrl+Z / Ctrl+Y | anywhere | Undo / redo; the mod says what changed |
+
+The picker keys do nothing when the colour they would act on has no instruction in the cell.
 
 ### 2.3 Running
 

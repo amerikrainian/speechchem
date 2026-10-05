@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Impeller;
 using SpaceChem;
 using SpaceChem.Reactor;
@@ -481,6 +482,7 @@ namespace SpeechChem.Screens.Reactor
                     Selected = () => { try { return it.isSelectedFunc_0(member); } catch { return false; } },
                     Run = () => { RunMenuItem(r, member, it); SyncMenu(menu, member); },
                     Group = MenuItemGroup(item),
+                    GroupLabel = MenuItemGroupLabel(item, member.GetType()),
                 });
             }
             string title = ColourWord((int)(r.method_19(member)?.enum114_0 ?? 0)) + " " + ReactorText.Label(member);
@@ -526,6 +528,35 @@ namespace SpeechChem.Screens.Reactor
             if (!(item is Class720) && !(item is InstructionMenuItem)) return null;
             try { return item.isSelectedFunc_0?.Method; }
             catch { return null; }
+        }
+
+        /// <summary>The name of a menu item's family — the instruction parameter its choices set,
+        /// spoken as the family's row name. The layers are the colour; an icon family is told by the
+        /// value its selected-test closes over (the closure's one enum field): Enum153 direction,
+        /// Enum111 control letter, Enum120 input / output zone, Enum146 add / remove bond, Enum85
+        /// grab / drop, Enum141 rotation. Mod words: the game draws these as unlabelled icons.</summary>
+        internal static Func<string> MenuItemGroupLabel(MenuItem<Instruction> item, Type instruction)
+        {
+            if (item is Class720) return () => Loc.T("reactor.menu.group.colour");
+            Type value = null;
+            try
+            {
+                var target = item.isSelectedFunc_0?.Target;
+                if (target != null)
+                    foreach (var f in target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                        if (f.FieldType.IsEnum) { value = f.FieldType; break; }
+            }
+            catch { }
+            string key =
+                value == typeof(Enum153) ? "direction" :
+                value == typeof(Enum111) ? "control" :
+                value == typeof(Enum120) ? (typeof(OutputInstruction).IsAssignableFrom(instruction) ? "output" : "input") :
+                value == typeof(Enum146) ? "bond" :
+                value == typeof(Enum85) ? "grab" :
+                value == typeof(Enum141) ? "rotation" :
+                null;
+            if (key == null) return null;
+            return () => Loc.T("reactor.menu.group." + key);
         }
 
         private void RunMenuItem(ReactorModel r, Instruction member, MenuItem<Instruction> item)

@@ -178,6 +178,7 @@ SDL_TEXTINPUT event — the game's real typing path; the navigator's echo sees i
 (a raw SDL key press to the GAME only — the mod's input reads SDL's state array, which pushed events
 don't update; use it to test what the game receives, e.g. that suppression blocks Enter),
 `profiles` (the profile set, `*` = current), `switchprofile` (main menu's Switch Profile),
+`menugroups` (every instruction menu's items by context-menu row, nothing placed),
 `instrmenu` (a control instruction's context-menu labels: placed on the first empty red cell of the
 open, stopped reactor for the read, then removed and forgotten),
 `pipemap` (the open pipeline as text, 0-based cells: terrain, bodies, pipes, crossings, then every
@@ -514,7 +515,14 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as
   `Screens/ActionListScreen`; the layer and icon-variant items are RADIO GROUPS (families share one
   `isSelectedFunc_0` method) that apply on Enter and keep the menu open (user rule: colour + variant
-  in one visit); Delete / Change Trigger Element still run and close. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
+  in one visit); Delete / Change Trigger Element still run and close. EACH RADIO GROUP IS ONE
+  HORIZONTAL ROW (user rule 2026-10-05) named by the parameter it sets (a context spoken on entering
+  the row): Colour (Class720), then by the enum the family's selected-test closure holds — Direction
+  (Enum153), Control letter (Enum111), Input / Output type (Enum120), Bond type (Enum146), Grab type
+  (Enum85), Rotation (Enum141); Up/Down walk rows and plain actions, landing on the row's SELECTED
+  choice (the menu opens on the first row's); Left/Right walk the choices; a grouped menu speaks
+  no counts at all (user rule 2026-10-05). Generic in ActionListScreen (Item.GroupLabel); the
+  note editor's bond menu uses it too ("Bond right"). Probe `menugroups` lists every menu's rows. Undo scope `Locals.smethod_0().smethod_0().method_49()`. Natives kept:
   1-4 speeds, ~ stop, Space, Ctrl+Z/Y, Escape.
 - STEP TO THE NEXT EVENT (`Patches/StepControl`; user request 2026-10-03, replacing the single-cycle
   step of 2026-09-27 — the game has no step): 0 (repeats while held), or the toolbar's "Step to next

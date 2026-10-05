@@ -29,6 +29,7 @@ namespace SpeechChem.Dev
     ///   rawkey &lt;scancode&gt;  push a raw SDL key press to the GAME (bypasses the mod's own input)
     ///   switchprofile      press the main menu's Switch Profile (opens the profile picker)
     ///   tolevelselect      leave the open level through the game's own return-to-level-select
+    ///   menugroups         every instruction menu's items by the context menu's parameter row
     ///   instrmenu          the context-menu labels of a control instruction (C, down), placed on the
     ///                      first empty red cell of the open reactor for the read, then removed
     ///   custom &lt;json&gt;|clean  open a test research puzzle / wipe its saved solution (CustomPuzzle)
@@ -70,6 +71,7 @@ namespace SpeechChem.Dev
                     Class53.smethod_8(true, false, false);
                     return "returned to level select\n";
                 case "instrmenu": return InstrMenu();
+                case "menugroups": return MenuGroups();
                 case "custom": return CustomPuzzle.Run(argument);
                 case "pipemap": return PipeMap();
                 case "focus": return Focus(argument);
@@ -284,6 +286,28 @@ namespace SpeechChem.Dev
                 r.method_21(member);
                 Impeller.Locals.smethod_0().smethod_0().method_72(member);
                 sb.Append("removed; cell now ").Append(r.method_17(free.Value) == null ? "empty" : "OCCUPIED").Append('\n');
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>Every instruction menu's items with the row (family) each lands in — the
+        /// context menu's parameter rows, without placing anything.</summary>
+        private static string MenuGroups()
+        {
+            var sb = new StringBuilder();
+            foreach (var kv in SpaceChem.Reactor.Instruction.dictionary_1)
+            {
+                sb.Append(GameNames.DeobTypeName(kv.Key) ?? kv.Key.Name).Append('\n');
+                foreach (var component in kv.Value.linkedList_0)
+                {
+                    if (!(component is SpaceChem.UI.MenuItem<SpaceChem.Reactor.Instruction> item)) continue;
+                    var label = SpeechChem.Screens.Reactor.ReactorEditorScreen.MenuItemLabel(item);
+                    if (label == null) continue;
+                    var group = SpeechChem.Screens.Reactor.ReactorEditorScreen.MenuItemGroupLabel(item, kv.Key);
+                    string text;
+                    try { text = label(); } catch (Exception ex) { text = "[" + ex.GetType().Name + "]"; }
+                    sb.Append("  ").Append(group == null ? "(action)" : group()).Append(": ").Append(text).Append('\n');
+                }
             }
             return sb.ToString();
         }

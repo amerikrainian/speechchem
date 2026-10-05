@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.0.6
+
+- Mutually exclusive instruction parameter options are now rendered as horizontal rows as opposed to one vertical list.
+
 ## V0.0.5
 
 - We now announce when you're leaving an input/output zone.

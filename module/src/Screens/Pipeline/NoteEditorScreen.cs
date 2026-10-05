@@ -268,6 +268,7 @@ namespace SpeechChem.Screens.Pipeline
                     items.Add(new ActionListScreen.Item
                     {
                         Group = group,
+                        GroupLabel = () => Loc.T("note.bond.group", new { dir }),
                         Label = () => Loc.T("note.bond.item", new { dir, kind = count == 0 ? Loc.T("note.bond.none") : ReactorText.BondWord(count) }),
                         Selected = () => BondCount(MoleculeAt(k), bond) == count,
                         Run = () => SetBond(k, bond, count),

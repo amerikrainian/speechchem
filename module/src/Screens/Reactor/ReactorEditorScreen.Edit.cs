@@ -50,6 +50,7 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.copy", () => CopyAtCursor(cut: false));
             yield return new ElementAction("screen.reactor.paste", Paste);
             yield return new ElementAction("screen.reactor.mark", MarkCorner);
+            yield return new ElementAction("screen.reactor.unmark", ClearMark);
             foreach (var a in PickActions()) yield return a;
         }
 
@@ -143,7 +144,8 @@ namespace SpeechChem.Screens.Reactor
         // corner, the second the opposite one; a third starts a new rectangle (there is only one).
         // It is independent of the cursor: cells inside read "Marked" first, and the edit keys act on
         // the whole rectangle while the cursor is inside it, else on the cursor's cell alone. Spoken
-        // top-left to bottom-right whichever corners were marked. ----
+        // top-left to bottom-right whichever corners were marked. Ctrl+Space unmarks it (or the
+        // corner waiting for its pair) — "Cleared", or nothing at all when nothing is marked. ----
 
         private Vector2i? _markFirst, _markSecond;
 
@@ -167,6 +169,13 @@ namespace SpeechChem.Screens.Reactor
                 from = CellName(x0, y0),
                 to = CellName(x1, y1),
             }), interrupt: true);
+        }
+
+        private void ClearMark()
+        {
+            if (!OnGrid || !_markFirst.HasValue) return;
+            _markFirst = _markSecond = null;
+            Speech.Tts.Speak(Loc.T("reactor.mark.cleared"), interrupt: true);
         }
 
         private static string CellName(int x, int y) => Loc.T("reactor.cell", new { x = x + 1, y = y + 1 });

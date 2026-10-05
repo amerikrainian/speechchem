@@ -513,10 +513,12 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   on the clipboard for another try and is named ("Sensor did not fit") — verified live for bonders,
   sensor, both lasers (off the right edge refused) and tunnels, with 0 / 4 / 8 bonder puzzles; THE MARKED RECTANGLE (user design 2026-10-05, replacing Shift+arrows):
   Shift+Space marks one corner ("Corner 2, 2"), the next the opposite one ("4 by 2 from 2, 2 to 5, 3",
-  always top-left to bottom-right), a third starts over (one rectangle). Independent of the cursor;
+  always top-left to bottom-right), a third starts over (one rectangle);
+  Ctrl+Space unmarks (a finished rectangle or a lone first corner) saying "Cleared", silent when
+  nothing is marked. Independent of the cursor;
   its cells read "Marked" BEFORE the coordinates (the first corner alone while the second is to
   come); Delete / Ctrl+X / Ctrl+C act on the whole rectangle while the cursor is inside it, else on
-  the cursor's cell; it survives edits. Shift+Space is kept from the game (the toolbar reads Space
+  the cursor's cell; it survives edits. Shift+Space and Ctrl+Space are kept from the game (the toolbar reads Space
   as play / pause whatever the modifiers). Posted keys can't test Shift: SDL unsticks a Shift that
   GetKeyState says is up on every pump (posted Alt chords do work). THE INSTRUCTION PICKER
   (`ReactorEditorScreen.Pick.cs`, user design 2026-10-05): Shift+Up/Down pick among the PICKER

@@ -124,6 +124,32 @@ namespace SpeechChem.Screens.Reactor
             WatchTutorial(editor);
             UpdateRunWatch(editor);
             ApplyPendingJump();
+            SpeakLevelStart(editor);
+        }
+
+        // ---- level start (user request 2026-10-06): opening a research level speaks the Molecules
+        // stop's lines, one utterance each, queued after the screen name and the focused cell — the
+        // navigator reads the cell at the end of the focus frame, so the lines wait a frame more.
+        // Once per level instance (Class83): closing Story & Info or a dialog doesn't repeat them;
+        // leaving and reopening the level does. Production reactors open from the pipeline mid-level,
+        // so they don't. ----
+
+        private static Class83 _startSpokenFor;
+        private int _startFrames;
+
+        public override void OnFocus()
+        {
+            base.OnFocus();
+            _startFrames = 2;
+        }
+
+        private void SpeakLevelStart(Class77 editor)
+        {
+            if (_startFrames == 0 || --_startFrames > 0) return;
+            var level = Class53.smethod_5<Class83>();
+            if (level == null || ReferenceEquals(level, _startSpokenFor) || Class53.smethod_5<Class84>() == null) return;
+            _startSpokenFor = level;
+            foreach (var line in MoleculeLines(editor)) Speech.Tts.Speak(line);
         }
 
         /// <summary>A game screen over the reactor (a Reaction Error, the exit prompt, the periodic

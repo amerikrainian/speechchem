@@ -591,6 +591,10 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   lists — user: Waldos is enough); , / . cycle items in READING ORDER (fixed by the board, never by the
   cursor — the user asked for a stable order). Grid items move the cursor; an instruction item arms it
   and just names it (no "armed" — user); waldo items read like Shift+R / Shift+B.
+- LEVEL START (user request 2026-10-06): opening a RESEARCH level (a Class84 in the chain) speaks the
+  Molecules stop's lines (`MoleculeLines`), one utterance each, after the screen name and the cell
+  (a frame late: the navigator reads the cell at the end of the focus frame). Once per level
+  instance (Class83): closing a dialog or Story & Info doesn't repeat it. Verified live 2026-10-06 on a real level entry.
 - MOLECULES stop: input/output lines from the port annotations; Enter opens `Screens/MoleculeViewerScreen`
   (a molecule as a navigable mini-grid, reusable anywhere a molecule is drawn). INPUTS open in
   landing mode: the whole zone-shaped box the panel draws (4 x 4, 4 x 8 when tall) with every cell

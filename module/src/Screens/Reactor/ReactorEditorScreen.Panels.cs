@@ -175,27 +175,46 @@ namespace SpeechChem.Screens.Reactor
             var rd = editor.reactorDraggable_0;
             if (rd == null) return;
             b.BeginStop(MoleculesStop);
-            int drawn = 0;
-            foreach (var kv in rd.class485_0)
+            foreach (int index in InputPanels(editor))
             {
-                int index = kv.Key;
-                // The laser reactor (Class636 draggable, Class80 editor) has a third input, the
-                // discharge gas (Xe) that fires it; its panel (Class80.vmethod_7) draws only the
-                // first two ports, α and β — so do we. From the decompile; UNTESTED live.
-                if (editor is Class80 && drawn >= 2) break;
-                drawn++;
                 var vt = ProfileUi.Text(true, () => InputLine(index));
                 vt.OnActivate = () => OpenInput(index);
                 b.AddItem(ControlId.Structural("reactor.mol.in." + index), vt);
             }
-            foreach (var kv in rd.class485_1)
+            foreach (int index in rd.class485_1.Keys)
             {
-                int index = kv.Key;
                 var vt = ProfileUi.Text(true, () => OutputLine(index));
                 vt.OnActivate = () => OpenMolecules(PanelAnnotation(false, index), "reactor.mol.out." + index);
                 vt.OnSecondary = () => EditNote(index);
                 b.AddItem(ControlId.Structural("reactor.mol.out." + index), vt);
             }
+        }
+
+        /// <summary>The input ports the panel draws, in order. The laser reactor (Class636
+        /// draggable, Class80 editor) has a third input, the discharge gas (Xe) that fires it; its
+        /// panel (Class80.vmethod_7) draws only the first two ports, α and β — so do we. From the
+        /// decompile; UNTESTED live.</summary>
+        private static List<int> InputPanels(Class77 editor)
+        {
+            var indices = new List<int>();
+            foreach (int index in editor.reactorDraggable_0.class485_0.Keys)
+            {
+                if (editor is Class80 && indices.Count >= 2) break;
+                indices.Add(index);
+            }
+            return indices;
+        }
+
+        /// <summary>The Molecules stop's lines, in its order (inputs, then outputs).</summary>
+        private static List<string> MoleculeLines(Class77 editor)
+        {
+            var lines = new List<string>();
+            var rd = editor?.reactorDraggable_0;
+            if (rd == null) return lines;
+            foreach (int index in InputPanels(editor)) lines.Add(InputLine(index));
+            foreach (int index in rd.class485_1.Keys) lines.Add(OutputLine(index));
+            lines.RemoveAll(string.IsNullOrEmpty);
+            return lines;
         }
 
         /// <summary>Backspace on an output line: the game's right-click on that output panel

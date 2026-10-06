@@ -2,11 +2,11 @@
 
 A screen-reader accessibility mod for [SpaceChem](https://store.steampowered.com/app/92800/SpaceChem/)
 
-## 0. WIP
+## WIP
 
-This is work-in-progress. Pipeline and research have been verified and are at least usable; defense has largely been untouched.
+This is work-in-progress. Pipeline and research have been verified and are at least usable; defense works but likely still needs some love.
 
-## 1. Manual
+## Manual
 
 The manual walks you through the first two tutorials and lists every key:
 [docs/manual.html](docs/manual.html). It also ships with the mod, in the game folder as

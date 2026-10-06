@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpeechChem Manual</title>
+<style>
+  :root { --fg: #1d1d1f; --bg: #fdfdfb; --muted: #55554f; --rule: #d8d6cf; --code: #f1efe8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg: #e9e7e1; --bg: #171716; --muted: #a9a69c; --rule: #3a3935; --code: #24231f; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.6 system-ui, sans-serif; }
+  main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  h1, h2, h3 { line-height: 1.25; }
+  h2 { margin-top: 2.5rem; border-bottom: 1px solid var(--rule); padding-bottom: .3rem; }
+  code, kbd, samp { background: var(--code); border-radius: 3px; padding: 0 .25em; font-size: .95em; }
+  .transcript { background: var(--code); border-left: 3px solid var(--rule); padding: .5rem 1rem; margin: .75rem 0; }
+  .transcript p { margin: .2rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid var(--rule); padding: .35rem .5rem; text-align: left; vertical-align: top; }
+  th { background: var(--code); }
+  .note { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>SpeechChem Manual</h1>
+
+<p>Welcome! This guide walks you through the first two SpaceChem tutorials with SpeechChem, and is
+meant to replace the shoddy in-game version. A key reference for everything else is at the end.</p>
+
+<nav aria-label="Contents">
+<h2>Contents</h2>
+<ol>
+  <li><a href="#basics">The basics</a></li>
+  <li><a href="#screen">The reactor screen</a></li>
+  <li><a href="#tutorial1">Tutorial 1: Of Pancakes and Spaceships</a></li>
+  <li><a href="#tutorial2">Tutorial 2: Slightly Different</a></li>
+  <li><a href="#keys">Key reference</a></li>
+</ol>
+</nav>
+
+<h2 id="basics">1. The basics</h2>
+
+<h3>1.1 The grid</h3>
+
+<p>SpaceChem's research levels, which is what you start with, are played on a 10 by 8 grid.
+Coordinates are spoken column first, then row, counting from 1 at the top left: (1, 1) is the top-left
+corner, (10, 8) the bottom-right one. For a start, think of the grid as three zones:</p>
+
+<ul>
+  <li><strong>Inputs</strong>, on the left: alpha (α) from (1, 1) to (4, 4), beta (β) from (1, 5) to (4, 8).
+    New molecules appear here.</li>
+  <li><strong>Outputs</strong>, on the right: psi (ψ) from (7, 1) to (10, 4), omega (ω) from (7, 5) to (10, 8).
+    Finished molecules leave from here.</li>
+  <li><strong>The chamber</strong>: the narrow vertical strip in between, columns 5 and 6.</li>
+</ul>
+
+<p>There are exceptions to the above, but I'm sure you'll figure them out. When you cross from one zone
+into another, the grid tells you ("alpha input", "chamber", "psi output").</p>
+
+<h3>1.2 Waldos</h3>
+
+<p>You don't actually get to do any chemistry. Instead, you control two waldos: robotic arms that travel
+across the grid under your guidance, one red and one blue. The basic idea is simple: grab atoms, make
+chemistry happen, deliver them to the output zones, profit. Each waldo follows only the instructions
+of its own colour.</p>
+
+<p>Each cell can hold one arrow and one non-arrow instruction per colour. When a waldo passes over a
+cell, its instruction runs first, then its arrow.</p>
+
+<h2 id="screen">2. The reactor screen</h2>
+
+<p>The reactor screen is split into stops; Tab and Shift+Tab move between them, and they wrap.</p>
+
+<ol>
+  <li><strong>Grid</strong>: where you start. Arrows move one cell. Each cell reads its coordinates
+    first, then the zone when you cross into a new one, then what's in it: instructions by colour,
+    and during a run the waldos and atoms. An empty cell reads just its coordinates.</li>
+  <li><strong>Palette</strong>: the instructions this level allows, each with its key letter
+    ("E, grab drop"). You rarely need to visit it: the letters work straight from the grid.</li>
+  <li><strong>Layers</strong>: which colour is active (the colour new instructions get), and whether each
+    colour is visible or locked.</li>
+  <li><strong>Tools</strong>: the toolbar: stop, step, the play buttons, undo and redo, the periodic
+    table and so on.</li>
+  <li><strong>Molecules</strong>: the inputs and outputs, with what each one takes or wants and how many
+    you've delivered ("psi output: Oxygen, O2, 0 of 10"). Enter opens a molecule.</li>
+  <li><strong>Status</strong>: the level's progress.</li>
+  <li><strong>Tutorial</strong>: the current tutorial step, only while there is one. Ctrl+T repeats it from
+    anywhere. The cell the tutorial wants reads "highlighted".</li>
+  <li><strong>Run log</strong>: every event of the last run, grouped by cycle; it appears once a run has
+    logged something.</li>
+</ol>
+
+<h2 id="tutorial1">3. Tutorial 1: Of Pancakes and Spaceships</h2>
+
+<h3>3.1 Where things start</h3>
+
+<p>Your waldos start at (5, 2) and (5, 7). Shift+R and Shift+B read where they are, and Ctrl+Shift+R /
+Ctrl+Shift+B also move your cursor there. They'll generally start there unless you move the start
+markers around, which you don't need to do here. Jump to the red waldo and you'll hear
+<samp>5, 2, red start left</samp>. It starts moving left. Hopefully it's now clear why the tutorial first
+asks you to go to (4, 2), one cell to the left, and place the "in" instruction, which you do with
+<kbd>R</kbd>. When the waldo passes over it, a new molecule appears in the input zone, and the waldo goes
+on its merry way.</p>
+
+<h3>3.2 The molecule</h3>
+
+<p>Where does said molecule appear, you ask? Press <kbd>M</kbd> on any cell of the alpha zone, and an
+overlay of the input opens with your cursor on the molecule. Here it says <samp>Oxygen, O2</samp>,
+followed by <samp>2, 2, Oxygen, double bond right</samp>. That tells us a few things:</p>
+
+<ul>
+  <li>We're picking up oxygen (duh). That's what we want: the Molecules stop says psi wants 10 of it,
+    <samp>psi output: Oxygen, O2, 0 of 10</samp>.</li>
+  <li>The atom has a double bond to its neighbour. Ignore that bit for now.</li>
+  <li>The bond points right.</li>
+</ul>
+
+<p>Pressing Right then gets you <samp>3, 2, Oxygen, double bond left</samp>. So the molecule runs
+west to east from (2, 2) to (3, 2), two oxygen atoms doubly bonded to each other. Escape closes the
+overlay.</p>
+
+<h3>3.3 Building the program</h3>
+
+<p>Having spawned the molecule, we need to go and grab it. The tutorial helpfully suggests a grab / drop
+instruction (<kbd>E</kbd>) at (3, 2). Why there? Because after the "in" at (4, 2), your waldo is still
+moving left, and (3, 2) is the next cell, the one with the right-hand oxygen in it.</p>
+
+<p>Having picked up the molecule by one end (move one atom and the other comes along, since they're
+bonded), we need to turn around and deliver it to the output zone in the top-right. The tutorial
+suggests an arrow down (<kbd>S</kbd>) at (2, 2). When the waldo hits it, it turns and heads down the
+second column, (2, 2) to (2, 3) to (2, 4), and two rows down is plenty, so the next stop is an arrow right
+(<kbd>D</kbd>) at (2, 4).</p>
+
+<p>Our waldo now heads right, out of the alpha input, through the chamber and into the psi output. For
+demonstration purposes, the tutorial has you place a rotate counter-clockwise instruction
+(<kbd>G</kbd>) at (6, 4), right on that path. It does what you think: when a waldo holding a molecule
+crosses it, the molecule turns 90 degrees to the left.</p>
+
+<p>Next comes an arrow up (<kbd>W</kbd>) at (9, 4). The goal in every level is a loop that keeps
+delivering the molecule you want, over and over. Matching what we did on the left, it shouldn't come as
+a surprise that we then turn left (<kbd>A</kbd>) at (9, 2). But before we head home&hellip;</p>
+
+<p>To make a delivery, we must:</p>
+
+<ul>
+  <li>drop the molecule so that all of it is inside the output zone, and</li>
+  <li>pass over an output instruction for that zone.</li>
+</ul>
+
+<p>Which is exactly what the tutorial asks for: a grab / drop (<kbd>E</kbd>) at (8, 2) and an output
+(<kbd>F</kbd>) at (7, 2).</p>
+
+<h3>3.4 Checking the path</h3>
+
+<p>Congratulations! You've just built a loop for your red sla&mdash;I mean, friendly machine. To hear
+where and how it will travel, press <kbd>Ctrl+R</kbd>:</p>
+
+<div class="transcript">
+  <p>red waldo path</p>
+  <p>5, 2, start, heading left, 1 of 11</p>
+  <p>4, 2, in alpha, 2 of 11</p>
+  <p>3, 2, grab drop, 3 of 11</p>
+  <p>2, 2, arrow down, 4 of 11</p>
+  <p>2, 4, arrow right, 5 of 11</p>
+  <p>6, 4, rotate counter-clockwise, 6 of 11</p>
+  <p>9, 4, arrow up, 7 of 11</p>
+  <p>9, 2, arrow left, 8 of 11</p>
+  <p>8, 2, grab drop, 9 of 11</p>
+  <p>7, 2, out psi, 10 of 11</p>
+  <p>5, 2, loops back onto the path, 11 of 11</p>
+</div>
+
+<p>Enter on a line jumps the cursor to that cell; Escape closes the list.</p>
+
+<h3>3.5 Stepping through the run</h3>
+
+<p>Oh, the beauty of the process, the elegance, the perfection of the machi&mdash;I mean, right. We
+probably want to run the reactor now. Any of the keys 1 to 4 will do that, but first, allow me to
+talk about stepping.</p>
+
+<p>Press <kbd>0</kbd> and the reactor runs to the next interesting event, then pauses. An event is
+interesting if it's more than plain movement: a molecule coming in, a grab or drop, a turn, a rotation,
+an output, a waldo hitting the wall. What you hear is what happened in the cycle that just ran.
+Press 0 now:</p>
+
+<div class="transcript">
+  <p>Cycle 1</p>
+  <p>red: in alpha, Oxygen, O2 at 2, 2</p>
+</div>
+
+<p>Arrow around and you'll find the red waldo at <samp>3, 2, red grab drop, red waldo, facing left,
+Oxygen, double bond left</samp>. In other words, it passed the "in", which brought the molecule in, and
+it's still heading left.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 2</p>
+  <p>red: grabbed Oxygen, O2</p>
+</div>
+
+<p>The waldo is at (2, 2) now, right after the grab: <samp>2, 2, red arrow down, red waldo, facing left,
+Oxygen, double bond left</samp>. Importantly, it brought the other atom with it. Arrow to (1, 2) and
+you'll hear <samp>1, 2, Oxygen, double bond right</samp>. If the waldo kept going left, that left-hand
+atom would try to leave the reactor. That's generally undesirable, and you will be sad, because the
+reactor will throw an error and stop.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 3</p>
+  <p>red: heading down</p>
+</div>
+
+<p>The waldo is now at <samp>2, 3, red waldo, facing down, Oxygen, double bond left</samp>.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 4</p>
+  <p>blue: hit the wall at 1, 7</p>
+</div>
+
+<p>Ah, yes. Your other waldo! Both waldos run at the same time. Since you didn't tell the blue one to do
+anything special, it set off left from (5, 7) (Shift+B to check) and kept going until it smacked into
+the wall. It will now sit there for the rest of the run and feel left out.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 5</p>
+  <p>red: heading right</p>
+</div>
+
+<p>Pretty standard stuff at this point. The waldo is at <samp>3, 4, red waldo, facing right, Oxygen,
+double bond left</samp>.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 9</p>
+  <p>red: rotate counter-clockwise, rotated Oxygen, O2</p>
+</div>
+
+<p>Something interesting! Go check it out: the waldo is at <samp>6, 4, red rotate counter-clockwise,
+red waldo, facing right, Oxygen, double bond down</samp>, and as the bond suggests, the rotation
+happened. The oxygen now sits at (6, 4) and (6, 5). Note the cycle numbers jumped from 5 to 9: cycles
+without events pass silently.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 13</p>
+  <p>red: heading up</p>
+</div>
+
+<p>Rotating the molecule means we now have to either rotate it back or head up, as we just did. Remember,
+the whole molecule must fit inside the output zone. Psi spans (7, 1) to (10, 4), so entering it on row 4
+with one oxygen hanging below on row 5 leaves that atom dangling in omega's territory. Anyway, we're
+at (9, 3) now, heading up.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 15</p>
+  <p>red: heading left</p>
+</div>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 16</p>
+  <p>red: dropped Oxygen, O2</p>
+</div>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 17</p>
+  <p>red: out psi</p>
+  <p>Research Output ψ: Oxygen, O2, 1 of 10</p>
+</div>
+
+<p>And there we have it! We just have to press 0 about twenty more times to&hellip;</p>
+
+<p>I'm kidding. You can keep stepping with 0, but if you're bored, press 1 to hear the events in real
+time at the slowest speed. Press 4 to race through at top speed, which completes the level. 2 and 3
+are for when you want to skip some cycles without being spammed by speech: events are only spoken at
+speed 1 and while stepping. Everything is always in the Run log, though.</p>
+
+<p>And with that, level 1 is complete!</p>
+
+<h3>3.6 When things go wrong</h3>
+
+<p>Sooner or later, a reactor of yours will crash. The tutorial even warns you: "If an atom collides with
+another atom or the side of the reactor the simulation will be stopped!" Let's do it on purpose.</p>
+
+<p>Go to (2, 2) and press <kbd>Delete</kbd> to remove the arrow down (with red active; Delete removes the
+active colour's instructions). Now the waldo grabs the oxygen and just keeps going left. Step with
+<kbd>0</kbd>:</p>
+
+<div class="transcript">
+  <p>Cycle 1</p>
+  <p>red: in alpha, Oxygen, O2 at 2, 2</p>
+  <p>Cycle 2</p>
+  <p>red: grabbed Oxygen, O2</p>
+</div>
+
+<p>So far, so good. Press 0 again:</p>
+
+<div class="transcript">
+  <p>Paused</p>
+  <p>Reaction Error</p>
+  <p>Atoms cannot leave the bounds of a reactor. The reaction will now be stopped.</p>
+  <p>At 1, 2</p>
+  <p>Okay, button</p>
+</div>
+
+<p>The waldo dragged the molecule into the wall, and the left-hand oxygen tried to leave the reactor.
+The game pauses and shows an error box: what went wrong, and the cell where it happened. Press Enter
+on Okay and the run stops. Everything resets: molecules gone, waldos back at their starts. So how do
+you find out what the reactor looked like at the moment of the crash?</p>
+
+<p>The <strong>Run log</strong>. It's the last stop, so Shift+Tab from the grid gets you there:</p>
+
+<div class="transcript">
+  <p>Run log, Cycle 4, Paused, 1 of 3</p>
+</div>
+
+<p>The log holds every event of the last run, grouped by cycle. Up and Down move through the events,
+Ctrl+Up and Ctrl+Down jump a whole cycle, and Home and End go to the start and end of the log. When a
+cycle has several events, each says its position in it. Arrow up through it and you'll hear the whole story:</p>
+
+<div class="transcript">
+  <p>Cycle 1, red: in alpha, Oxygen, O2 at 2, 2</p>
+  <p>Cycle 2, red: grabbed Oxygen, O2</p>
+  <p>Cycle 4, Paused, 1 of 3</p>
+  <p>Reaction Error: Atoms cannot leave the bounds of a reactor. The reaction will now be stopped., button, 2 of 3</p>
+  <p>Stopped, 3 of 3</p>
+</div>
+
+<p>Notice the error is a button. Press Enter on it and you get the reactor <em>exactly as it was when it
+crashed</em>, frozen, with the cursor on the cell the error box marked:</p>
+
+<div class="transcript">
+  <p>Reactor at cycle 4</p>
+  <p>1, 2, alpha input, red waldo, facing left, Oxygen, double bond left, error here</p>
+</div>
+
+<p>There's our culprit: the waldo is at the left edge, still facing left, holding an oxygen whose bond
+points left, out of the reactor. Its partner had nowhere to go. You can arrow around this frozen copy
+like the real grid (every instruction is there too, all layers), and Shift+Backspace gives a cell's
+details:</p>
+
+<div class="transcript">
+  <p>red waldo, holding Oxygen, O2. Oxygen, atomic number 8, Maximum Bonds: 2</p>
+</div>
+
+<p>Escape takes you back to the log. The log is cleared when you start a new run, so take a look before
+you do.</p>
+
+<p>Now put the arrow back: <kbd>Ctrl+Z</kbd> undoes the delete, or press <kbd>S</kbd> on (2, 2).</p>
+
+<h2 id="tutorial2">4. Tutorial 2: Slightly Different</h2>
+
+<p>This time the red waldo gets the day off. You'll take hydrogen from the beta input and deliver 10 of
+it to the omega output, using the blue waldo. The tutorial (and this guide) walks you through half the
+program and then leaves the rest to you.</p>
+
+<h3>4.1 The molecule</h3>
+
+<p>Move to any cell of the beta zone, (1, 5) to (4, 8), and press <kbd>M</kbd>. You'll hear
+<samp>Hydrogen, H2</samp>, and the cursor lands on <samp>2, 6, Hydrogen, single bond right</samp>.
+Right from there gives <samp>3, 6, Hydrogen, single bond left</samp>. So: two hydrogen atoms, side by
+side from (2, 6) to (3, 6), joined by a single bond. The Molecules stop confirms what omega wants:
+<samp>omega output: Hydrogen, H2, 0 of 10</samp>.</p>
+
+<h3>4.2 Going blue</h3>
+
+<p>The blue waldo behaves exactly like the red one, but follows only blue instructions.</p>
+
+<p>Instructions of the other colour don't exist as far as a waldo is concerned. The red waldo can run
+straight over blue instructions and nothing happens, and the other way round. So the two colours can
+share cells and even whole paths without getting in each other's way. (The waldos themselves don't
+collide either. Atoms do.)</p>
+
+<p>The tutorial's first step only checks that the blue start is at (5, 7). It is: that's where it starts
+anyway. Shift+B says so.</p>
+
+<h3>4.3 The tutorial's half</h3>
+
+<p>Our blue waldo heads left from (5, 7), so the first instruction goes at (3, 7): an input. Press
+<kbd>R</kbd> there and you'll hear <samp>red in alpha</samp>. Wrong on both counts: we want a blue
+instruction, and our hydrogen comes from beta. There are no separate keys for those: you place the
+instruction and change it. Two ways:</p>
+
+<ul>
+  <li><strong>The context menu</strong>: Backspace on the cell opens the instruction's menu (the game's
+    right-click). Its first row is Colour: Right to Blue Layer, then Enter. Down to the Input type row,
+    Right to in beta, then Enter. The menu stays open while you change things; Escape closes it.</li>
+  <li><strong>The quick way</strong>: Alt+Down walks the instruction's settings, and Alt+Right changes the
+    one you're on. Alt+Down says <samp>Colour, red</samp>; Alt+Right makes it <samp>blue</samp>.
+    Alt+Down again says <samp>Input type, in alpha</samp>; Alt+Right makes it <samp>in beta</samp>.</li>
+</ul>
+
+<p>Changing the colour of every single instruction gets old fast. Which colour new instructions get
+is the <em>active</em> colour, and it's red until you switch it: press <kbd>L</kbd> and you'll hear
+<samp>blue</samp>. (The game uses Tab for this, but Tab moves between stops here.) From now on, every
+instruction you place is blue.</p>
+
+<p>Next, the waldo needs to get up to the molecule. Place an arrow up (<kbd>W</kbd>) at (2, 7), then
+an arrow right (<kbd>D</kbd>) at (2, 6). The waldo passes (3, 7) and gets the molecule, turns up at
+(2, 7), and at (2, 6) turns right, straight into the hydrogen's row.</p>
+
+<p>Last of the tutorial's steps: a grab / drop (<kbd>E</kbd>) at (3, 6). The waldo grabs the right-hand
+hydrogen there, with its partner trailing behind at (2, 6).</p>
+
+<p>Ctrl+B to see where that gets you:</p>
+
+<div class="transcript">
+  <p>blue waldo path</p>
+  <p>5, 7, start, heading left, 1 of 6</p>
+  <p>3, 7, in beta, 2 of 6</p>
+  <p>2, 7, arrow up, 3 of 6</p>
+  <p>2, 6, arrow right, 4 of 6</p>
+  <p>3, 6, grab drop, 5 of 6</p>
+  <p>10, 6, stops at the wall, 6 of 6</p>
+</div>
+
+<p>Not a loop yet: the waldo carries the hydrogen off to the right and stops at the wall.</p>
+
+<h3>4.4 Stepping through it</h3>
+
+<p>Press <kbd>0</kbd>. Nothing happens in cycle 1 (the waldo just moves), so the first stop is:</p>
+
+<div class="transcript">
+  <p>Cycle 2</p>
+  <p>blue: in beta, Hydrogen, H2 at 2, 6</p>
+</div>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 3</p>
+  <p>blue: heading up</p>
+</div>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 4</p>
+  <p>blue: heading right</p>
+  <p>red: hit the wall at 1, 2</p>
+</div>
+
+<p>The roles are reversed from last time: now it's the red waldo, with no instructions of its own,
+that wanders left from (5, 2) and smacks into the wall. Notice the blue waldo passed right over the
+hydrogen at (2, 6) without picking it up. A waldo only grabs when it hits a grab instruction.</p>
+
+<p>Press 0 again:</p>
+
+<div class="transcript">
+  <p>Cycle 5</p>
+  <p>blue: grabbed Hydrogen, H2</p>
+</div>
+
+<p>And that's where the tutorial (and we) let go of your hand. Off you go!</p>
+
+<h2 id="keys">5. Key reference</h2>
+
+<h3>5.1 Keys on every screen</h3>
+
+<table>
+  <thead><tr><th>Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Tab / Shift+Tab</td><td>Next / previous stop (wraps)</td></tr>
+    <tr><td>Up / Down / Left / Right</td><td>Move within the stop</td></tr>
+    <tr><td>Enter, numpad Enter</td><td>Activate the focused item</td></tr>
+    <tr><td>Home / End</td><td>First / last item of the stop (grid rows: row start / end; run log: the whole log's ends)</td></tr>
+    <tr><td>Ctrl+Up / Ctrl+Down</td><td>Previous / next region (a journal issue, a run-log cycle); on grids, skip cells that read the same</td></tr>
+    <tr><td>Page Up / Page Down</td><td>Sliders only: large step up / down</td></tr>
+    <tr><td>Backspace</td><td>Secondary action (the right-click menu, Delete on a profile)</td></tr>
+    <tr><td>Shift+Backspace</td><td>Details of the focused item (the game's tooltip, atom info)</td></tr>
+    <tr><td>Escape</td><td>Back / cancel / close</td></tr>
+    <tr><td>F6</td><td>Typing echo on / off</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 Reactor: moving and reading</h3>
+
+<table>
+  <thead><tr><th>Key</th><th>Where</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Arrows</td><td>Grid</td><td>Move one cell; "crossed quantum junction" on quantum levels</td></tr>
+    <tr><td>Home / End</td><td>Grid</td><td>Start / end of the row</td></tr>
+    <tr><td>Ctrl+arrows</td><td>Grid</td><td>Skip cells that read the same as this one; stops at zone boundaries</td></tr>
+    <tr><td>C</td><td>Grid</td><td>Coordinates</td></tr>
+    <tr><td>Shift+Backspace</td><td>Grid</td><td>Cell details: waldo state, atom info, the game's tooltip</td></tr>
+    <tr><td>Shift+Backspace</td><td>Palette</td><td>The instruction's description</td></tr>
+    <tr><td>M</td><td>Grid</td><td>The molecule of the zone under the cursor, in the molecule viewer</td></tr>
+    <tr><td>P</td><td>anywhere</td><td>Status</td></tr>
+    <tr><td>Ctrl+T</td><td>anywhere</td><td>Repeat the tutorial step</td></tr>
+    <tr><td>[ / ]</td><td>anywhere</td><td>Previous / next category: Instructions, Inputs, Outputs, Hardware, Waldos</td></tr>
+    <tr><td>, / .</td><td>anywhere</td><td>Previous / next item of the category, in reading order (moves the grid cursor; an instruction item arms it)</td></tr>
+    <tr><td>Shift+R / Shift+B</td><td>anywhere</td><td>Red / blue waldo: its start when stopped; cell, heading, holding, waiting while running</td></tr>
+    <tr><td>Ctrl+Shift+R / Ctrl+Shift+B</td><td>anywhere</td><td>The same, and move the grid cursor there</td></tr>
+    <tr><td>Ctrl+R / Ctrl+B</td><td>anywhere</td><td>Trace the red / blue waldo's path as a list</td></tr>
+    <tr><td>Enter</td><td>Molecules</td><td>Open the molecule (a chooser first when there are several)</td></tr>
+  </tbody>
+</table>
+
+<h3>5.3 Reactor: editing</h3>
+
+<table>
+  <thead><tr><th>Key</th><th>Where</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Q W E R T Y U I, A S D F G H J K</td><td>Grid</td><td>Place that palette slot's instruction at the cursor in the active colour, replacing what holds that slot of the cell</td></tr>
+    <tr><td>Enter</td><td>Palette</td><td>Arm the instruction</td></tr>
+    <tr><td>Enter</td><td>Grid</td><td>Place the armed instruction</td></tr>
+    <tr><td>L</td><td>anywhere</td><td>Switch the active colour</td></tr>
+    <tr><td>Shift+Space</td><td>Grid</td><td>Mark a rectangle's first corner; press again on the opposite corner to finish it ("3 by 2 from 2, 2 to 4, 3", always top-left to bottom-right). Marking again starts a new rectangle; there is only one. Its cells read "Marked" first</td></tr>
+    <tr><td>Ctrl+Space</td><td>Grid</td><td>Clear the marked rectangle, or a first corner still waiting for its pair; silent when nothing is marked</td></tr>
+    <tr><td>Shift+Up / Shift+Down</td><td>Grid</td><td>Pick among the cell's instructions of the picker colour (wraps). The picker colour starts as the active colour on every cell</td></tr>
+    <tr><td>Shift+Left / Shift+Right</td><td>Grid</td><td>Switch the picker colour for this cell only (the active colour stays) and name its first instruction</td></tr>
+    <tr><td>Alt+Up / Alt+Down</td><td>Grid</td><td>The picked instruction's parameters: colour, direction, grab type and so on (wraps)</td></tr>
+    <tr><td>Alt+Left / Alt+Right</td><td>Grid</td><td>Change that parameter's value (wraps), exactly as the context menu would; a colour change moves the instruction to the other colour</td></tr>
+    <tr><td>Delete</td><td>Grid</td><td>Remove the active colour's instructions in the cell, or in the whole marked rectangle while the cursor is inside it</td></tr>
+    <tr><td>Ctrl+X / Ctrl+C / Ctrl+V</td><td>Grid</td><td>Cut / copy / paste the active colour's instructions (cut and copy take the whole marked rectangle while the cursor is inside it; a paste keeps the layout with its top-left at the cursor). Start markers move only by cut and paste and are never deleted or copied. Hardware (bonders, sensors, tunnels, lasers) moves only by cut and paste: Ctrl+X takes it when the active colour has nothing there (lock a layer to reach hardware under instructions); a paste that doesn't fit stays on the clipboard</td></tr>
+    <tr><td>Backspace</td><td>Grid</td><td>Context menu: the instruction's right-click menu, or the grid menu on an empty cell. Colour and icon-variant items apply on Enter and leave the menu open</td></tr>
+    <tr><td>Ctrl+Z / Ctrl+Y</td><td>anywhere</td><td>Undo / redo; the mod says what changed</td></tr>
+  </tbody>
+</table>
+
+<p class="note">The picker keys (Shift and Alt with arrows) do nothing when the colour they would act on
+has no instruction in the cell.</p>
+
+<h3>5.4 Reactor: running</h3>
+
+<table>
+  <thead><tr><th>Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Space</td><td>Run; pauses when running</td></tr>
+    <tr><td>Backquote</td><td>Stop</td></tr>
+    <tr><td>1 / 2 / 3 / 4</td><td>Play at speed 1 to 4</td></tr>
+    <tr><td>0</td><td>Step to the next event of the open reactor</td></tr>
+    <tr><td>Ctrl+0</td><td>Step to the next event of any reactor</td></tr>
+    <tr><td>Escape</td><td>Research levels: stops a run; when stopped, opens the exit prompt. Production, defense and sandbox: returns to the pipeline, and the run keeps going</td></tr>
+  </tbody>
+</table>
+
+<p>Run events (grabs, drops, bonds, sensor hits, outputs, errors) are always logged in the Run log.
+They are spoken only at speed 1 and while stepping, and inside a reactor only that reactor's events.
+Run state changes are always spoken.</p>
+
+<h3>5.5 Pipeline editor</h3>
+
+<p>Most keys are shared with the reactor. These are the additions:</p>
+
+<table>
+  <thead><tr><th>Key</th><th>Where</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Enter</td><td>Map</td><td>Start drawing from a pipe end, open a reactor, or place the armed item</td></tr>
+    <tr><td>M</td><td>Components, on a port</td><td>The port's molecule in the molecule viewer</td></tr>
+    <tr><td>Escape</td><td>while armed</td><td>Cancel the armed item</td></tr>
+    <tr><td>Ctrl+X</td><td>Components or Map</td><td>Cut the component</td></tr>
+    <tr><td>Ctrl+C</td><td>Components or Map</td><td>Copy the component</td></tr>
+    <tr><td>Ctrl+V</td><td>Map</td><td>Move the cut component here, or place a copy (the copy stays on the clipboard)</td></tr>
+    <tr><td>Delete</td><td>Components or Map</td><td>Delete the component</td></tr>
+    <tr><td>Delete</td><td>Shelf, on a saved design</td><td>Delete the design</td></tr>
+    <tr><td>Backspace</td><td>Components or Map</td><td>Component menu: Reset Pipes, the reactor's notes, Save to Toolbox, Delete</td></tr>
+    <tr><td>Escape</td><td>anywhere</td><td>Exit prompt</td></tr>
+  </tbody>
+</table>
+
+<p>The Shelf lists the stock components, then your saved reactor designs (with a Delete button to the
+right of each). Enter arms one; Enter on the map places it. Save a design with Save to Toolbox from a
+reactor's menu.</p>
+
+<h3>5.6 Drawing a pipe</h3>
+
+<table>
+  <thead><tr><th>Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Arrows</td><td>Extend or retract the pipe</td></tr>
+    <tr><td>P</td><td>Pipe status</td></tr>
+    <tr><td>Enter / Escape / leaving the map</td><td>Finish</td></tr>
+  </tbody>
+</table>
+
+<h3>5.7 Output notes</h3>
+
+<p>A note is up to three molecules on 4 by 4 grids. Open it from a reactor's menu on the pipeline, or
+with Backspace on an output line in the reactor's Molecules stop.</p>
+
+<table>
+  <thead><tr><th>Key</th><th>Where</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Enter</td><td>Palette</td><td>Arm an atom</td></tr>
+    <tr><td>Enter / Ctrl+V</td><td>Grid</td><td>Place the armed atom (it bonds singly to its neighbours)</td></tr>
+    <tr><td>Delete</td><td>Grid</td><td>Remove the atom</td></tr>
+    <tr><td>Ctrl+C / Ctrl+X</td><td>Grid</td><td>Arm the atom</td></tr>
+    <tr><td>Backspace</td><td>Grid</td><td>Bonds to each neighbouring atom, and Delete</td></tr>
+    <tr><td>Escape, or Done</td><td>anywhere</td><td>Close and keep the note (the game has no cancel; use Undo)</td></tr>
+  </tbody>
+</table>
+
+</main>
+</body>
+</html>

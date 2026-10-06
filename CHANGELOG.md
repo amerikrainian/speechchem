@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.0.7
+
+- Rectangle selection now works by having you place corners with shift+space, Ctrl+space clears the rectangle.
+- Shift left/right cycle through the instruction colors on the given cell. Shift up/down cycle over the instructions of that color. Alt up/down cycle through instruction parameters, e.g., colors, output type. Alt left/right change parameter values.
+- We have a draft of the manual now guiding you through the first two tutorials.
+
 ## V0.0.6
 
 - Mutually exclusive instruction parameter options are now rendered as horizontal rows as opposed to one vertical list.

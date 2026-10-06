@@ -1,7 +1,7 @@
 # Build the distributable mod zip: the Release build's shipping file set laid out as the
 # game folder - SpaceChem.exe.config (replaces the stock one), SpeechChem.dll,
 # SpeechChem.Module.dll, Mono.Cecil.dll, 0Harmony.dll, prism.dll (x86), steam_appid.txt, and the
-# SpeechChem\ folder (namemap.tsv + locale\).
+# SpeechChem\ folder (namemap.tsv + locale\ + manual.html).
 # The zip root IS the game folder, so an installer (or a manual user) extracts it straight into the
 # game dir. A Release build carries no dev tooling (no dev server, no Mono.CSharp, no probe).
 #
@@ -28,11 +28,12 @@ $hostOutDir = Join-Path $scriptDir "bin\Release"
 $moduleOutDir = Join-Path $scriptDir "module\bin\Release"
 $nameMap = Join-Path $scriptDir "module\obj\Release\namemap.tsv"
 $localeDir = Join-Path $scriptDir "module\assets\locale"
+$manual = Join-Path $scriptDir "docs\manual.html"
 $prismDll = Join-Path $scriptDir "third_party\prism\x86\prism.dll"
 $configFile = Join-Path $scriptDir "deploy\SpaceChem.exe.config"
 $zipPath = Join-Path $releaseDir "SpeechChem-v$version.zip"
 
-foreach ($required in @($prismDll, $configFile, $localeDir, (Join-Path $scriptDir "game\SpaceChem-deob.exe"))) {
+foreach ($required in @($prismDll, $configFile, $localeDir, $manual, (Join-Path $scriptDir "game\SpaceChem-deob.exe"))) {
     if (-not (Test-Path $required)) {
         throw "Required file not found: $required (the module build needs game\SpaceChem-deob.exe - run tools\prepare-game.ps1)"
     }
@@ -88,6 +89,7 @@ try {
     # Packaging pattern adapted from SayTheSpire2:
     # https://github.com/bradjrenshaw/say-the-spire2
     Copy-Item -Path $localeDir -Destination (Join-Path $modDir "locale") -Recurse
+    Copy-Item -LiteralPath $manual -Destination $modDir
 
     if (Test-Path $zipPath) {
         Remove-Item -LiteralPath $zipPath -Force

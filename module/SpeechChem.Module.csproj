@@ -99,7 +99,9 @@
     </ItemGroup>
     <Copy SourceFiles="@(LocaleFiles)"
           DestinationFiles="@(LocaleFiles->'$(GameDir)\SpeechChem\locale\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Message Importance="high" Text="SpeechChem.Module + namemap + locale deployed to $(GameDir)" />
+    <!-- The player's manual, next to the mod's other files (the release zip ships it there too). -->
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\docs\manual.html" DestinationFolder="$(GameDir)\SpeechChem" />
+    <Message Importance="high" Text="SpeechChem.Module + namemap + locale + manual deployed to $(GameDir)" />
   </Target>
 
 </Project>

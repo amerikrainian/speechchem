@@ -117,7 +117,7 @@ Everything is **x86** (host, module, tests — the module references the 32-bit 
 host must be 32-bit too). BUILD PREREQUISITE: `game/SpaceChem-deob.exe` (run `tools\prepare-game.ps1`).
 A Debug build deploys: `SpeechChem.dll`, `SpeechChem.Module.dll`, `0Harmony.dll`, `Mono.Cecil.dll`,
 `prism.dll` (x86), `SpaceChem.exe.config`, `Mono.CSharp.dll` (dev REPL), `steam_appid.txt`,
-`SpeechChem\namemap.tsv`, `SpeechChem\locale\`. The host dll is file-locked while the game runs; the
+`SpeechChem\namemap.tsv`, `SpeechChem\locale\`, `SpeechChem\manual.html` (the player's manual, from `docs/manual.html`). The host dll is file-locked while the game runs; the
 module is not (hot reload). Uninstall = restore `SpaceChem.exe.config.vanilla` over the config.
 Release zip = the same set minus Mono.CSharp. `create-release.ps1 vX.Y.Z` = gh release with the zip,
 the installer exe when built, and the tag's CHANGELOG.md section as notes.

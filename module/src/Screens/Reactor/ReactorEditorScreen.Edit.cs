@@ -145,7 +145,9 @@ namespace SpeechChem.Screens.Reactor
         // It is independent of the cursor: cells inside read "Marked" first, and the edit keys act on
         // the whole rectangle while the cursor is inside it, else on the cursor's cell alone. Spoken
         // top-left to bottom-right whichever corners were marked. Ctrl+Space unmarks it (or the
-        // corner waiting for its pair) — "Cleared", or nothing at all when nothing is marked. ----
+        // corner waiting for its pair) — "Cleared", or nothing at all when nothing is marked. A cut,
+        // copy or delete that took the rectangle, and any paste that lands something, clear it
+        // silently (user rule 2026-10-06). ----
 
         private Vector2i? _markFirst, _markSecond;
 
@@ -178,6 +180,10 @@ namespace SpeechChem.Screens.Reactor
             Speech.Tts.Speak(Loc.T("reactor.mark.cleared"), interrupt: true);
         }
 
+        private void DropMark() => _markFirst = _markSecond = null;
+
+        private bool CursorInRectangle => _markSecond.HasValue && IsMarked(_cursorX, _cursorY);
+
         private static string CellName(int x, int y) => Loc.T("reactor.cell", new { x = x + 1, y = y + 1 });
 
         /// <summary>The marked cells' bounds: the rectangle, or the first corner alone while the
@@ -201,7 +207,7 @@ namespace SpeechChem.Screens.Reactor
         private List<Vector2i> TargetCells()
         {
             var cells = new List<Vector2i>();
-            if (_markSecond.HasValue && IsMarked(_cursorX, _cursorY))
+            if (CursorInRectangle)
             {
                 MarkBounds(out int x0, out int y0, out int x1, out int y1);
                 for (int y = y0; y <= y1; y++)
@@ -222,6 +228,7 @@ namespace SpeechChem.Screens.Reactor
             if (!OnGrid) return;
             var r = Model;
             if (r == null || !CanEdit()) return;
+            bool fromRectangle = CursorInRectangle;
             var victims = new List<Instruction>();
             bool sawStart = false;
             foreach (var cell in TargetCells())
@@ -248,6 +255,7 @@ namespace SpeechChem.Screens.Reactor
                     Forget(i);
                 }
             }
+            if (fromRectangle) DropMark();
             Speech.Tts.Speak(Loc.T("reactor.edit.deleted", new { what = string.Join(", ", labels.ToArray()) }), interrupt: true);
         }
 
@@ -281,6 +289,7 @@ namespace SpeechChem.Screens.Reactor
             var r = Model;
             if (r == null) return;
             if (cut && !CanEdit()) return;
+            bool fromRectangle = CursorInRectangle;
             var cells = TargetCells();
             int ox = int.MaxValue, oy = int.MaxValue;
             foreach (var c in cells) { ox = Math.Min(ox, c.int_0); oy = Math.Min(oy, c.int_1); }
@@ -330,6 +339,7 @@ namespace SpeechChem.Screens.Reactor
             }
             _clip.Clear();
             _clip.AddRange(entries);
+            if (fromRectangle) DropMark();
             if (toRemove.Count > 0)
             {
                 using (UndoStep())
@@ -416,6 +426,7 @@ namespace SpeechChem.Screens.Reactor
             // A START or a piece of hardware moves once; later pastes of the same clipboard should
             // not move it again. One the paste refused stays on the clipboard for another try.
             _clip.RemoveAll(moved.Contains);
+            if (placed > 0) DropMark();
             Class428.class14_11.vmethod_0();
             // What landed where ("Bonder at 9, 2"; past three, "5 items at 3, 2" from the cursor),
             // then what didn't fit.

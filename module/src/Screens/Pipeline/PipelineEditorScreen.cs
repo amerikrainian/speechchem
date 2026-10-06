@@ -219,6 +219,7 @@ namespace SpeechChem.Screens.Pipeline
             vt.ControlType = d is ReactorDraggable ? ControlTypes.Button : ControlTypes.Text;
             if (d is ReactorDraggable rd) vt.OnActivate = () => OpenReactor(rd);
             else vt.OnActivate = () => JumpToComponent(d);
+            vt.OnTooltip = () => SpeakTooltip(d);
             return vt;
         }
 

@@ -668,7 +668,9 @@ Tab stops:
   jump, not drawing — Enter on the end there starts drawing). Verified live 2026-10-02.
 - Map: every cell, coordinates first, then the occupant (component + port, "pipe, owner output",
   "end", "crossing Storage Tank 2 output" (no "pipe" word — user), the carried molecule during a run, "blocked" for terrain /
-  decoration). [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
+  decoration). Shift+Backspace on a building's cell (map) or its row (Components table) = the
+  hover tooltip the game draws over a PLACED component (Draggable.class713_0, PipelineText.Tooltip,
+  minus the title) — "Accepts any compound, …" on the Recycler; pipe cells / terrain have none. [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
   components / Open pipe ends; C reads the cell; Ctrl+arrows skip identical cells (as the reactor
   grid; not while drawing). Enter: end drawing / place the armed shelf item /
   on a pipe end start drawing / on a reactor's body open it (user rule).

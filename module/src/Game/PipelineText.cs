@@ -240,14 +240,15 @@ namespace SpeechChem.Game
         /// <summary>The component's hover tooltip as the game builds it (Draggable.vmethod_18 →
         /// Class713.smethod_0(string_1, string_2, struct103_0)) minus the title, which the focused
         /// item already names: the general description (string_2), then the type's own text
-        /// (struct103_0.string_1 — for a reactor its abilities, outputs and the flavour line).</summary>
+        /// (struct103_0.string_1 — for a reactor its abilities, outputs and the flavour line).
+        /// Formula markup is stripped ("CH~04" → "CH4", the Oxygen Tank's).</summary>
         public static string Tooltip(Draggable d)
         {
             if (d == null) return null;
             var parts = new System.Collections.Generic.List<string>();
-            string body = GameText.Speech(d.string_2);
+            string body = MoleculeText.Clean(GameText.Speech(d.string_2));
             if (!string.IsNullOrEmpty(body)) parts.Add(body);
-            string extra = GameText.Speech(d.struct103_0.string_1);
+            string extra = MoleculeText.Clean(GameText.Speech(d.struct103_0.string_1));
             if (!string.IsNullOrEmpty(extra)) parts.Add(extra);
             return parts.Count == 0 ? null : string.Join(" ", parts.ToArray());
         }

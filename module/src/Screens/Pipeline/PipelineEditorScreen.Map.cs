@@ -42,6 +42,7 @@ namespace SpeechChem.Screens.Pipeline
                         OnSelect = () => { if (_drawPipe != null) DrawStep(cx, cy); _cursorX = cx; _cursorY = cy; },
                         OnActivate = () => ActivateMapCell(cx, cy),
                         OnSecondary = OpenMenu,
+                        OnTooltip = () => SpeakTooltip(BuildingAt(Model, new Vector2i(cx, cy))),
                         OnJumpEdge = first => JumpMapEdge(cy, first),
                         OnRegionJump = dir => SkipMapCells(cx, cy, 0, dir),
                     });
@@ -139,6 +140,30 @@ namespace SpeechChem.Screens.Pipeline
                     if (kv.Value + local == cell) return d;
             }
             return null;
+        }
+
+        /// <summary>The building whose own footprint covers <paramref name="cell"/> (a pipe cell is
+        /// not its owner's footprint; terrain and decoration are no building), or null.</summary>
+        private static Draggable BuildingAt(SpaceChem.Pipeline.Pipeline p, Vector2i cell)
+        {
+            var d = p?.method_7(cell);
+            if (d == null) return null;
+            if (d is Class612) d = BuildingUnderTerrain(p, cell);
+            var origin = d == null ? null : p.method_9(d);
+            if (!origin.HasValue) return null;
+            var local = cell - origin.Value;
+            foreach (var kv in d.class485_1)
+                if (kv.Value.pipeDraggable_0 != null && kv.Value.pipeDraggable_0.dictionary_3.ContainsKey(local)) return null;
+            return d;
+        }
+
+        /// <summary>Shift+Backspace on a building: the hover tooltip the game draws over it on the map
+        /// (Draggable.class713_0, drawn by Pipeline's frame draw) minus the title — only where the
+        /// game has one (its builder ran vmethod_18).</summary>
+        private static void SpeakTooltip(Draggable d)
+        {
+            string text = d?.class713_0 != null ? PipelineText.Tooltip(d) : null;
+            Speech.Tts.Speak(text ?? Loc.T("nav.no_tooltip"), interrupt: true);
         }
 
         private static List<string> CellContentsCore(SpaceChem.Pipeline.Pipeline p, Vector2i cell)

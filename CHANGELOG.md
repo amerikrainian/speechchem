@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.0.8
+
+- We now include tooltips for buildings on the map.
+- When starting a research level, you're told the research objective.
+
 ## V0.0.7
 
 - Rectangle selection now works by having you place corners with shift+space, Ctrl+space clears the rectangle.

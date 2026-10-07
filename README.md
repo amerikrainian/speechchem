@@ -8,6 +8,6 @@ This is work-in-progress. Pipeline and research have been verified and are at le
 
 ## Manual
 
-The manual walks you through the first two tutorials and lists every key:
-[docs/manual.html](docs/manual.html). It also ships with the mod, in the game folder as
-`SpeechChem\manual.html`.
+The manual has a quick start and lists every key: [docs/manual.html](docs/manual.html). A
+step-by-step walkthrough of the first two levels is in [docs/tutorial.html](docs/tutorial.html).
+Both ship with the mod, in the game folder under `SpeechChem\`.

@@ -529,7 +529,9 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   CELL ONLY (the game's active layer is untouched — user rule 2026-10-05), spoken, then the new
   colour's first instruction as a queued line. Every picker key is a SILENT NO-OP when the colour
   it would act on has no instruction in the cell (user rule). Alt+Up/Down walk the pick's parameters = its context menu's radio
-  groups ("Direction, up"; wraps); Alt+Left/Right step the value (wraps) by RUNNING THE MENU ITEM
+  groups ("Direction, up"; wraps; a Shift+Up/Down or Shift+Left/Right pick starts ON
+  Colour, so Alt+Down speaks the next parameter — user rule 2026-10-07; an Alt key with nothing
+  picked still lands on Colour first); Alt+Left/Right step the value (wraps) by RUNNING THE MENU ITEM
   (RunMenuItem), so a colour change really moves it (the pick follows it; the active colour's
   Shift+Up/Down no longer finds it). The colour item silently does nothing when the other colour's
   slot is taken (InstructionMenu's Class723) — the mod says "red grab drop in the way". Values:

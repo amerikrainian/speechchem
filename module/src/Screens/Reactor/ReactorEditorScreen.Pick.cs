@@ -22,7 +22,8 @@ namespace SpeechChem.Screens.Reactor
         //                       colour on every cell; the game's active layer never changes), then
         //                       the new colour's first instruction as a separate, queued line
         //   Alt+Up / Down       the picked instruction's parameters — its context menu's radio
-        //                       groups (Colour, Direction, ...); wraps; "Direction, up"
+        //                       groups (Colour, Direction, ...); wraps; "Direction, up". A Shift+arrow
+        //                       pick starts on Colour, so Alt+Down speaks the next one
         //   Alt+Left / Right    that parameter's next / previous value (wraps): the menu item's own
         //                       click, so a colour change really moves the instruction.
         //   ; / '               the PRIMARY parameter's previous / next value, whichever parameter
@@ -106,9 +107,15 @@ namespace SpeechChem.Screens.Reactor
             int at = list.IndexOf(CurrentPick(r));
             int next = at < 0 ? (dir > 0 ? 0 : list.Count - 1) : ((at + dir) % list.Count + list.Count) % list.Count;
             _pick = list[next];
-            _param = -1;
+            _param = ColourParam(_pick);
             Speech.Tts.Speak(ReactorText.Label(_pick), interrupt: true);
         }
+
+        /// <summary>A Shift+arrow pick starts its parameter cursor ON the colour (user rule
+        /// 2026-10-07), so Alt+Down goes on to the next parameter; -1 (none yet) without a colour
+        /// (START).</summary>
+        private static int ColourParam(Instruction member)
+            => ParamsOf(member, out _).FindIndex(p => p.IsColour);
 
         private void SwitchPickColour()
         {
@@ -120,7 +127,7 @@ namespace SpeechChem.Screens.Reactor
             if (list.Count == 0) return;
             _pickRed = red;
             _pick = list[0];
-            _param = -1;
+            _param = ColourParam(_pick);
             Speech.Tts.Speak(Loc.T(red ? "reactor.red" : "reactor.blue"), interrupt: true);
             Speech.Tts.Speak(ReactorText.Label(_pick));
         }

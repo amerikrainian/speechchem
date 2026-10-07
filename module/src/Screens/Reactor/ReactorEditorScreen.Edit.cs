@@ -27,7 +27,8 @@ namespace SpeechChem.Screens.Reactor
         // Keys: a palette letter places that instruction at the cursor in the active colour
         // (replacing what occupies that slot — user rule); Enter places the ARMED palette slot (one
         // shot); Delete removes the active colour's instructions in the cell or selection; Ctrl+X /
-        // Ctrl+C / Ctrl+V cut, copy and paste them; Shift+Space marks a rectangle's corners;
+        // Ctrl+C / Ctrl+V cut, copy and paste them; Shift+Space marks a rectangle's corners, Ctrl+A
+        // the whole reactor;
         // Backspace on a grid cell (the secondary action, the right-click key) opens the context
         // menu: the cell's instruction menu (the game's right-click menu, item by item) or, on an
         // empty cell, the Reactor Grid menu. ----
@@ -51,6 +52,7 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.paste", Paste);
             yield return new ElementAction("screen.reactor.mark", MarkCorner);
             yield return new ElementAction("screen.reactor.unmark", ClearMark);
+            yield return new ElementAction("screen.reactor.markall", MarkAll);
             foreach (var a in PickActions()) yield return a;
         }
 
@@ -147,7 +149,7 @@ namespace SpeechChem.Screens.Reactor
         // top-left to bottom-right whichever corners were marked. Ctrl+Space unmarks it (or the
         // corner waiting for its pair) — "Cleared", or nothing at all when nothing is marked. A cut,
         // copy or delete that took the rectangle, and any paste that lands something, clear it
-        // silently (user rule 2026-10-06). ----
+        // silently (user rule 2026-10-06). Ctrl+A marks the whole reactor in one go. ----
 
         private Vector2i? _markFirst, _markSecond;
 
@@ -163,6 +165,23 @@ namespace SpeechChem.Screens.Reactor
                 return;
             }
             _markSecond = here;
+            SpeakRectangle();
+        }
+
+        /// <summary>Ctrl+A: the rectangle becomes the whole reactor.</summary>
+        private void MarkAll()
+        {
+            if (!OnGrid) return;
+            var r = Model;
+            if (r == null) return;
+            var size = r.method_1();
+            _markFirst = new Vector2i(0, 0);
+            _markSecond = new Vector2i(size.int_0 - 1, size.int_1 - 1);
+            SpeakRectangle();
+        }
+
+        private void SpeakRectangle()
+        {
             MarkBounds(out int x0, out int y0, out int x1, out int y1);
             Speech.Tts.Speak(Loc.T("reactor.mark.rect", new
             {

@@ -515,7 +515,8 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   Shift+Space marks one corner ("Corner 2, 2"), the next the opposite one ("4 by 2 from 2, 2 to 5, 3",
   always top-left to bottom-right), a third starts over (one rectangle);
   Ctrl+Space unmarks (a finished rectangle or a lone first corner) saying "Cleared", silent when
-  nothing is marked. Independent of the cursor;
+  nothing is marked. Ctrl+A marks the whole reactor ("10 by 8 from 1, 1 to 10, 8"; user request
+  2026-10-07 — the game reads A only as a palette-slot hover, no Ctrl chord). Independent of the cursor;
   its cells read "Marked" BEFORE the coordinates (the first corner alone while the second is to
   come); Delete / Ctrl+X / Ctrl+C act on the whole rectangle while the cursor is inside it, else on
   the cursor's cell; a cut / copy / delete that took it, or any paste that lands something,

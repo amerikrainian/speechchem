@@ -141,6 +141,7 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.value.next", "Next parameter value", Input.InputCategory.UI).AddBinding(Input.Scancode.Right, alt: true).Repeating();
             Input.InputManager.Register("screen.reactor.mark", "Mark a rectangle corner", Input.InputCategory.UI).AddBinding(Input.Scancode.Space, shift: true);
             Input.InputManager.Register("screen.reactor.unmark", "Clear the marked rectangle", Input.InputCategory.UI).AddBinding(Input.Scancode.Space, ctrl: true);
+            Input.InputManager.Register("screen.reactor.markall", "Mark the whole reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.A, ctrl: true);
             Input.InputManager.Register("screen.reactor.skip.left", "Skip identical cells left", Input.InputCategory.UI).AddBinding(Input.Scancode.Left, ctrl: true).Repeating();
             Input.InputManager.Register("screen.reactor.skip.right", "Skip identical cells right", Input.InputCategory.UI).AddBinding(Input.Scancode.Right, ctrl: true).Repeating();
             // Context menus live on ui.secondary (Backspace, the right-click key) — user rule, 2026-09-27.

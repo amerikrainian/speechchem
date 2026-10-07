@@ -117,7 +117,8 @@ Everything is **x86** (host, module, tests — the module references the 32-bit 
 host must be 32-bit too). BUILD PREREQUISITE: `game/SpaceChem-deob.exe` (run `tools\prepare-game.ps1`).
 A Debug build deploys: `SpeechChem.dll`, `SpeechChem.Module.dll`, `0Harmony.dll`, `Mono.Cecil.dll`,
 `prism.dll` (x86), `SpaceChem.exe.config`, `Mono.CSharp.dll` (dev REPL), `steam_appid.txt`,
-`SpeechChem\namemap.tsv`, `SpeechChem\locale\`, `SpeechChem\manual.html` (the player's manual, from `docs/manual.html`). The host dll is file-locked while the game runs; the
+`SpeechChem\namemap.tsv`, `SpeechChem\locale\`, `SpeechChem\manual.html` + `SpeechChem\tutorial.html` (the player's manual — quick start + key
+reference — and the step-by-step walkthrough of the first two levels, from `docs/`). The host dll is file-locked while the game runs; the
 module is not (hot reload). Uninstall = restore `SpaceChem.exe.config.vanilla` over the config.
 Release zip = the same set minus Mono.CSharp. `create-release.ps1 vX.Y.Z` = gh release with the zip,
 the installer exe when built, and the tag's CHANGELOG.md section as notes.
@@ -712,6 +713,17 @@ the clone; the clipboard keeps the source for more copies; fixed components refu
 menu's delete (method_10 null, method_15, method_66); Backspace = the menu as a list in the game's
 order (DraggableMenu): Reset Pipes (Draggable.method_6 — NO undo step), the reactor's note items,
 Save to Toolbox, Delete — see §16b. Verified live 2026-10-03.
+THE MARKED RECTANGLE ON THE MAP (`PipelineEditorScreen.Mark.cs`, user request 2026-10-07; the
+reactor's keys and rules: Shift+Space corners, Ctrl+A the whole map, Ctrl+Space clears, cells
+read "Marked" first, a take / delete / landing paste clears it; Shift/Ctrl+Space kept from the
+game here too). With the map cursor inside it, Delete / Ctrl+X / Ctrl+C take every movable
+(`!bool_0`) building whose BODY (origin + `vector2i_0`) lies wholly inside — the game's own
+drag-select (`Pipeline.method_30`) wants the pipes inside too, deliberately not followed: a
+rectangle around reactors would miss any whose pipe leaves it. The clipboard is a list with an
+anchor (the rectangle's top-left; a single item's origin), so the paste is ONE method_13 over the
+whole set (`vector2i_4` = anchor): all or nothing, one undo step; refusals name each item in
+`hashSet_1` with its blockers. Delete = the game's multi-delete (method_10 each, method_15,
+method_66 of the set), "Deleted A, B" (3 named, else "N items"). Verified live by the user 2026-10-07.
 DRAW MODE (PipelineEditorScreen.Draw.cs): StartDraw opens the undo scope a drag would
 (pipe.class381_0 = worker.method_49(), enum145_0 = 1, vector2i_3 = end); each arrow landing sets
 Pipeline.vector2i_3 to the neighbour and calls pipe.vmethod_4 (the game's own extend / retract /

@@ -329,9 +329,13 @@ namespace SpeechChem.Screens.Pipeline
         // (its list entry, a port cell or any of its map cells) remembers it — it stays put until
         // the paste — and Ctrl+V on a map cell drops it with its top-left corner there, through the
         // game's own move (Pipeline.method_13 with the component selected, dragged from its origin
-        // to the cell). Pipes move with it. A refused drop keeps it on the clipboard. ----
+        // to the cell). Pipes move with it. A refused drop keeps it on the clipboard. With the map
+        // cursor in the marked rectangle, the clipboard takes every marked building and the
+        // rectangle's top-left corner is the anchor that lands on the paste cell
+        // (PipelineEditorScreen.Mark.cs). ----
 
-        private Draggable _cut;
+        private readonly List<Draggable> _clip = new List<Draggable>();
+        private Vector2i _clipAnchor; // the clipboard's cell that lands on the paste cell
         private bool _copy; // the clipboard holds a copy (Ctrl+C): the paste duplicates, the source stays
 
         /// <summary>The component under focus: a Components entry, one of its port cells, or a map
@@ -356,72 +360,101 @@ namespace SpeechChem.Screens.Pipeline
             return null;
         }
 
-        private void Cut()
-        {
-            var p = Model;
-            var d = FocusedComponent();
-            if (p == null || d == null) return;
-            if (!CanEdit()) return;
-            if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
-            _cut = d;
-            _copy = false;
-            Speech.Tts.Speak(Loc.T("reactor.edit.cut", new { what = PipelineText.Name(p, d) }), interrupt: true);
-        }
+        private void Cut() => Take(copy: false);
 
         /// <summary>Ctrl+C: the game's Ctrl-drag copy (training: "Copy reactors within a production
         /// assignment by holding the control key and dragging the reactor"), split like the move —
         /// the paste drops a duplicate (program, notes and pipe shapes; input links cleared) through
         /// the same Pipeline.method_13 with Ctrl forced on, and the clipboard keeps the source for
         /// more copies. Fixed components can't be copied, as the game refuses to drag them.</summary>
-        private void Copy()
+        private void Copy() => Take(copy: true);
+
+        private void Take(bool copy)
         {
             var p = Model;
-            var d = FocusedComponent();
-            if (p == null || d == null) return;
+            if (p == null) return;
+            if (CursorInRectangle)
+            {
+                var marked = MarkedBuildings(p);
+                if (marked.Count == 0) return; // nothing movable inside: silent (user rule 2026-10-07)
+                if (!CanEdit()) return;
+                MarkBounds(out int x0, out int y0, out _, out _);
+                _clip.Clear();
+                _clip.AddRange(marked);
+                _clipAnchor = new Vector2i(x0, y0);
+                _copy = copy;
+                DropMark();
+                var names = new List<string>();
+                foreach (var d in marked) names.Add(PipelineText.Name(p, d));
+                Speech.Tts.Speak(Loc.T(copy ? "reactor.edit.copied" : "reactor.edit.cut", new { what = Summary(names) }), interrupt: true);
+                return;
+            }
+            var item = FocusedComponent();
+            if (item == null) return;
             if (!CanEdit()) return;
-            if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
-            _cut = d;
-            _copy = true;
-            Speech.Tts.Speak(Loc.T("reactor.edit.copied", new { what = PipelineText.Name(p, d) }), interrupt: true);
+            if (item.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, item) }), interrupt: true); return; }
+            _clip.Clear();
+            _clip.Add(item);
+            _clipAnchor = p.method_9(item).Value;
+            _copy = copy;
+            Speech.Tts.Speak(Loc.T(copy ? "reactor.edit.copied" : "reactor.edit.cut", new { what = PipelineText.Name(p, item) }), interrupt: true);
         }
 
         private void Paste()
         {
             var p = Model;
             if (p == null || !MapStop.Equals(Navigation.FocusedStopKey)) return;
-            if (_cut == null || !p.method_9(_cut).HasValue) { _cut = null; Speech.Tts.Speak(Loc.T("reactor.edit.clipempty"), interrupt: true); return; }
+            _clip.RemoveAll(d => !p.method_9(d).HasValue); // deleted, or gone in an undo's reload
+            if (_clip.Count == 0) { Speech.Tts.Speak(Loc.T("reactor.edit.clipempty"), interrupt: true); return; }
             if (!CanEdit()) return;
-            var item = _cut;
+            var items = new List<Draggable>(_clip);
             var at = new Vector2i(_cursorX, _cursorY);
             try
             {
                 bool ok;
                 p.hashSet_0.Clear();
-                p.hashSet_0.Add(item);
-                p.vector2i_4 = p.method_9(item).Value;
+                foreach (var d in items) p.hashSet_0.Add(d);
+                p.vector2i_4 = _clipAnchor;
                 p.method_1((Enum18)2);
-                // A copy: Ctrl held makes method_13 clone each selected item (and counts the source
-                // as a blocker, so the copy can't overlap it).
+                // A copy: Ctrl held makes method_13 clone each selected item (and counts the sources
+                // as blockers, so a copy can't overlap them).
                 using (_copy ? Patches.ModifierMask.ForceCtrl() : Patches.ModifierMask.NoCtrl())
                 {
                     p.vector2i_3 = at;
                     ok = p.method_13();
                 }
-                string why = ok ? null : Refusal(p, item, at);
-                Draggable placed = item;
-                if (ok && _copy) foreach (var d in p.hashSet_0) placed = d; // the selection is now the clone
+                // Refused: each item that didn't fit (method_12's hashSet_1) and what was in its way.
+                var refusals = new List<string>();
+                if (!ok)
+                    foreach (var d in items)
+                        if (p.hashSet_1.Contains(d))
+                            refusals.Add(Loc.T("pipeline.edit.nofit", new { what = PipelineText.Name(p, d), why = Refusal(p, d, p.method_9(d).Value + at - _clipAnchor) }));
+                var placed = ok && _copy ? new List<Draggable>(p.hashSet_0) : items; // a copy's selection is now the clones
                 p.method_23();
                 if (!ok)
                 {
-                    Speech.Tts.Speak(Loc.T("pipeline.edit.nofit", new { what = PipelineText.Name(p, item), why }), interrupt: true);
+                    string text = refusals.Count <= MaxNamed ? string.Join("; ", refusals.ToArray())
+                        : string.Join("; ", refusals.GetRange(0, MaxNamed).ToArray()) + " " + Loc.T("pipeline.edit.more", new { n = refusals.Count - MaxNamed });
+                    Speech.Tts.Speak(text, interrupt: true);
                     return;
                 }
-                if (!_copy) _cut = null; // a copy stays on the clipboard for more
-                PipelineText.Sync(p); // number the new copy before it is named
-                string text = Loc.T("reactor.edit.at", new { what = PipelineText.Name(p, placed), cell = PipelineText.Cell(at) });
-                if (_copy && placed is ReactorDraggable && GoalTracker.int_0 > 0 && p.method_21() > GoalTracker.int_0)
-                    text += ", " + Loc.T("pipeline.quota.over");
-                Speech.Tts.Speak(text, interrupt: true);
+                if (!_copy) _clip.Clear(); // a copy stays on the clipboard for more
+                DropMark();
+                PipelineText.Sync(p); // number the new copies before they are named
+                // What landed where ("Assembly Reactor 3 at 9, 2"; past three, "5 items at 3, 2").
+                var landed = new List<string>();
+                bool reactor = false;
+                foreach (var d in placed)
+                {
+                    var cell = p.method_9(d);
+                    landed.Add(cell.HasValue ? Loc.T("reactor.edit.at", new { what = PipelineText.Name(p, d), cell = PipelineText.Cell(cell.Value) }) : PipelineText.Name(p, d));
+                    reactor |= d is ReactorDraggable;
+                }
+                string said = landed.Count <= MaxNamed ? string.Join("; ", landed.ToArray())
+                    : Loc.T("reactor.edit.at", new { what = Loc.T("reactor.edit.items", new { n = landed.Count }), cell = PipelineText.Cell(at) });
+                if (_copy && reactor && GoalTracker.int_0 > 0 && p.method_21() > GoalTracker.int_0)
+                    said += ", " + Loc.T("pipeline.quota.over");
+                Speech.Tts.Speak(said, interrupt: true);
             }
             catch (System.Exception ex) { Log.Error("[pipeline] move failed", ex); }
         }
@@ -456,7 +489,7 @@ namespace SpeechChem.Screens.Pipeline
                 p.method_10(d, null);
                 p.method_15();
                 Locals.smethod_0().smethod_0().method_66(new[] { d });
-                if (ReferenceEquals(_cut, d)) _cut = null;
+                _clip.Remove(d);
                 if (neighbour != null)
                 {
                     if (viaMenu) _deleteFocus = ComponentId(neighbour);

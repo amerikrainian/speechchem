@@ -111,7 +111,9 @@ namespace SpeechChem.Screens.Pipeline
             if (p == null) return null;
             if (_drawPipe != null && _drawStepCell.HasValue && _drawStepCell.Value.int_0 == x && _drawStepCell.Value.int_1 == y)
                 return _drawStep;
-            var parts = new List<string> { PipelineText.Cell(new Vector2i(x, y)) };
+            var parts = new List<string>();
+            if (IsMarked(x, y)) parts.Add(Loc.T("reactor.marked")); // first, before the coordinates (the reactor's rule)
+            parts.Add(PipelineText.Cell(new Vector2i(x, y)));
             parts.AddRange(CellContents(p, new Vector2i(x, y)));
             return string.Join(", ", parts.ToArray());
         }

@@ -110,9 +110,10 @@ namespace SpeechChem.Patches
                 // Ctrl+1..4 are step keys (assignable, a no-op when not): the game reads 1-4 as its
                 // play speeds whatever the modifiers.
                 if (scancode >= Numrow1 && scancode <= Numrow4 && CtrlHeld()) return true;
-                // Shift+Space / Ctrl+Space mark / clear the reactor grid's rectangle; the toolbar
-                // reads Space as play / pause whatever the modifiers.
-                if (scancode == SpaceScancode && (Input.SdlKeyboard.ShiftHeld || CtrlHeld()) && cur is Screens.Reactor.ReactorEditorScreen) return true;
+                // Shift+Space / Ctrl+Space mark / clear the reactor grid's or the pipeline map's
+                // rectangle; the toolbar reads Space as play / pause whatever the modifiers.
+                if (scancode == SpaceScancode && (Input.SdlKeyboard.ShiftHeld || CtrlHeld())
+                    && (cur is Screens.Reactor.ReactorEditorScreen || cur is Screens.Pipeline.PipelineEditorScreen)) return true;
                 return Keys.Contains(scancode) && !cur.PassKeyToGame(scancode);
             }
             catch { return false; }

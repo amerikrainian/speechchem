@@ -65,6 +65,7 @@ namespace SpeechChem.Screens.Pipeline
             {
                 var design = FocusedDesign();
                 if (design != null) DeleteDesign(design);
+                else if (CursorInRectangle) DeleteMarked();
                 else Delete(FocusedComponent());
             });
             yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
@@ -72,6 +73,9 @@ namespace SpeechChem.Screens.Pipeline
             foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
             yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipMapSideways(1));
+            yield return new ElementAction("screen.reactor.mark", MarkCorner); // the marked rectangle (Mark.cs)
+            yield return new ElementAction("screen.reactor.unmark", ClearMark);
+            yield return new ElementAction("screen.reactor.markall", MarkAll);
             if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());
             else if (_armed != null) yield return new ElementAction(ActionIds.Back, Unarm);
         }
@@ -134,7 +138,8 @@ namespace SpeechChem.Screens.Pipeline
             _cursorX = _cursorY = 0;
             _category = _item = -1;
             _armed = null;
-            _cut = null;
+            _clip.Clear();
+            DropMark();
             _copy = false;
             _designs = null;
             _drawPipe = null;

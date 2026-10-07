@@ -130,7 +130,7 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.copy", "Copy", Input.InputCategory.UI).AddBinding(Input.Scancode.C, ctrl: true);
             Input.InputManager.Register("screen.reactor.paste", "Paste", Input.InputCategory.UI).AddBinding(Input.Scancode.V, ctrl: true);
             // The instruction picker (user design 2026-10-05): Shift+arrows pick an instruction and
-            // its colour, Alt+arrows its parameter and value.
+            // its colour, Alt+arrows its parameter and value, ; / ' its main parameter's value.
             Input.InputManager.Register("screen.reactor.pick.prev", "Previous instruction in the cell", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, shift: true).Repeating();
             Input.InputManager.Register("screen.reactor.pick.next", "Next instruction in the cell", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, shift: true).Repeating();
             Input.InputManager.Register("screen.reactor.pick.colour.prev", "Switch colour", Input.InputCategory.UI).AddBinding(Input.Scancode.Left, shift: true);
@@ -139,6 +139,8 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.param.next", "Next instruction parameter", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, alt: true).Repeating();
             Input.InputManager.Register("screen.reactor.value.prev", "Previous parameter value", Input.InputCategory.UI).AddBinding(Input.Scancode.Left, alt: true).Repeating();
             Input.InputManager.Register("screen.reactor.value.next", "Next parameter value", Input.InputCategory.UI).AddBinding(Input.Scancode.Right, alt: true).Repeating();
+            Input.InputManager.Register("screen.reactor.primary.prev", "Previous value of the instruction's main parameter", Input.InputCategory.UI).AddBinding(Input.Scancode.Semicolon).Repeating();
+            Input.InputManager.Register("screen.reactor.primary.next", "Next value of the instruction's main parameter", Input.InputCategory.UI).AddBinding(Input.Scancode.Apostrophe).Repeating();
             Input.InputManager.Register("screen.reactor.mark", "Mark a rectangle corner", Input.InputCategory.UI).AddBinding(Input.Scancode.Space, shift: true);
             Input.InputManager.Register("screen.reactor.unmark", "Clear the marked rectangle", Input.InputCategory.UI).AddBinding(Input.Scancode.Space, ctrl: true);
             Input.InputManager.Register("screen.reactor.markall", "Mark the whole reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.A, ctrl: true);

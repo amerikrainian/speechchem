@@ -25,6 +25,9 @@ namespace SpeechChem.Screens.Reactor
         //                       groups (Colour, Direction, ...); wraps; "Direction, up"
         //   Alt+Left / Right    that parameter's next / previous value (wraps): the menu item's own
         //                       click, so a colour change really moves the instruction.
+        //   ; / '               the PRIMARY parameter's previous / next value, whichever parameter
+        //                       Alt+Up/Down is on: the first that is not the colour (Grab type, Bond
+        //                       type, Input type, Direction, Control letter; user request 2026-10-07).
         // The pick and the picker colour belong to the cell: landing elsewhere drops them. Alt with
         // nothing picked takes the picker colour's first instruction. Every key is a silent no-op
         // when the colour it would act on has no instruction in the cell (user rule). ----
@@ -43,6 +46,8 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.param.next", () => StepParam(1));
             yield return new ElementAction("screen.reactor.value.prev", () => StepValue(-1));
             yield return new ElementAction("screen.reactor.value.next", () => StepValue(1));
+            yield return new ElementAction("screen.reactor.primary.prev", () => StepPrimary(-1));
+            yield return new ElementAction("screen.reactor.primary.next", () => StepPrimary(1));
         }
 
         private void DropPick()
@@ -137,6 +142,7 @@ namespace SpeechChem.Screens.Reactor
         private sealed class Param
         {
             public Func<string> Label;
+            public bool IsColour;
             public readonly List<MenuItem<Instruction>> Items = new List<MenuItem<Instruction>>();
         }
 
@@ -163,7 +169,11 @@ namespace SpeechChem.Screens.Reactor
                 Param p;
                 if (!byGroup.TryGetValue(group, out p))
                 {
-                    p = new Param { Label = MenuItemGroupLabel(item, member.GetType()) ?? (() => Loc.T("menu.group.default")) };
+                    p = new Param
+                    {
+                        Label = MenuItemGroupLabel(item, member.GetType()) ?? (() => Loc.T("menu.group.default")),
+                        IsColour = item is Class720,
+                    };
                     byGroup[group] = p;
                     result.Add(p);
                 }
@@ -236,7 +246,28 @@ namespace SpeechChem.Screens.Reactor
             if (ps.Count == 0) { Speech.Tts.Speak(Loc.T("reactor.pick.noparams"), interrupt: true); return; }
             if (!CanEdit()) return;
             if (_param < 0 || _param >= ps.Count) _param = 0;
-            var p = ps[_param];
+            ChangeValue(r, member, ps[_param], menu, dir);
+        }
+
+        /// <summary>; / ': the primary parameter (the first that is not the colour) steps its value,
+        /// leaving the Alt+Up/Down parameter where it was.</summary>
+        private void StepPrimary(int dir)
+        {
+            if (!OnGrid) return;
+            var r = Model;
+            if (r == null) return;
+            var member = PickOrFirst(r);
+            if (member == null) return;
+            var ps = ParamsOf(member, out var menu);
+            var p = ps.Find(x => !x.IsColour);
+            if (p == null) { Speech.Tts.Speak(Loc.T("reactor.pick.noparams"), interrupt: true); return; }
+            if (!CanEdit()) return;
+            ChangeValue(r, member, p, menu, dir);
+        }
+
+        /// <summary>Run the parameter's next / previous choice (wraps) and say the value it took.</summary>
+        private void ChangeValue(ReactorModel r, Instruction member, Param p, InstructionMenu menu, int dir)
+        {
             int layer = (int)(r.method_19(member)?.enum114_0 ?? 0);
             if (!LayerEditable(r, layer))
             {

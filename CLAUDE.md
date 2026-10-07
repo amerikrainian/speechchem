@@ -533,7 +533,11 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   (RunMenuItem), so a colour change really moves it (the pick follows it; the active colour's
   Shift+Up/Down no longer finds it). The colour item silently does nothing when the other colour's
   slot is taken (InstructionMenu's Class723) — the mod says "red grab drop in the way". Values:
-  colour word, direction word, control letter, else the choice's label. The pick is the cell's:
+  colour word, direction word, control letter, else the choice's label. ; / ' step the PRIMARY
+  parameter's value (previous / next, wraps) the same way, whatever parameter Alt+Up/Down is on: the
+  first group that is not Colour (Grab / Bond / Input / Output type, Direction, Control letter,
+  Rotation); "No parameters" on one without (user request 2026-10-07; the game binds neither key).
+  The pick is the cell's:
   landing elsewhere drops it and the picker colour; Alt with no pick takes the first. Verified live on a tutorial level
   2026-10-05 (grab type cycle, colour moves both ways, the refusal), program restored. Backspace (ui.secondary) = the context menu (the
   game's right-click InstructionMenu per member, or the grid menu on an empty cell) as

@@ -23,8 +23,9 @@ namespace SpeechChem.Screens.Reactor
         //                       the new colour's first instruction as a separate, queued line
         //   Alt+Up / Down       the picked instruction's parameters — its context menu's radio
         //                       groups (Colour, Direction, ...); wraps; "Direction, up". Every pick
-        //                       starts ON Colour (a Shift+arrow pick, a placed instruction, the
-        //                       first one an Alt key takes), so Alt+Down speaks the next one
+        //                       starts ON its first parameter (Colour, or START's Direction): a
+        //                       Shift+arrow pick, a placed instruction, the first one an Alt key
+        //                       takes — so Alt+Down speaks the next one
         //   Alt+Left / Right    that parameter's next / previous value (wraps): the menu item's own
         //                       click, so a colour change really moves the instruction.
         //   ; / '               the PRIMARY parameter's previous / next value, whichever parameter
@@ -37,6 +38,11 @@ namespace SpeechChem.Screens.Reactor
 
         private Instruction _pick;
         private int _param = -1;
+
+        // Every pick starts its parameter cursor ON the first parameter — the colour, or START's
+        // direction (user rule 2026-10-07) — so Alt+Down goes on to the next one. An instruction
+        // without parameters gets "No parameters" before the index is used.
+        private const int FirstParam = 0;
         private bool? _pickRed; // the picker colour switched on this cell; null = the active colour
 
         private IEnumerable<ElementAction> PickActions()
@@ -109,14 +115,9 @@ namespace SpeechChem.Screens.Reactor
             int at = list.IndexOf(CurrentPick(r));
             int next = at < 0 ? (dir > 0 ? 0 : list.Count - 1) : ((at + dir) % list.Count + list.Count) % list.Count;
             _pick = list[next];
-            _param = ColourParam(_pick);
+            _param = FirstParam;
             Speech.Tts.Speak(ReactorText.Label(_pick), interrupt: true);
         }
-
-        /// <summary>Every pick starts its parameter cursor ON the colour (user rule 2026-10-07), so
-        /// Alt+Down goes on to the next parameter; -1 (none yet) without a colour (START).</summary>
-        private static int ColourParam(Instruction member)
-            => ParamsOf(member, out _).FindIndex(p => p.IsColour);
 
         private void SwitchPickColour()
         {
@@ -128,7 +129,7 @@ namespace SpeechChem.Screens.Reactor
             if (list.Count == 0) return;
             _pickRed = red;
             _pick = list[0];
-            _param = ColourParam(_pick);
+            _param = FirstParam;
             Speech.Tts.Speak(Loc.T(red ? "reactor.red" : "reactor.blue"), interrupt: true);
             Speech.Tts.Speak(ReactorText.Label(_pick));
         }
@@ -139,7 +140,7 @@ namespace SpeechChem.Screens.Reactor
         {
             _pick = placed;
             _pickRed = (layer & (ReactorText.Red | ReactorText.RedArrow)) != 0;
-            _param = ColourParam(placed);
+            _param = FirstParam;
         }
 
         /// <summary>The picked instruction, or the picker colour's first one in the cell (which then
@@ -151,7 +152,7 @@ namespace SpeechChem.Screens.Reactor
             var list = InstructionsHere(r, PickRed);
             if (list.Count == 0) return null;
             _pick = list[0];
-            _param = ColourParam(_pick);
+            _param = FirstParam;
             return _pick;
         }
 

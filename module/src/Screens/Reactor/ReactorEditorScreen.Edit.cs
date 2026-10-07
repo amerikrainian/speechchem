@@ -383,7 +383,7 @@ namespace SpeechChem.Screens.Reactor
         {
             if (!OnGrid) return;
             var r = Model;
-            if (r == null || _clip.Count == 0) { Speech.Tts.Speak(Loc.T("reactor.edit.clipempty"), interrupt: true); return; }
+            if (r == null || _clip.Count == 0) return;
             if (!CanEdit()) return;
             var size = r.method_1();
             int placed = 0, skipped = 0;

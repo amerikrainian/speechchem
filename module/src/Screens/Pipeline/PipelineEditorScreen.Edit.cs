@@ -405,7 +405,7 @@ namespace SpeechChem.Screens.Pipeline
             var p = Model;
             if (p == null || !MapStop.Equals(Navigation.FocusedStopKey)) return;
             _clip.RemoveAll(d => !p.method_9(d).HasValue); // deleted, or gone in an undo's reload
-            if (_clip.Count == 0) { Speech.Tts.Speak(Loc.T("reactor.edit.clipempty"), interrupt: true); return; }
+            if (_clip.Count == 0) return;
             if (!CanEdit()) return;
             var items = new List<Draggable>(_clip);
             var at = new Vector2i(_cursorX, _cursorY);

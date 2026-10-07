@@ -234,7 +234,6 @@
   "reactor.edit.cut": "Cut {what}",
   "reactor.edit.copied": "Copied {what}",
   "reactor.edit.items": "{n} items",
-  "reactor.edit.clipempty": "Nothing copied.",
   "reactor.edit.at": "{what} at {cell}",
   "reactor.edit.pasted.skipped": "{what}, {skipped} did not fit",
   "reactor.edit.nofit": "{n} did not fit",

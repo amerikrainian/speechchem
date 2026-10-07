@@ -531,7 +531,8 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   it would act on has no instruction in the cell (user rule). Alt+Up/Down walk the pick's parameters = its context menu's radio
   groups ("Direction, up"; wraps; EVERY pick starts ON its first parameter — Colour, or
   START's Direction; Shift+Up/Down, Shift+Left/Right, the first instruction an Alt key takes — so
-  Alt+Down speaks the next parameter;
+  Alt+Down speaks the next parameter; a pick / parameter / value step with nothing to wrap to
+  (START's lone Direction) is a silent no-op;
   placing an instruction (palette letter, armed Enter) picks it in its colour as if Shift had landed
   on it — user rules 2026-10-07); Alt+Left/Right step the value (wraps) by RUNNING THE MENU ITEM
   (RunMenuItem), so a colour change really moves it (the pick follows it; the active colour's

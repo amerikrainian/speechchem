@@ -32,7 +32,8 @@ namespace SpeechChem.Screens.Reactor
         //                       Alt+Up/Down is on: the first that is not the colour (Grab type, Bond
         //                       type, Input type, Direction, Control letter; user request 2026-10-07).
         // The pick and the picker colour belong to the cell: landing elsewhere drops them. Alt with
-        // nothing picked takes the picker colour's first instruction. Placing an instruction picks
+        // nothing picked takes the picker colour's first instruction. A step with nothing to wrap to
+        // (one instruction, one parameter, one value) is a silent no-op (user rule 2026-10-07). Placing an instruction picks
         // it, in its colour, as if Shift+Up/Down had landed on it (user rule 2026-10-07). Every key is a silent no-op
         // when the colour it would act on has no instruction in the cell (user rule). ----
 
@@ -114,6 +115,7 @@ namespace SpeechChem.Screens.Reactor
             if (list.Count == 0) return;
             int at = list.IndexOf(CurrentPick(r));
             int next = at < 0 ? (dir > 0 ? 0 : list.Count - 1) : ((at + dir) % list.Count + list.Count) % list.Count;
+            if (next == at) return; // nothing to wrap to
             _pick = list[next];
             _param = FirstParam;
             Speech.Tts.Speak(ReactorText.Label(_pick), interrupt: true);
@@ -244,9 +246,11 @@ namespace SpeechChem.Screens.Reactor
             if (member == null) return;
             var ps = ParamsOf(member, out _);
             if (ps.Count == 0) { Speech.Tts.Speak(Loc.T("reactor.pick.noparams"), interrupt: true); return; }
-            _param = _param < 0 || _param >= ps.Count
+            int next = _param < 0 || _param >= ps.Count
                 ? (dir > 0 ? 0 : ps.Count - 1)
                 : ((_param + dir) % ps.Count + ps.Count) % ps.Count;
+            if (next == _param) return; // nothing to wrap to
+            _param = next;
             var p = ps[_param];
             int sel = SelectedIndex(p, member);
             string label = p.Label();
@@ -294,6 +298,7 @@ namespace SpeechChem.Screens.Reactor
             }
             int sel = SelectedIndex(p, member);
             int next = sel < 0 ? 0 : ((sel + dir) % p.Items.Count + p.Items.Count) % p.Items.Count;
+            if (next == sel) return; // nothing to wrap to
             var item = p.Items[next];
             if (item is Class720 colour && !ColourChangeAllowed(r, member, layer, colour.bool_3)) return;
             RunMenuItem(r, member, item);

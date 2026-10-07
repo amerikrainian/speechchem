@@ -135,6 +135,7 @@ namespace SpeechChem.Screens.Reactor
                 }
                 r.method_18(new ReactorBin(cell, (Enum114)layer), clone);
             }
+            if (x == _cursorX && y == _cursorY) PickPlaced(clone, layer);
             Class428.class14_11.vmethod_0(); // the drop sound (Reactor.method_11 leaving the drag state)
             // Just the new instruction, replacement or not (user rule).
             string placed = ColourWord(layer) + " " + ReactorText.Label(clone);

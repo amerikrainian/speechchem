@@ -22,15 +22,17 @@ namespace SpeechChem.Screens.Reactor
         //                       colour on every cell; the game's active layer never changes), then
         //                       the new colour's first instruction as a separate, queued line
         //   Alt+Up / Down       the picked instruction's parameters — its context menu's radio
-        //                       groups (Colour, Direction, ...); wraps; "Direction, up". A Shift+arrow
-        //                       pick starts on Colour, so Alt+Down speaks the next one
+        //                       groups (Colour, Direction, ...); wraps; "Direction, up". Every pick
+        //                       starts ON Colour (a Shift+arrow pick, a placed instruction, the
+        //                       first one an Alt key takes), so Alt+Down speaks the next one
         //   Alt+Left / Right    that parameter's next / previous value (wraps): the menu item's own
         //                       click, so a colour change really moves the instruction.
         //   ; / '               the PRIMARY parameter's previous / next value, whichever parameter
         //                       Alt+Up/Down is on: the first that is not the colour (Grab type, Bond
         //                       type, Input type, Direction, Control letter; user request 2026-10-07).
         // The pick and the picker colour belong to the cell: landing elsewhere drops them. Alt with
-        // nothing picked takes the picker colour's first instruction. Every key is a silent no-op
+        // nothing picked takes the picker colour's first instruction. Placing an instruction picks
+        // it, in its colour, as if Shift+Up/Down had landed on it (user rule 2026-10-07). Every key is a silent no-op
         // when the colour it would act on has no instruction in the cell (user rule). ----
 
         private Instruction _pick;
@@ -111,9 +113,8 @@ namespace SpeechChem.Screens.Reactor
             Speech.Tts.Speak(ReactorText.Label(_pick), interrupt: true);
         }
 
-        /// <summary>A Shift+arrow pick starts its parameter cursor ON the colour (user rule
-        /// 2026-10-07), so Alt+Down goes on to the next parameter; -1 (none yet) without a colour
-        /// (START).</summary>
+        /// <summary>Every pick starts its parameter cursor ON the colour (user rule 2026-10-07), so
+        /// Alt+Down goes on to the next parameter; -1 (none yet) without a colour (START).</summary>
         private static int ColourParam(Instruction member)
             => ParamsOf(member, out _).FindIndex(p => p.IsColour);
 
@@ -132,6 +133,15 @@ namespace SpeechChem.Screens.Reactor
             Speech.Tts.Speak(ReactorText.Label(_pick));
         }
 
+        /// <summary>An instruction just placed in the cursor's cell becomes the pick, and the picker
+        /// colour becomes its colour.</summary>
+        private void PickPlaced(Instruction placed, int layer)
+        {
+            _pick = placed;
+            _pickRed = (layer & (ReactorText.Red | ReactorText.RedArrow)) != 0;
+            _param = ColourParam(placed);
+        }
+
         /// <summary>The picked instruction, or the picker colour's first one in the cell (which then
         /// becomes the pick). Null (silently) when there is none.</summary>
         private Instruction PickOrFirst(ReactorModel r)
@@ -141,7 +151,7 @@ namespace SpeechChem.Screens.Reactor
             var list = InstructionsHere(r, PickRed);
             if (list.Count == 0) return null;
             _pick = list[0];
-            _param = -1;
+            _param = ColourParam(_pick);
             return _pick;
         }
 

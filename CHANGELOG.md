@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.1.0
+
+- Removed instructions from categories; they had shortcut keys already.
+
 ## V0.0.9
 
 - Added ; and ' keys to cycle instruction primary parameter.

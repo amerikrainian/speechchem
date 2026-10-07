@@ -70,15 +70,14 @@ namespace SpeechChem.Screens.Reactor
             return KeyLetter(key) + ", " + ReactorText.Label(slot.struct116_0.method_0());
         }
 
-        /// <summary>Arm a slot. From the palette Enter confirms "… armed"; the Instructions category
-        /// just names the instruction (arming is what cycling it means — user rule).</summary>
-        private void Arm(int key, bool quiet = false)
+        /// <summary>Arm a slot (palette Enter): "… armed".</summary>
+        private void Arm(int key)
         {
             var slot = Slot(Editor, key);
             if (slot == null) return;
             _armedKey = key;
             string instruction = ReactorText.Label(slot.struct116_0.method_0());
-            Speech.Tts.Speak(quiet ? instruction : Loc.T("reactor.armed.instr", new { instruction }), interrupt: true);
+            Speech.Tts.Speak(Loc.T("reactor.armed.instr", new { instruction }), interrupt: true);
         }
 
         // ---- layer controls (Class714 over the reactor's masks): Active red/blue (radio — the

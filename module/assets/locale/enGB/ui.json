@@ -44,7 +44,6 @@
   "reactor.hardware": "hardware",
   "reactor.waldo.wall": "at the wall",
   "reactor.cat": "{name}, {n}",
-  "reactor.cat.instructions": "Instructions",
   "reactor.cat.inputs": "Inputs",
   "reactor.cat.outputs": "Outputs",
   "reactor.cat.hardware": "Hardware",

@@ -14,8 +14,8 @@ namespace SpeechChem.Screens.Reactor
     {
         // ---- category cycling (user request, 2026-09-27): [ and ] step through categories, , and .
         // through the category's items. Grid items move the cursor there (read as if arrowed onto);
-        // Instructions arm the palette slot for the next Enter on the grid; Waldos read like Shift+R / Shift+B
-        // and jump. Items are listed in READING ORDER (row by row, left to right) — fixed by the
+        // Waldos read like Shift+R / Shift+B and jump. No Instructions category: the palette letters
+        // already reach every instruction (user decision 2026-10-07). Items are listed in READING ORDER (row by row, left to right) — fixed by the
         // board, not by the cursor, so the same keys always land on the same places. Items are
         // recomputed on every press (the program changes); the index is kept and clamped. ----
 
@@ -23,7 +23,7 @@ namespace SpeechChem.Screens.Reactor
         {
             public int X = -1, Y = -1;  // a grid cell to move to, or -1
             public bool Zone;           // name the zone on landing even without a crossing
-            public Action Run;          // instead of moving (palette slots, waldos)
+            public Action Run;          // instead of moving (waldos)
         }
 
         private sealed class Category
@@ -37,7 +37,6 @@ namespace SpeechChem.Screens.Reactor
 
         private List<Category> Categories => _categories ?? (_categories = new List<Category>
         {
-            new Category { Name = "reactor.cat.instructions", Items = PaletteItems },
             new Category { Name = "reactor.cat.inputs", Items = (r, e) => ZoneItems(r, input: true) },
             new Category { Name = "reactor.cat.outputs", Items = (r, e) => ZoneItems(r, input: false) },
             new Category { Name = "reactor.cat.hardware", Items = (r, e) => FeatureItems(r) },
@@ -76,20 +75,6 @@ namespace SpeechChem.Screens.Reactor
                 return;
             }
             FocusCell(item.X, item.Y);
-        }
-
-        private List<CategoryItem> PaletteItems(ReactorModel r, Class77 editor)
-        {
-            var items = new List<CategoryItem>();
-            var palette = editor?.class715_0;
-            if (palette == null) return items;
-            foreach (var kv in palette.dictionary_0)
-            {
-                if (!kv.Value.struct116_0.bool_0) continue;
-                int key = (int)kv.Key;
-                items.Add(new CategoryItem { Run = () => Arm(key, quiet: true) });
-            }
-            return items;
         }
 
         private static List<CategoryItem> ZoneItems(ReactorModel r, bool input)

@@ -476,10 +476,10 @@ hydrogen at (2, 6) without picking it up. A waldo only grabs when it hits a grab
 <table>
   <thead><tr><th>Key</th><th>Action</th></tr></thead>
   <tbody>
-    <tr><td>Tab / Shift+Tab</td><td>Next / previous stop (wraps)</td></tr>
+    <tr><td>Tab / Shift+Tab</td><td>Next / previous stop</td></tr>
     <tr><td>Up / Down / Left / Right</td><td>Move within the stop</td></tr>
     <tr><td>Enter, numpad Enter</td><td>Activate the focused item</td></tr>
-    <tr><td>Home / End</td><td>First / last item of the stop (grid rows: row start / end; run log: the whole log's ends)</td></tr>
+    <tr><td>Home / End</td><td>First / last item of the stop</td></tr>
     <tr><td>Ctrl+Up / Ctrl+Down</td><td>Previous / next region (a journal issue, a run-log cycle); on grids, skip cells that read the same</td></tr>
     <tr><td>Page Up / Page Down</td><td>Sliders only: large step up / down</td></tr>
     <tr><td>Backspace</td><td>Secondary action (the right-click menu, Delete on a profile)</td></tr>
@@ -494,7 +494,7 @@ hydrogen at (2, 6) without picking it up. A waldo only grabs when it hits a grab
 <table>
   <thead><tr><th>Key</th><th>Where</th><th>Action</th></tr></thead>
   <tbody>
-    <tr><td>Arrows</td><td>Grid</td><td>Move one cell; "crossed quantum junction" on quantum levels</td></tr>
+    <tr><td>Arrows</td><td>Grid</td><td>Move one cell</td></tr>
     <tr><td>Home / End</td><td>Grid</td><td>Start / end of the row</td></tr>
     <tr><td>Ctrl+arrows</td><td>Grid</td><td>Skip cells that read the same as this one; stops at zone boundaries</td></tr>
     <tr><td>C</td><td>Grid</td><td>Coordinates</td></tr>
@@ -508,7 +508,7 @@ hydrogen at (2, 6) without picking it up. A waldo only grabs when it hits a grab
     <tr><td>Shift+R / Shift+B</td><td>anywhere</td><td>Red / blue waldo: its start when stopped; cell, heading, holding, waiting while running</td></tr>
     <tr><td>Ctrl+Shift+R / Ctrl+Shift+B</td><td>anywhere</td><td>The same, and move the grid cursor there</td></tr>
     <tr><td>Ctrl+R / Ctrl+B</td><td>anywhere</td><td>Trace the red / blue waldo's path as a list</td></tr>
-    <tr><td>Enter</td><td>Molecules</td><td>Open the molecule (a chooser first when there are several)</td></tr>
+    <tr><td>Enter</td><td>Molecules</td><td>Open the molecule</td></tr>
   </tbody>
 </table>
 
@@ -521,39 +521,32 @@ hydrogen at (2, 6) without picking it up. A waldo only grabs when it hits a grab
     <tr><td>Enter</td><td>Palette</td><td>Arm the instruction</td></tr>
     <tr><td>Enter</td><td>Grid</td><td>Place the armed instruction</td></tr>
     <tr><td>L</td><td>anywhere</td><td>Switch the active colour</td></tr>
-    <tr><td>Shift+Space</td><td>Grid</td><td>Mark a rectangle's first corner; press again on the opposite corner to finish it ("3 by 2 from 2, 2 to 4, 3", always top-left to bottom-right). Marking again starts a new rectangle; there is only one. Its cells read "Marked" first</td></tr>
-    <tr><td>Ctrl+Space</td><td>Grid</td><td>Clear the marked rectangle, or a first corner still waiting for its pair; silent when nothing is marked</td></tr>
-    <tr><td>Shift+Up / Shift+Down</td><td>Grid</td><td>Pick among the cell's instructions of the picker colour (wraps). The picker colour starts as the active colour on every cell</td></tr>
-    <tr><td>Shift+Left / Shift+Right</td><td>Grid</td><td>Switch the picker colour for this cell only (the active colour stays) and name its first instruction</td></tr>
-    <tr><td>Alt+Up / Alt+Down</td><td>Grid</td><td>The picked instruction's parameters: colour, direction, grab type and so on (wraps)</td></tr>
-    <tr><td>Alt+Left / Alt+Right</td><td>Grid</td><td>Change that parameter's value (wraps), exactly as the context menu would; a colour change moves the instruction to the other colour</td></tr>
+    <tr><td>Shift+Space</td><td>Grid</td><td>Mark a rectangle's first corner; press again on the opposite corner to finish it</td></tr>
+    <tr><td>Ctrl+Space</td><td>Grid</td><td>Clear the marked rectangle</td></tr>
+    <tr><td>Shift+Up / Shift+Down</td><td>Grid</td><td>Pick among the cell's instructions of the picker colour. The picker colour starts as the active colour on every cell</td></tr>
+    <tr><td>Shift+Left / Shift+Right</td><td>Grid</td><td>Switch the picker colour for this cell only and name its first instruction</td></tr>
+    <tr><td>Alt+Up / Alt+Down</td><td>Grid</td><td>The picked instruction's parameters: colour, direction, grab type and so on</td></tr>
+    <tr><td>Alt+Left / Alt+Right</td><td>Grid</td><td>Change that parameter's value</td></tr>
     <tr><td>Delete</td><td>Grid</td><td>Remove the active colour's instructions in the cell, or in the whole marked rectangle while the cursor is inside it</td></tr>
-    <tr><td>Ctrl+X / Ctrl+C / Ctrl+V</td><td>Grid</td><td>Cut / copy / paste the active colour's instructions (cut and copy take the whole marked rectangle while the cursor is inside it; a paste keeps the layout with its top-left at the cursor). Start markers move only by cut and paste and are never deleted or copied. Hardware (bonders, sensors, tunnels, lasers) moves only by cut and paste: Ctrl+X takes it when the active colour has nothing there (lock a layer to reach hardware under instructions); a paste that doesn't fit stays on the clipboard</td></tr>
+    <tr><td>Ctrl+X / Ctrl+C / Ctrl+V</td><td>Grid</td><td>Cut / copy / paste the active colour's instructions. Hardware (bonders, sensors, tunnels, lasers) moves only by cut and paste: Ctrl+X takes it when the active colour has nothing there (lock a layer to reach hardware under instructions)</td></tr>
     <tr><td>Backspace</td><td>Grid</td><td>Context menu: the instruction's right-click menu, or the grid menu on an empty cell. Colour and icon-variant items apply on Enter and leave the menu open</td></tr>
-    <tr><td>Ctrl+Z / Ctrl+Y</td><td>anywhere</td><td>Undo / redo; the mod says what changed</td></tr>
+    <tr><td>Ctrl+Z / Ctrl+Y</td><td>anywhere</td><td>Undo / redo</td></tr>
   </tbody>
 </table>
-
-<p class="note">The picker keys (Shift and Alt with arrows) do nothing when the colour they would act on
-has no instruction in the cell.</p>
 
 <h3>5.4 Reactor: running</h3>
 
 <table>
   <thead><tr><th>Key</th><th>Action</th></tr></thead>
   <tbody>
-    <tr><td>Space</td><td>Run; pauses when running</td></tr>
+    <tr><td>Space</td><td>Run/pause</td></tr>
     <tr><td>Backquote</td><td>Stop</td></tr>
     <tr><td>1 / 2 / 3 / 4</td><td>Play at speed 1 to 4</td></tr>
     <tr><td>0</td><td>Step to the next event of the open reactor</td></tr>
     <tr><td>Ctrl+0</td><td>Step to the next event of any reactor</td></tr>
-    <tr><td>Escape</td><td>Research levels: stops a run; when stopped, opens the exit prompt. Production, defense and sandbox: returns to the pipeline, and the run keeps going</td></tr>
+    <tr><td>Escape</td><td>Research levels: stops a run; when stopped, opens the exit prompt. Production, defense and sandbox: returns to the pipeline</td></tr>
   </tbody>
 </table>
-
-<p>Run events (grabs, drops, bonds, sensor hits, outputs, errors) are always logged in the Run log.
-They are spoken only at speed 1 and while stepping, and inside a reactor only that reactor's events.
-Run state changes are always spoken.</p>
 
 <h3>5.5 Pipeline editor</h3>
 
@@ -567,17 +560,13 @@ Run state changes are always spoken.</p>
     <tr><td>Escape</td><td>while armed</td><td>Cancel the armed item</td></tr>
     <tr><td>Ctrl+X</td><td>Components or Map</td><td>Cut the component</td></tr>
     <tr><td>Ctrl+C</td><td>Components or Map</td><td>Copy the component</td></tr>
-    <tr><td>Ctrl+V</td><td>Map</td><td>Move the cut component here, or place a copy (the copy stays on the clipboard)</td></tr>
+    <tr><td>Ctrl+V</td><td>Map</td><td>Move the cut component here, or place a copy</td></tr>
     <tr><td>Delete</td><td>Components or Map</td><td>Delete the component</td></tr>
     <tr><td>Delete</td><td>Shelf, on a saved design</td><td>Delete the design</td></tr>
     <tr><td>Backspace</td><td>Components or Map</td><td>Component menu: Reset Pipes, the reactor's notes, Save to Toolbox, Delete</td></tr>
     <tr><td>Escape</td><td>anywhere</td><td>Exit prompt</td></tr>
   </tbody>
 </table>
-
-<p>The Shelf lists the stock components, then your saved reactor designs (with a Delete button to the
-right of each). Enter arms one; Enter on the map places it. Save a design with Save to Toolbox from a
-reactor's menu.</p>
 
 <h3>5.6 Drawing a pipe</h3>
 

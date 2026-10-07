@@ -403,7 +403,9 @@ instruction and change it. Two ways:</p>
     Right to in beta, then Enter. The menu stays open while you change things; Escape closes it.</li>
   <li><strong>The quick way</strong>: Alt+Down walks the instruction's settings, and Alt+Right changes the
     one you're on. Alt+Down says <samp>Colour, red</samp>; Alt+Right makes it <samp>blue</samp>.
-    Alt+Down again says <samp>Input type, in alpha</samp>; Alt+Right makes it <samp>in beta</samp>.</li>
+    Alt+Down again says <samp>Input type, in alpha</samp>; Alt+Right makes it <samp>in beta</samp>.
+    The input type is this instruction's main setting, and <kbd>'</kbd> changes that one directly,
+    without walking to it: <kbd>'</kbd> on the input says <samp>in beta</samp>.</li>
 </ul>
 
 <p>Changing the colour of every single instruction gets old fast. Which colour new instructions get
@@ -523,10 +525,12 @@ hydrogen at (2, 6) without picking it up. A waldo only grabs when it hits a grab
     <tr><td>L</td><td>anywhere</td><td>Switch the active colour</td></tr>
     <tr><td>Shift+Space</td><td>Grid</td><td>Mark a rectangle's first corner; press again on the opposite corner to finish it</td></tr>
     <tr><td>Ctrl+Space</td><td>Grid</td><td>Clear the marked rectangle</td></tr>
+    <tr><td>Ctrl+A</td><td>Grid</td><td>Mark the whole reactor as the rectangle</td></tr>
     <tr><td>Shift+Up / Shift+Down</td><td>Grid</td><td>Pick among the cell's instructions of the picker colour. The picker colour starts as the active colour on every cell</td></tr>
     <tr><td>Shift+Left / Shift+Right</td><td>Grid</td><td>Switch the picker colour for this cell only and name its first instruction</td></tr>
     <tr><td>Alt+Up / Alt+Down</td><td>Grid</td><td>The picked instruction's parameters: colour, direction, grab type and so on</td></tr>
     <tr><td>Alt+Left / Alt+Right</td><td>Grid</td><td>Change that parameter's value</td></tr>
+    <tr><td>; / '</td><td>Grid</td><td>Change the picked instruction's main parameter (grab type, bond type, input or output type, direction, control letter, rotation) to the previous / next value, whichever parameter Alt+Up / Alt+Down is on</td></tr>
     <tr><td>Delete</td><td>Grid</td><td>Remove the active colour's instructions in the cell, or in the whole marked rectangle while the cursor is inside it</td></tr>
     <tr><td>Ctrl+X / Ctrl+C / Ctrl+V</td><td>Grid</td><td>Cut / copy / paste the active colour's instructions. Hardware (bonders, sensors, tunnels, lasers) moves only by cut and paste: Ctrl+X takes it when the active colour has nothing there (lock a layer to reach hardware under instructions)</td></tr>
     <tr><td>Backspace</td><td>Grid</td><td>Context menu: the instruction's right-click menu, or the grid menu on an empty cell. Colour and icon-variant items apply on Enter and leave the menu open</td></tr>

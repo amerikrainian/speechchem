@@ -257,12 +257,14 @@ namespace SpeechChem.Screens.Reactor
                     if (!LayerEditable(r, layer)) continue;
                     var i = r.method_15(cell, (Enum114)layer) as Instruction;
                     if (i == null) continue;
-                    if (!i.bool_0) { sawStart = true; continue; } // START: not deletable
+                    if (!i.bool_0) { sawStart = true; continue; } // START: not deletable, skipped silently
                     victims.Add(i);
                 }
             if (victims.Count == 0)
             {
-                Speech.Tts.Speak(Loc.T(sawStart ? "reactor.edit.start" : "reactor.edit.nothing"), interrupt: true);
+                // Only START markers there: a silent no-op (user rule 2026-10-07; the game says nothing
+                // either — START's menu simply has no Delete).
+                if (!sawStart) Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true);
                 return;
             }
             var labels = new List<string>();

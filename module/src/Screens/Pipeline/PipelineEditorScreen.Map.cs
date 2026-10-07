@@ -121,9 +121,16 @@ namespace SpeechChem.Screens.Pipeline
         {
             var parts = CellContentsCore(p, cell);
             // A defense level's enemy is drawn over the map (Game/DefenseText): name it on the cells
-            // its drawing covers, after whatever lies beneath.
+            // its drawing covers, after whatever lies beneath, with its visible state when it has one
+            // ("shield down"; nothing while normal — user request 2026-10-06).
             var level = DefenseText.Level;
-            if (level != null && DefenseText.Covers(DefenseText.Enemy(level), cell)) parts.Add(DefenseText.EnemyName(level));
+            var enemy = DefenseText.Enemy(level);
+            if (level != null && DefenseText.Covers(enemy, cell))
+            {
+                parts.Add(DefenseText.EnemyName(level));
+                string state = DefenseText.Defeated(enemy) ? null : DefenseText.EnemyState(level, enemy);
+                if (state != null) parts.Add(state);
+            }
             return parts;
         }
 

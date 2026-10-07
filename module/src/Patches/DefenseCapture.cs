@@ -318,8 +318,10 @@ namespace SpeechChem.Patches
                         var move = DefenseText.MoveEvent(EnemyName, watch.At, at);
                         if (move != null) Narrator.Emit(move);
                     }
-                    if (state != null && state != watch.State)
-                        Narrator.Emit(new NarrationEvent("defense.state").Part("enemy", EnemyName, ":").Part("state", state));
+                    // A state clearing is a change too: back to "normal" (the shield coming back up on an
+                    // undamaged enemy used to pass silently — user report 2026-10-06).
+                    if (state != watch.State)
+                        Narrator.Emit(new NarrationEvent("defense.state").Part("enemy", EnemyName, ":").Part("state", state ?? Loc.T("defense.state.none")));
                 }
                 watch.At = at;
                 watch.State = state;

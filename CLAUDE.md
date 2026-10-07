@@ -788,7 +788,8 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   (each subclass's `vmethod_3`, run by the pipeline's frame draw) passes to `SpriteBatch.method_8`
   (every sprite overload funnels there), particle effects (Class190.method_2/3) excluded — spoken as
   map cells ("columns 27 to 32, rows 3 to 11": the robot's body, wheels and its tracks to the edge);
-  the map names the enemy on every covered cell. Captured only when the pipeline is drawn (not
+  the map names the enemy on every covered cell, plus its visible state when it has one
+  ("Quororque, shield down"; nothing while normal — user request 2026-10-06). Captured only when the pipeline is drawn (not
   inside a reactor — the game shows no map there either). Enemy health and attack timers are drawn
   nowhere but the graph, so they are not spoken as numbers (health drops log "{enemy} hit").
 - ENEMY stop (pipeline, after the map): name + title (+ "destroyed"), the span (live), the parts
@@ -843,7 +844,8 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   damage), thruster left / right); Bodies — which drawn rectangle is each enemy's body (some draw
   attacks, water or a shadow too; one is drawn by its LEVEL, not itself; one is absent until it
   arrives = "off the map"); EnemyStates — visible states (an eye's opening and colour, a shield
-  down, a mouth opening / firing, walking, phasing / stunned, damage stages, lightning); Parts —
+  down, a mouth opening / firing, walking, phasing / stunned, damage stages, lightning; a state
+  clearing is logged as "{enemy}: normal" — user report 2026-10-06); Parts —
   only the robot. Bodies / states read the enemy's OWN level (Class310.defenseLevelEditor_0).
   Multi-bar meters read every bar ("H2 0 percent, O2 0 percent, Pu 0 percent"; formula markup
   stripped with MoleculeText.Clean).

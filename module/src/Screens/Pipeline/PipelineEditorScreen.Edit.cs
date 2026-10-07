@@ -360,7 +360,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             var d = FocusedComponent();
-            if (p == null || d == null) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (p == null || d == null) return;
             if (!CanEdit()) return;
             if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
             _cut = d;
@@ -377,7 +377,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             var d = FocusedComponent();
-            if (p == null || d == null) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (p == null || d == null) return;
             if (!CanEdit()) return;
             if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
             _cut = d;
@@ -437,7 +437,7 @@ namespace SpeechChem.Screens.Pipeline
         private void Delete(Draggable d, bool fromList, bool viaMenu)
         {
             var p = Model;
-            if (p == null || d == null) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (p == null || d == null) return;
             if (!CanEdit()) return;
             if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
             string name = PipelineText.Name(p, d);

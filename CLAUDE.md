@@ -504,7 +504,8 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
 - EDITING (user rules): palette letters place at the cursor in the ACTIVE colour, replacing the slot's
   occupant; Enter on a palette slot arms it, the next Enter on the grid places it (one-shot; Enter with
   nothing armed does nothing); Delete / Ctrl+X / Ctrl+C / Ctrl+V act on the active colour only; START
-  moves only via cut/paste (Delete skips it silently, also when it is all there is — user rule 2026-10-07); HARDWARE (bonders, sensors, tunnels, lasers — all built undeletable) moves
+  moves only via cut/paste (Delete skips it silently); Delete / cut / copy with nothing to take are SILENT no-ops here, on the
+  pipeline and in the note editor (no "Nothing there" — user rule 2026-10-07); HARDWARE (bonders, sensors, tunnels, lasers — all built undeletable) moves
   only via cut/paste too: Ctrl+X takes a cell's hardware when the active colour gave nothing there
   (none, or that colour locked — the game's own pick order walks red, red arrow, blue, blue arrow,
   hardware LAST and skips locked/hidden layers, so locking is how a player reaches hardware under

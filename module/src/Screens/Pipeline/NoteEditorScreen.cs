@@ -215,7 +215,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var m = MoleculeAt(k);
             if (m == null) return;
-            if (!m.dictionary_2.ContainsKey(pos)) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (!m.dictionary_2.ContainsKey(pos)) return;
             try
             {
                 string name = m.dictionary_2[pos].method_0();
@@ -233,7 +233,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var m = MoleculeAt(k);
             Atom atom;
-            if (m == null || !m.dictionary_2.TryGetValue(pos, out atom)) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (m == null || !m.dictionary_2.TryGetValue(pos, out atom)) return;
             _armed = atom;
             if (cut) Remove(k, pos);
             else Speech.Tts.Speak(Loc.T("reactor.edit.copied", new { what = atom.method_0() }), interrupt: true);
@@ -245,7 +245,7 @@ namespace SpeechChem.Screens.Pipeline
         private void OpenBondMenu(int k, Vector2i pos)
         {
             var m = MoleculeAt(k);
-            if (m == null || !m.dictionary_2.ContainsKey(pos)) { Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true); return; }
+            if (m == null || !m.dictionary_2.ContainsKey(pos)) return;
             var items = new List<ActionListScreen.Item>();
             // Right / Down from this atom; left / up = the neighbour's own Right / Down bond.
             var sides = new[]

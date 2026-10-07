@@ -250,23 +250,18 @@ namespace SpeechChem.Screens.Reactor
             if (r == null || !CanEdit()) return;
             bool fromRectangle = CursorInRectangle;
             var victims = new List<Instruction>();
-            bool sawStart = false;
             foreach (var cell in TargetCells())
                 foreach (int layer in ActiveLayers())
                 {
                     if (!LayerEditable(r, layer)) continue;
                     var i = r.method_15(cell, (Enum114)layer) as Instruction;
                     if (i == null) continue;
-                    if (!i.bool_0) { sawStart = true; continue; } // START: not deletable, skipped silently
+                    if (!i.bool_0) continue; // START: not deletable, skipped silently
                     victims.Add(i);
                 }
-            if (victims.Count == 0)
-            {
-                // Only START markers there: a silent no-op (user rule 2026-10-07; the game says nothing
-                // either — START's menu simply has no Delete).
-                if (!sawStart) Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true);
-                return;
-            }
+            // Nothing deletable (empty, or only START markers): a silent no-op (user rule 2026-10-07;
+            // the game says nothing either — START's menu simply has no Delete).
+            if (victims.Count == 0) return;
             var labels = new List<string>();
             using (UndoStep())
             {
@@ -354,11 +349,7 @@ namespace SpeechChem.Screens.Reactor
                     }
                 }
             }
-            if (entries.Count == 0)
-            {
-                Speech.Tts.Speak(Loc.T("reactor.edit.nothing"), interrupt: true);
-                return;
-            }
+            if (entries.Count == 0) return; // nothing to take: silent (user rule 2026-10-07)
             _clip.Clear();
             _clip.AddRange(entries);
             if (fromRectangle) DropMark();

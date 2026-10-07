@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.0.9
+
+- Added ; and ' keys to cycle instruction primary parameter.
+
 ## V0.0.8
 
 - We now include tooltips for buildings on the map.

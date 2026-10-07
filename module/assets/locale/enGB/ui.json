@@ -230,7 +230,6 @@
   "reactor.menu.group.rotation": "Rotation",
   "menu.group.default": "Options",
   "reactor.edit.start": "Start markers can only be moved.",
-  "reactor.edit.nothing": "Nothing there.",
   "reactor.edit.placed": "{placed}",
   "reactor.edit.deleted": "Deleted {what}",
   "reactor.edit.cut": "Cut {what}",

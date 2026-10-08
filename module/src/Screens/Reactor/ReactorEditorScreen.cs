@@ -88,16 +88,40 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.jump.log", () => JumpToStop(LogStop));
             yield return new ElementAction("screen.jump.extra", () => JumpToStop(LayersStop));
             yield return new ElementAction("screen.jump.back", () => _jumps.Back(Here()));
+            if (_crash != null) yield return new ElementAction(ActionIds.Back, EndCrash); // Escape: the live grid
         }
 
         private readonly JumpBack _jumps = new JumpBack();
 
-        /// <summary>How to come back to where focus is now: the grid cell, or the node.</summary>
+        // The last place focus was seen (each update), for a jump made before focus has resumed —
+        // the first frame after a dialog closes.
+        private ControlId _hereNode;
+        private bool _hereOnGrid;
+        private int _hereX, _hereY;
+
+        private void NoteHere()
+        {
+            var id = Navigation.FocusedNodeId;
+            if (id == null) return;
+            _hereNode = id;
+            _hereOnGrid = OnGrid;
+            _hereX = _cursorX;
+            _hereY = _cursorY;
+        }
+
+        /// <summary>How to come back to where focus is now: the grid cell, or the node; focus not
+        /// resumed yet: the last place seen.</summary>
         private Action Here()
         {
-            if (OnGrid) { int x = _cursorX, y = _cursorY; return () => FocusCell(x, y); }
             var id = Navigation.FocusedNodeId;
-            return id == null ? (Action)null : () => Navigation.FocusNode(id);
+            if (id == null)
+            {
+                if (_hereOnGrid) { int hx = _hereX, hy = _hereY; return () => FocusCell(hx, hy); }
+                var last = _hereNode;
+                return last == null ? (Action)null : () => Navigation.FocusNode(last);
+            }
+            if (OnGrid) { int x = _cursorX, y = _cursorY; return () => FocusCell(x, y); }
+            return () => Navigation.FocusNode(id);
         }
 
         /// <summary>A stop jump key: land on the stop as Tab would (where you last were in it).
@@ -148,6 +172,7 @@ namespace SpeechChem.Screens.Reactor
             _armedKey = -1;
             _pendingJump = null;
             _jumps.Clear();
+            _crash = null;
             _category = _item = -1;
             ResetEditState();
         }
@@ -157,11 +182,14 @@ namespace SpeechChem.Screens.Reactor
             var editor = Editor;
             if (editor?.reactor_0 == null) return;
             EnsureReactor(editor.reactor_0);
+            WatchCrash(editor); // the crash overlay (Crash.cs)
+            WatchInvalidMolecule(editor);
             TrackCursor();
             WatchTutorial(editor);
             UpdateRunWatch(editor);
             ApplyPendingJump();
             SpeakLevelStart(editor);
+            NoteHere();
         }
 
         // ---- level start (user request 2026-10-06): opening a research level speaks the Molecules

@@ -108,8 +108,10 @@ namespace SpeechChem.Screens.Reactor
             var r = Model;
             if (r == null) return false;
             var size = r.method_1();
+            var crash = _crash;
             GridSkip.Target(x, y, dx, dy, size.int_0, size.int_1,
-                (cx, cy) => RegionAt(r, cx, cy) + "|" + string.Join(", ", CellContents(r, cx, cy).ToArray()), out int tx, out int ty);
+                (cx, cy) => crash != null ? crash.Zones[cx, cy] + "|" + crash.Contents[cx, cy]
+                    : RegionAt(r, cx, cy) + "|" + string.Join(", ", CellContents(r, cx, cy).ToArray()), out int tx, out int ty);
             if (tx == x && ty == y) Speech.Tts.Speak(CellReadout(x, y), interrupt: true);
             else FocusCell(tx, ty);
             return true;
@@ -193,6 +195,7 @@ namespace SpeechChem.Screens.Reactor
 
         private string CellReadout(int x, int y)
         {
+            if (_crash != null) return CrashReadout(x, y); // the crash overlay (Crash.cs)
             var r = Model;
             if (r == null) return null;
             var parts = new List<string>();
@@ -326,7 +329,8 @@ namespace SpeechChem.Screens.Reactor
         }
 
         /// <summary>Shift+Backspace on a cell.</summary>
-        private string CellDetails(int x, int y) => CellDetailsOf(Model, x, y, allLayers: false);
+        private string CellDetails(int x, int y)
+            => _crash != null && x < _crash.Width && y < _crash.Height ? _crash.Details[x, y] : CellDetailsOf(Model, x, y, allLayers: false);
 
         /// <summary>A cell's details, most useful first (user rule): during a run each waldo's state
         /// beyond the grid's "facing" (holding, the game's waiting text, syncing, rotating, at the

@@ -1021,7 +1021,30 @@ inside reactor 2 its own events are SPOKEN (RunCapture.AddWaldo) and SHOWN in it
 (WindowedLogView render hook) without the prefix; other reactors keep theirs; the pipeline's view
 shows every number. Verified live in both views. Enter opens a
 read-only grid on the marked cell ("error here"); Escape returns to the entry. Atoms collide when
-closer than a cell mid-move, so the marked cell may hold one atom with the other beside it. GroupedLog (ported from Echopunks) keeps the whole run under
+closer than a cell mid-move, so the marked cell may hold one atom with the other beside it.
+CRASH OVERLAY (`ReactorEditorScreen.Crash.cs`, user request 2026-10-07): the error hook also leaves
+the snapshot PENDING; once the box is closed (Okay — which stops the run) and the failing reactor
+is back on top, its GRID shows the snapshot, cursor on the first marked cell: "Reactor at cycle 4, 1,
+2, alpha input, red waldo, facing left, Oxygen, double bond left, error here". Not modal, like pipe
+drawing: only the grid cells change (readout, Shift+Backspace details, Ctrl+arrow skips read the
+snapshot); other stops and keys are live. Escape (ModalCapturesEscape while shown) returns the grid
+to live, re-reading the cell; any edit (a Signature over the members, their cells / layers and
+instruction labels, changes) or a new run ends it silently. A box closed over the pipeline drops
+the pending snapshot — a safety net only: the game itself opens the failing reactor before the
+box (GoalTracker.smethod_11 -> Class77.method_6 pops to the pipeline and pushes it), so a crash
+while on the pipeline still ends on that reactor's grid. INVALID MOLECULE (Class69, raised by the
+refusing building's Draggable.method_7 — output counters Class578, defense buildings Class598, the
+laser reactor's gas input Class636; DialogCapture records the building and its input's marker, map
+pixels -> cell): in production / defense the game closes any reactor and the box sits over the
+pipeline; the first frame it is gone (before focus resumes, so the old cell is never re-read —
+user rule; Here() falls back to the last place seen, for Alt+Backspace) the map cursor lands
+on that input cell ("27, 3, Recycler, input 1"). In research the box closes over the reactor: the
+grid cursor lands in the output zone feeding that building and its Alt+P / O line follows
+(UNTESTED live). Probe `invalid` raises the game's own error on the first output building (safe
+while stopped). Verified live 2026-10-07 on the pipeline. 
+the pending snapshot. Verified live 2026-10-07 on a tutorial level (atom out of bounds at 1, 2):
+arrival, arrows, details, skip, Tools and back, Escape, an edit ending it.
+GroupedLog (ported from Echopunks) keeps the whole run under
 a 10M-entry insurance cap; WindowedLogView is the reusable Tab stop: one region per cycle, a window of
 51 groups / 1200 rows re-centred on focus every rebuild, tail-follow when focus is elsewhere, Home/End
 = the whole log's ends.

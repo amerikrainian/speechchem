@@ -704,6 +704,9 @@ namespace SpeechChem.Patches
                 {
                     var editor = __0.bool_0 ? __0.method_0() : Class53.smethod_5<Class77>();
                     snapshot = Screens.Reactor.ReactorSnapshot.Capture(editor?.reactor_0, __3, Cycle);
+                    // The grid shows it once the box is closed (ReactorEditorScreen's crash overlay).
+                    Screens.Reactor.ReactorEditorScreen.PendingCrash = snapshot;
+                    Screens.Reactor.ReactorEditorScreen.PendingCrashReactor = editor?.reactor_0;
                 }
                 catch (Exception ex) { SpeechChem.Log.Error("[run] crash snapshot", ex); }
                 // Several reactors: say which one failed, as the waldo events do ("reactor 2, ...").

@@ -124,6 +124,7 @@ namespace SpeechChem.Dev
                     return "page" + (char)10;
                 }
                 case "blast": return Blast(argument);
+                case "invalid": return Invalid();
                 case "profile": return LiveAudit.Profile(argument);
                 case "openlevel": return LiveAudit.OpenLevel(argument);
                 case "fire": return LiveAudit.Fire(argument);
@@ -179,6 +180,26 @@ namespace SpeechChem.Dev
                 return "blast from column " + x + "; robot x " + robot.vector2i_0.int_0 + ", " + Game.DefenseText.PartsText(robot) +"\n";
             }
             return "[no tank at column " + x + "]\n";
+        }
+
+        /// <summary>The game's own invalid-molecule error on the first output building's first
+        /// input (Draggable.method_7 with a Xenon, as the laser reactor raises it): the box, then
+        /// Okay stops the run. Safe while stopped: no cycle runs.</summary>
+        private static string Invalid()
+        {
+            var p = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+            if (p == null) return "[no pipeline open]\n";
+            var cellSize = p.method_3();
+            foreach (var kv in p.dictionary_1)
+            {
+                if (!(kv.Key is Class578 output) || output.class485_0.Count == 0) continue;
+                var input = output.class485_0.Values.First();
+                var cell = kv.Value + input.vector2i_0;
+                var pos = new Impeller.Vector2i(cell.int_0 * cellSize.int_0 + cellSize.int_0 / 2, cell.int_1 * cellSize.int_1 + cellSize.int_1 / 2);
+                output.method_7(Class307.smethod_6(Element.Xenon), output.dictionary_0.Keys, pos);
+                return "invalid molecule at " + output.string_1 + ", input cell " + (cell.int_0 + 1) + ", " + (cell.int_1 + 1) + "\n";
+            }
+            return "[no output building]\n";
         }
 
         private static string Focus(string argument)

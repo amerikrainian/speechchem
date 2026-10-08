@@ -57,6 +57,10 @@ namespace SpeechChem.Patches
                 }
                 harmony.Patch(typeof(Class69).GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)[0],
                     prefix: new HarmonyMethod(self, nameof(BeforeWrongMolecule)));
+                // The building that raises it (an output counter, a defense building, a laser
+                // reactor's gas input) and its input's marker point (map pixels: the input cell's centre).
+                harmony.Patch(Game.Expr.MethodOf(() => default(SpaceChem.Pipeline.Draggable).method_7(default(Molecule), default(IEnumerable<Molecule>), default(Vector2i))),
+                    prefix: new HarmonyMethod(self, nameof(BeforeInvalidMolecule)));
                 Log.Info("[patch] dialog capture armed");
             }
             catch (Exception ex) { Log.Error("[patch] dialog capture failed to apply", ex); }
@@ -112,6 +116,23 @@ namespace SpeechChem.Patches
                 }
             }
             catch (Exception ex) { Log.Error("[capture] message box", ex); }
+        }
+
+        /// <summary>The building whose input refused a molecule, and that input's map cell; taken
+        /// once the box is closed (user request 2026-10-07: as helpful as possible — the pipeline
+        /// lands on the input, a research reactor's grid on the output zone that fed it).</summary>
+        internal static SpaceChem.Pipeline.Draggable InvalidAt;
+        internal static Vector2i InvalidCell;
+
+        private static void BeforeInvalidMolecule(SpaceChem.Pipeline.Draggable __instance, Vector2i __2)
+        {
+            try
+            {
+                InvalidAt = __instance;
+                var size = __instance?.pipeline_0?.method_3() ?? default(Vector2i);
+                InvalidCell = size.int_0 > 0 && size.int_1 > 0 ? new Vector2i(__2.int_0 / size.int_0, __2.int_1 / size.int_1) : default(Vector2i);
+            }
+            catch (Exception ex) { Log.Error("[capture] invalid molecule source", ex); }
         }
 
         // (string output, Molecule produced, IEnumerable<Molecule> accepted, Struct116<Vector2i> pos)

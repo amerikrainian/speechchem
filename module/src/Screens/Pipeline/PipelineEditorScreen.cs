@@ -125,8 +125,26 @@ namespace SpeechChem.Screens.Pipeline
                 _deleteFocus = null;
             }
             TrackMapCursor();
+            // A Reaction Error box that closed over the pipeline: no reactor grid to show it on (the
+            // game opens the failing reactor before the box, so this is a safety net).
+            if (Reactor.ReactorEditorScreen.PendingCrash != null && !Running) Reactor.ReactorEditorScreen.PendingCrash = null;
+            // An invalid-molecule box closed (it stops the run): land on the input that refused it.
+            // At once, before focus resumes: the old cell's re-announcement is never heard (user
+            // rule 2026-10-07); Alt+Backspace returns to the last place seen before the box (Here).
+            if (Patches.DialogCapture.InvalidAt != null && !Running && ActiveChild == null)
+            {
+                var cell = Patches.DialogCapture.InvalidCell;
+                Patches.DialogCapture.InvalidAt = null;
+                var size = pipeline.method_4();
+                if (cell.int_0 >= 0 && cell.int_1 >= 0 && cell.int_0 < size.int_0 && cell.int_1 < size.int_1)
+                {
+                    _jumps.Remember(Here());
+                    FocusMapCell(cell.int_0, cell.int_1);
+                }
+            }
             UpdateDraw();
             UpdateRunWatch();
+            NoteHere();
         }
 
         // ---- lifetime: a reactor opened from here, a dialog or Story & Info cover the editor but
@@ -167,12 +185,35 @@ namespace SpeechChem.Screens.Pipeline
 
         private readonly JumpBack _jumps = new JumpBack();
 
-        /// <summary>How to come back to where focus is now: the map cell (at any zoom), or the node.</summary>
+        // The last place focus was seen (each update), for a jump made before focus has resumed —
+        // the first frame after a dialog closes.
+        private ControlId _hereNode;
+        private bool _hereOnMap;
+        private int _hereX, _hereY;
+
+        private void NoteHere()
+        {
+            var id = Navigation.FocusedNodeId;
+            if (id == null) return;
+            _hereNode = id;
+            _hereOnMap = OnMap;
+            _hereX = _cursorX;
+            _hereY = _cursorY;
+        }
+
+        /// <summary>How to come back to where focus is now: the map cell (at any zoom), or the node;
+        /// focus not resumed yet: the last place seen.</summary>
         private System.Action Here()
         {
-            if (OnMap) { int x = _cursorX, y = _cursorY; return () => FocusMapCell(x, y); }
             var id = Navigation.FocusedNodeId;
-            return id == null ? (System.Action)null : () => Navigation.FocusNode(id);
+            if (id == null)
+            {
+                if (_hereOnMap) { int hx = _hereX, hy = _hereY; return () => FocusMapCell(hx, hy); }
+                var last = _hereNode;
+                return last == null ? (System.Action)null : () => Navigation.FocusNode(last);
+            }
+            if (OnMap) { int x = _cursorX, y = _cursorY; return () => FocusMapCell(x, y); }
+            return () => Navigation.FocusNode(id);
         }
 
         /// <summary>Land on a stop as Tab would. Already there, or a stop not shown now: nothing.</summary>

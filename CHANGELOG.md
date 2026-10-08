@@ -3,6 +3,13 @@
 ## V0.1.0
 
 - Removed instructions from categories; they had shortcut keys already.
+- Added ctrl+G to check progress, ctrl+q to check reactor quota, ctrl+s to check symbols, cycles and reactors, alt a/b for alpha and beta inputs, alt p/o for psi/omega outputs. Alt+shift a/b/p/o now open the molecule viewer for that input/output, ctrl+shift p/o edit the psi/omega output notes.
+- Drawing pipes no longer locks you to the grid.
+- Added pipeline shelf as a category to place buildings while remaining on a grid.
+- Added zoom to the pipeline map: shift up/down zoom out and in through 4x4 and 8x8 blocks, ctrl+shift up/down jump straight to 8x8 or back to 1x1. Blocks tell you what's in them, shift+backspace for the details.
+- p on a pipe now tells you where it goes, and how many molecules are in it during a run.
+- Added alt+1 to jump to the grid/map, alt+` to the pipeline table, alt+2 to the palette/shelf, alt+3 to the tools, alt+4 to the run log, alt+5 to the layers or the enemy. Alt+1 from a table row and alt+` from a building on the map take you to that building. Alt+backspace takes you back to where you were before the jump.
+- Getting an error now immediately opens the crashed reactor's state. Editing said state or hitting escape closes the dialogue.
 
 ## V0.0.9
 

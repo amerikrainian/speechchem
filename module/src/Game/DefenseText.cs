@@ -382,7 +382,7 @@ namespace SpeechChem.Game
         }
 
         /// <summary>The Control Center's name as the progress panel titles it.</summary>
-        public static string BaseName() => Screens.Common.ProgressSection.ProgressLabel();
+        public static string BaseName() => Screens.Common.LevelStatus.ProgressLabel();
 
         // ---- special-building events ----
 

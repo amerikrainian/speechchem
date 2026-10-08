@@ -19,10 +19,11 @@ namespace SpeechChem.Screens.Reactor
     ///
     /// Tab stops (user-approved layout, 2026-09-27): grid (a 2D cursor; initial) → palette → layer
     /// controls → run and tools (the shared ToolbarSection) → molecules (input/output panels) →
-    /// status (the shared ProgressSection) → tutorial (only while a tutorial step is active) → run
-    /// log (the shared WindowedLogView over Patches/RunCapture; only once a run has logged events).
+    /// tutorial (only while a tutorial step is active) → run log (the shared WindowedLogView over
+    /// Patches/RunCapture; only once a run has logged events). No status stop: Ctrl+S / Ctrl+G /
+    /// Ctrl+Q read it (Common/LevelStatus).
     /// Screen keys: C coordinates, Shift+R / Shift+B red / blue waldo (Ctrl+Shift also jumps
-    /// the cursor there, Ctrl alone traces its path), P status,
+    /// the cursor there, Ctrl alone traces its path),
     /// Ctrl+T repeats the tutorial step, L switches the active layer (the game's Tab, which is
     /// navigation here), Shift+Backspace details. The game keeps 1-4, ~ and Space (run controls),
     /// Ctrl+Z / Ctrl+Y and Escape (native exit / stop / deselect).
@@ -34,7 +35,6 @@ namespace SpeechChem.Screens.Reactor
         private const string LayersStop = "reactor.layers";
         private const string ToolsStop = "reactor.tools";
         private const string MoleculesStop = "reactor.molecules";
-        private const string StatusStop = "reactor.status";
         private const string TutorialStop = "reactor.tutorial";
 
         public override string Key => "reactor";
@@ -61,7 +61,7 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.cat.next", () => StepCategory(1));
             yield return new ElementAction("screen.reactor.item.prev", () => StepItem(-1));
             yield return new ElementAction("screen.reactor.item.next", () => StepItem(1));
-            yield return new ElementAction("screen.reactor.status", () => Speech.Tts.Speak(ProgressSection.Summary(), interrupt: true));
+            foreach (var a in LevelStatus.Actions()) yield return a; // Ctrl+S score, Ctrl+G progress, Ctrl+Q quota
             yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
             yield return new ElementAction("screen.reactor.molecule", OpenZoneMolecules);
@@ -85,7 +85,6 @@ namespace SpeechChem.Screens.Reactor
             BuildLayers(b, editor);
             ToolbarSection.Build(b, ToolsStop, "reactor.tools");
             BuildMolecules(b, editor);
-            ProgressSection.Build(b, StatusStop, "reactor.status");
             BuildTutorial(b, editor);
             BuildLog(b);
         }

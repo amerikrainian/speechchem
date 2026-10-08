@@ -18,15 +18,14 @@ namespace SpeechChem.Screens.Pipeline
     /// opens its single reactor at once (PipelineEditor.vmethod_2), so they are skipped here.
     ///
     /// Tab stops (user-approved layout, 2026-09-27): Components (initial) → map → (defense levels:
-    /// the enemy) → shelf (a defense run: Reactor Controls in its place) → status (the shared
-    /// ProgressSection, then the reactor quota) → tools (the shared ToolbarSection) → run log.
+    /// the enemy) → shelf (a defense run: Reactor Controls in its place) → tools (the shared
+    /// ToolbarSection) → run log. No status stop: Ctrl+S / Ctrl+G / Ctrl+Q read it (Common/LevelStatus).
     /// Reactors are named "Assembly Reactor 2", numbered in reading order (Game/PipelineText, shared
     /// with the run log). Escape stays native (the exit prompt; the game polls it itself).
     /// </summary>
     public sealed partial class PipelineEditorScreen : Screen
     {
         private const string ComponentsStop = "pipeline.components";
-        private const string StatusStop = "pipeline.status";
         private const string ToolsStop = "pipeline.tools";
         private const string ControlsStop = "pipeline.controls";
 
@@ -68,7 +67,8 @@ namespace SpeechChem.Screens.Pipeline
                 else if (CursorInRectangle) DeleteMarked();
                 else Delete(FocusedComponent());
             });
-            yield return new ElementAction("screen.reactor.status", SpeakDrawStatus);
+            yield return new ElementAction("screen.reactor.status", SpeakDrawStatus); // P: the drawn pipe
+            foreach (var a in LevelStatus.Actions()) yield return a; // Ctrl+S score, Ctrl+G progress, Ctrl+Q quota
             yield return new ElementAction("screen.reactor.molecule", OpenFocusedMolecules); // M on a port cell
             foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
             yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
@@ -93,8 +93,6 @@ namespace SpeechChem.Screens.Pipeline
             // A defense run shows Reactor Controls where the shelf was (PipelineEditor.method_5).
             if (DefenseText.ControlsShown) ReactorControlsSection.Build(b, ControlsStop, "pipeline.controls");
             else BuildShelf(b, editor);
-            ProgressSection.Build(b, StatusStop, "pipeline.status");
-            b.AddItem(ControlId.Structural("pipeline.status.quota"), ProfileUi.Text(true, () => QuotaText(Model)));
             ToolbarSection.Build(b, ToolsStop, "pipeline.tools");
             BuildLog(b);
         }
@@ -272,17 +270,6 @@ namespace SpeechChem.Screens.Pipeline
         {
             try { rd.vmethod_2(); }
             catch (System.Exception ex) { Log.Error("[pipeline] open reactor failed", ex); }
-        }
-
-        // ---- the reactor quota (Class711): how many reactors against GoalTracker.int_0 ----
-
-        internal static string QuotaText(SpaceChem.Pipeline.Pipeline p)
-        {
-            if (p == null) return null;
-            if (GoalTracker.int_0 == 0) return GameText.Speech(GameText.T("NO\nREACTORS\nREQUIRED"));
-            int used = p.method_21();
-            string text = Loc.T("pipeline.quota", new { label = GameText.T("Reactor Quota"), used, quota = GoalTracker.int_0 });
-            return used > GoalTracker.int_0 ? text + ", " + Loc.T("pipeline.quota.exceeded") : text;
         }
 
         // ---- the run log, shared with the reactor editor's (Patches/RunCapture) ----

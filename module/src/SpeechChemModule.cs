@@ -105,7 +105,10 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.cat.next", "Next category", Input.InputCategory.UI).AddBinding(Input.Scancode.RightBracket);
             Input.InputManager.Register("screen.reactor.item.prev", "Previous item in category", Input.InputCategory.UI).AddBinding(Input.Scancode.Comma).Repeating();
             Input.InputManager.Register("screen.reactor.item.next", "Next item in category", Input.InputCategory.UI).AddBinding(Input.Scancode.Period).Repeating();
-            Input.InputManager.Register("screen.reactor.status", "Read status", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
+            Input.InputManager.Register("screen.reactor.status", "Pipe status while drawing", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
+            Input.InputManager.Register("screen.reactor.score", "Cycles, symbols, reactors", Input.InputCategory.UI).AddBinding(Input.Scancode.S, ctrl: true);
+            Input.InputManager.Register("screen.reactor.progress", "Level progress", Input.InputCategory.UI).AddBinding(Input.Scancode.G, ctrl: true);
+            Input.InputManager.Register("screen.reactor.quota", "Reactor quota", Input.InputCategory.UI).AddBinding(Input.Scancode.Q, ctrl: true);
             Input.InputManager.Register("screen.reactor.tutorial", "Repeat tutorial step", Input.InputCategory.UI).AddBinding(Input.Scancode.T, ctrl: true); // bare T = the game's Sync hotkey
             Input.InputManager.Register("screen.reactor.layer", "Switch active layer", Input.InputCategory.UI).AddBinding(Input.Scancode.L);
             Input.InputManager.Register("screen.reactor.molecule", "Molecule of this zone", Input.InputCategory.UI).AddBinding(Input.Scancode.M);

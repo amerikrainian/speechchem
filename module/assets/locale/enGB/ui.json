@@ -215,7 +215,7 @@
   "undo.pipe": "{pipe} pipe, end {cell}",
   "undo.none": "Nothing to undo",
   "redo.none": "Nothing to redo",
-  "run.summary": "{state}. {cyclesLabel} {cycles}, {symbolsLabel} {symbols}, {reactorsLabel} {reactors}. {progress}.",
+  "run.score": "{cyclesLabel} {cycles}, {symbolsLabel} {symbols}, {reactorsLabel} {reactors}",
   "reactor.edit.running": "Stop the reactor to edit.",
   "reactor.edit.locked": "The {colour} layer is locked or hidden.",
   "reactor.menu.group.colour": "Colour",

@@ -229,12 +229,12 @@ namespace SpeechChem.Screens.Pipeline
             }
         }
 
-        /// <summary>The draw-mode status (P): which pipe, its length, and where it ends.</summary>
+        /// <summary>The draw-mode status (P): which pipe and where it ends or connects. A no-op
+        /// when not drawing (the level status moved to Ctrl+S / Ctrl+G / Ctrl+Q).</summary>
         private void SpeakDrawStatus()
         {
             var p = Model;
-            if (p == null) return;
-            if (_drawPipe == null) { Speech.Tts.Speak(Common.ProgressSection.Summary(), interrupt: true); return; }
+            if (p == null || _drawPipe == null) return;
             Speech.Tts.Speak(Loc.T("pipeline.draw.status", new { pipe = DrawName(p, _drawPipe), state = PipeState(p, _drawPipe) }), interrupt: true);
         }
     }

@@ -773,7 +773,7 @@ namespace SpeechChem.Patches
                 // Completing the level (GoalTracker.smethod_7: enum158_0 = 1, then pause) pauses
                 // the run; the completion screen that follows speaks for it (user rule).
                 bool completed = now == 2 && (int)GoalTracker.enum158_0 == 1;
-                Narrator.Emit(new NarrationEvent("run.state").Part("state", Screens.Common.ProgressSection.RunState()),
+                Narrator.Emit(new NarrationEvent("run.state").Part("state", Screens.Common.LevelStatus.RunState()),
                     speakable: _leaving == 0 && !completed, cycle: key);
             }
             catch { }
@@ -805,7 +805,7 @@ namespace SpeechChem.Patches
             {
                 // A speed change while running (a start is announced by the state hook).
                 if (__state.Key == 1 && (int)Class258.smethod_16() == 1 && Class258.smethod_14() != __state.Value)
-                    Narrator.Emit(new NarrationEvent("run.speed").Part("state", Screens.Common.ProgressSection.RunState()));
+                    Narrator.Emit(new NarrationEvent("run.speed").Part("state", Screens.Common.LevelStatus.RunState()));
             }
             catch { }
         }

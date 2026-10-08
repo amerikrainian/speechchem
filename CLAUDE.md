@@ -476,8 +476,13 @@ the wrong molecule's produced/accepted molecules). Probe: `push exitprompt|react
 
 ## 16. Reactor editor (`Screens/Reactor/ReactorEditorScreen.*.cs`) — verified live 2026-09-27
 Generic over every Class77 variant (research, production, disassembly, laser). Tab stops: Grid, Palette,
-Layers, Tools (shared `Common/ToolbarSection`), Molecules, Status (shared `Common/ProgressSection`),
-Tutorial, Run log. Game Tab rebound to L (switch active layer).
+Layers, Tools (shared `Common/ToolbarSection`), Molecules, Tutorial, Run log. Game Tab rebound to L
+(switch active layer). NO STATUS STOP (user decision 2026-10-07; reactor and pipeline): keys read
+it, each a silent no-op where it does not apply (`Common/LevelStatus`) — Ctrl+S "Cycles n,
+Symbols n, Reactors n", Ctrl+G progress ("Current Progress: 40 percent", the panel's label),
+Ctrl+Q the reactor quota (production / defense levels, also from inside their reactors; nothing in
+research levels). The run state is not read anywhere (its changes are spoken). P is only the
+pipeline's pipe status while drawing; elsewhere it does nothing.
 VARIANTS VERIFIED LIVE (2026-09-27): standard layout 0 (campaign research), the quantum layout 5
 (QT-1: tunnels, junction), the LARGE OUTPUT layout 3 (Class78, custom `has-large-output`: ψ is
 columns 7-10 on all 8 rows, no ω line, the tall output opens in the viewer). NOT verified: assembly
@@ -598,7 +603,7 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   path trace (`Game/PathTrace`, mirrors Reactor.method_46/47: arrows turn, directed instructions branch,
   START only on its own cell, a branch ends at the wall or a repeated cell+heading) as a list; Enter
   jumps to the line's cell (deferred a frame: closing the list restores focus after the item runs).
-  P status, Ctrl+T repeat tutorial step (bare T = the game's Sync hotkey).
+  Ctrl+T repeat tutorial step (bare T = the game's Sync hotkey).
 - CATEGORIES (user request): [ / ] cycle Inputs, Outputs, Hardware, Waldos — only those holding something (UI/CategoryCycle, user rule 2026-10-04; the pipeline's too) ("name,
   count"; no per-colour program
   lists — user: Waldos is enough); , / . cycle items in READING ORDER (fixed by the board, never by the
@@ -704,7 +709,7 @@ Tab stops:
   beside its building, so each is read in its port's table cell (inputs' percentages, outputs'
   done of required, reactor notes that exist; empty panels such as the recycler's skipped); M =
   the molecule viewer (shared ReactorEditorScreen.OpenMolecules / AnnotationText).
-- Status (shared ProgressSection + "Reactor Quota, 2 of 3", "exceeded"), Tools (shared), Run log.
+- Tools (shared), Run log. (The status, with "Reactor Quota, 2 of 3" / "exceeded", is Ctrl+S / G / Q — §16.)
 Editing: Ctrl+X on a component (entry, port cell or map cell) / Ctrl+V on a map cell moves it
 (hashSet_0 = {it}, vector2i_4 = origin, vector2i_3 = target, method_13 with Ctrl masked; refused
 stays on the clipboard); Ctrl+C then Ctrl+V COPIES (the game's Ctrl-drag: the same method_13 under
@@ -748,7 +753,7 @@ mid-draw, a refusal, reconnecting.
 Undo on the pipeline (Patches/UndoCapture): components by type + cell and pipe ends relative to
 the owner; a component undo reloads the level synchronously and focus survives it. An undo of a
 reactor edit from the pipeline makes the game open that reactor (its own behaviour).
-Progress panel: ProgressSection follows Class709 ("Control Center" / "The Prometheus" in
+Progress panel: LevelStatus follows Class709 ("Control Center" / "The Prometheus" in
 defense-style levels, GoalTracker.int_1 percent; Class148's own measure).
 
 ## 16b. Saved designs, notes, text fields — verified live 2026-10-03

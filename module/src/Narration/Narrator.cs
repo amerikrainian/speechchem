@@ -99,7 +99,7 @@ namespace SpeechChem.Narration
             {
                 _speed = speed;
                 _speedFrame = frame;
-                _speedIndex = Math.Max(0, Math.Min(3, Screens.Common.ProgressSection.SpeedNumber(speed) - 1));
+                _speedIndex = Math.Max(0, Math.Min(3, Screens.Common.LevelStatus.SpeedNumber(speed) - 1));
             }
             return _speedIndex;
         }

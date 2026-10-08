@@ -1,51 +1,39 @@
 using System;
+using System.Collections.Generic;
 using SpaceChem;
 using SpeechChem.Game;
 using SpeechChem.Localization;
 using SpeechChem.UI;
-using SpeechChem.UI.Graph;
 
 namespace SpeechChem.Screens.Common
 {
     /// <summary>
     /// The run status every level screen shows (Class709, drawn by the reactor and pipeline
-    /// editors): run state, Cycles, Symbols, Reactors and the progress ring, as a reusable Tab stop
-    /// and a one-shot readout (the P key). Values are the game's: GoalTracker.score_0 (int_0
+    /// editors) and the pipeline's reactor quota (Class711), read by keys rather than a Tab stop
+    /// (user decision 2026-10-07): Ctrl+S score (Cycles, Symbols, Reactors), Ctrl+G progress,
+    /// Ctrl+Q quota — each a silent no-op where it does not apply. The run state is not read (the
+    /// run's own state changes are spoken). Values are the game's: GoalTracker.score_0 (int_0
     /// cycles, int_1 reactors, int_2 symbols — refreshed every frame by the pipeline editor),
     /// GoalTracker.smethod_1() for the ring (produced over required), Class258 for the run state.
     /// Labels are the panel's own ("Current Progress" — "Control Center" in defense-style levels —
-    /// "Cycles", "Symbols", "Reactors").
+    /// "Cycles", "Symbols", "Reactors", "Reactor Quota").
     /// </summary>
-    internal static class ProgressSection
+    internal static class LevelStatus
     {
-        public static void Build(GraphBuilder b, string stopKey, string idPrefix)
+        /// <summary>The keys, for the reactor and pipeline screens' actions.</summary>
+        public static IEnumerable<ElementAction> Actions()
         {
-            b.BeginStop(stopKey);
-            Row(b, idPrefix + ".state", RunState);
-            Row(b, idPrefix + ".cycles", () => GameText.T("Cycles") + " " + GoalTracker.score_0.int_0);
-            Row(b, idPrefix + ".symbols", () => GameText.T("Symbols") + " " + GoalTracker.score_0.int_2);
-            Row(b, idPrefix + ".reactors", () => GameText.T("Reactors") + " " + GoalTracker.score_0.int_1);
-            // The one LIVE row (user rule): while focused, each change of the percentage is spoken
-            // on its own ("20 percent") as a run produces. The other rows only read on arrival.
-            b.AddItem(ControlId.Structural(idPrefix + ".progress"), new NodeVtable
-            {
-                ControlType = ControlTypes.Text,
-                Announcements = new[]
-                {
-                    new NodeAnnouncement(ProgressLabel, kind: AnnouncementKinds.Label),
-                    new NodeAnnouncement(() => Loc.T("run.percent", new { percent = ProgressPercent() }), live: true, kind: AnnouncementKinds.Value),
-                },
-            });
+            yield return new ElementAction("screen.reactor.score", () => Say(Score()));
+            yield return new ElementAction("screen.reactor.progress", () => Say(Progress()));
+            yield return new ElementAction("screen.reactor.quota", () => Say(Quota()));
         }
 
-        private static void Row(GraphBuilder b, string id, Func<string> text)
-            => b.AddItem(ControlId.Structural(id), new NodeVtable
-            {
-                ControlType = ControlTypes.Text,
-                Announcements = new[] { new NodeAnnouncement(text, kind: AnnouncementKinds.Label) },
-            });
+        private static void Say(string text)
+        {
+            if (!string.IsNullOrEmpty(text)) Speech.Tts.Speak(text, interrupt: true);
+        }
 
-        /// <summary>"Stopped" / "Running, speed 2" / "Paused". Speeds are numbered like the play
+        /// <summary>"Running, speed 2" / "Paused" / "Stopped". Speeds are numbered like the play
         /// buttons (1-4), read through the toolbar's own button-to-speed map (Defense remaps).</summary>
         public static string RunState()
         {
@@ -68,6 +56,18 @@ namespace SpeechChem.Screens.Common
             }
             return 1;
         }
+
+        /// <summary>"Cycles 120, Symbols 14, Reactors 1" (the panel's order).</summary>
+        public static string Score()
+            => Loc.T("run.score", new
+            {
+                cyclesLabel = GameText.T("Cycles"),
+                cycles = GoalTracker.score_0.int_0,
+                symbolsLabel = GameText.T("Symbols"),
+                symbols = GoalTracker.score_0.int_2,
+                reactorsLabel = GameText.T("Reactors"),
+                reactors = GoalTracker.score_0.int_1,
+            });
 
         public static string Progress()
             => Loc.T("run.progress", new { label = ProgressLabel(), percent = ProgressPercent() });
@@ -105,18 +105,23 @@ namespace SpeechChem.Screens.Common
             catch { return 0; }
         }
 
-        /// <summary>The whole panel in one line, for the status key.</summary>
-        public static string Summary()
-            => Loc.T("run.summary", new
+        /// <summary>The reactor quota the pipeline's Class711 draws: "Reactor Quota, 2 of 3"
+        /// (", exceeded" when over), or the game's "NO REACTORS REQUIRED". Null in research levels
+        /// (a Class84 in the chain: no pipeline is shown, so no quota) — also from inside a reactor
+        /// of a pipeline level, where the pipeline editor is lower in the chain.</summary>
+        public static string Quota()
+        {
+            try
             {
-                state = RunState(),
-                cyclesLabel = GameText.T("Cycles"),
-                cycles = GoalTracker.score_0.int_0,
-                symbolsLabel = GameText.T("Symbols"),
-                symbols = GoalTracker.score_0.int_2,
-                reactorsLabel = GameText.T("Reactors"),
-                reactors = GoalTracker.score_0.int_1,
-                progress = Progress(),
-            });
+                if (Class53.smethod_5<Class84>() != null) return null;
+                var p = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+                if (p == null) return null;
+                if (GoalTracker.int_0 == 0) return GameText.Speech(GameText.T("NO\nREACTORS\nREQUIRED"));
+                int used = p.method_21();
+                string text = Loc.T("pipeline.quota", new { label = GameText.T("Reactor Quota"), used, quota = GoalTracker.int_0 });
+                return used > GoalTracker.int_0 ? text + ", " + Loc.T("pipeline.quota.exceeded") : text;
+            }
+            catch { return null; }
+        }
     }
 }

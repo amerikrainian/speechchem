@@ -108,6 +108,14 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.status", "Pipe status", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
             // Pipeline zoom (blocks of 4 / 8); Shift+Up / Down also pick instructions in a reactor —
             // same-category duplicates both fire, and each screen takes only its own ids.
+            // Stop jumps on the reactor / pipeline screens (each screen offers the ones it has).
+            Input.InputManager.Register("screen.jump.grid", "Jump to the grid", Input.InputCategory.UI).AddBinding(Input.Scancode.Num1, alt: true);
+            Input.InputManager.Register("screen.jump.table", "Jump to the components table", Input.InputCategory.UI).AddBinding(Input.Scancode.Grave, alt: true);
+            Input.InputManager.Register("screen.jump.place", "Jump to the palette or shelf", Input.InputCategory.UI).AddBinding(Input.Scancode.Num2, alt: true);
+            Input.InputManager.Register("screen.jump.tools", "Jump to the tools", Input.InputCategory.UI).AddBinding(Input.Scancode.Num3, alt: true);
+            Input.InputManager.Register("screen.jump.log", "Jump to the run log", Input.InputCategory.UI).AddBinding(Input.Scancode.Num4, alt: true);
+            Input.InputManager.Register("screen.jump.extra", "Jump to the layers or the enemy", Input.InputCategory.UI).AddBinding(Input.Scancode.Num5, alt: true);
+            Input.InputManager.Register("screen.jump.back", "Jump back", Input.InputCategory.UI).AddBinding(Input.Scancode.Backspace, alt: true);
             Input.InputManager.Register("screen.pipeline.zoom.out", "Zoom out", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, shift: true);
             Input.InputManager.Register("screen.pipeline.zoom.in", "Zoom in", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, shift: true);
             Input.InputManager.Register("screen.pipeline.zoom.max", "Zoom to 8 by 8", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, ctrl: true, shift: true);

@@ -341,7 +341,10 @@ namespace SpeechChem.Screens.Pipeline
                 Speech.Tts.Speak(MapNodeReadout(c.int_0, c.int_1), interrupt: true);
             }
             else
+            {
+                _jumps.Remember(Here());
                 FocusMapCell(c.int_0, c.int_1);
+            }
         }
 
         private void SpeakCoordinates()

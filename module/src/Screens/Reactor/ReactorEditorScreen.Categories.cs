@@ -74,6 +74,7 @@ namespace SpeechChem.Screens.Reactor
                 Speech.Tts.Speak(CellReadout(item.X, item.Y), interrupt: true);
                 return;
             }
+            _jumps.Remember(Here());
             FocusCell(item.X, item.Y);
         }
 

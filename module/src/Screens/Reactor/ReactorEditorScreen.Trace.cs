@@ -51,6 +51,7 @@ namespace SpeechChem.Screens.Reactor
             if (_pendingJump == null || ActiveChild != null) return;
             var cell = _pendingJump.Value;
             _pendingJump = null;
+            _jumps.Remember(Here()); // the grid cell the trace was opened from
             FocusCell(cell.int_0, cell.int_1);
         }
 

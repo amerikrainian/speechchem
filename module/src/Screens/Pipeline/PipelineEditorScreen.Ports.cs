@@ -37,11 +37,13 @@ namespace SpeechChem.Screens.Pipeline
             var origin = Model?.method_9(d);
             if (!origin.HasValue) return;
             var at = origin.Value + input.vector2i_0;
+            _jumps.Remember(Here());
             FocusMapCell(at.int_0, at.int_1);
         }
 
         private void JumpToOutput(Draggable d, PipelineOutput output)
         {
+            _jumps.Remember(Here());
             var pipe = output.pipeDraggable_0;
             if (pipe != null && pipe.linkedList_0.Count > 0)
             {

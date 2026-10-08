@@ -46,7 +46,11 @@ namespace SpeechChem.Screens.Reactor
                 parts.AddRange(WaldoState(waldo));
             }
             Speech.Tts.Speak(string.Join(", ", parts.ToArray()), interrupt: true);
-            if (jump) FocusCell(cell.int_0, cell.int_1, announce: false); // the waldo line already names the cell
+            if (jump)
+            {
+                _jumps.Remember(Here());
+                FocusCell(cell.int_0, cell.int_1, announce: false); // the waldo line already names the cell
+            }
         }
 
         /// <summary>A running waldo's state beyond position and heading: what it holds, the game's

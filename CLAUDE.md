@@ -763,6 +763,20 @@ marking, place / copy / cut / delete per block, P on a pipe cell (stopped). NOT 
 molecule counts (a run would have completed the user's solved level). One unexplained miss: twice
 in one module generation Ctrl+C on a zoomed block was silent; never again in four tries after a
 reload — watch for it.
+STOP JUMPS (reactor and pipeline, user request 2026-10-07; ids `screen.jump.*`, each screen offers
+the ones it has, the rest no-op): Alt+1 grid / map, Alt+` the Components table (pipeline only),
+Alt+2 palette / shelf (Reactor Controls during a defense run), Alt+3 tools, Alt+4 run log, Alt+5
+layers (reactor) / enemy (defense pipeline). A jump lands like Tab (the stop's remembered node);
+already in the stop or the stop absent (no log yet, no enemy) = nothing. CONTEXT-AWARE on the
+pipeline: Alt+` from a map cell on a building (cell cursor, `BuildingAt` — not pipe cells) lands
+on its row; Alt+1 from a Components row lands on that building's top-left cell. ALT+BACKSPACE
+(`UI/JumpBack`) returns to where focus was before the last jump (stop jumps, Components Enter on a
+component / input / output, category items, waldo jumps Ctrl+Shift+R / B, path-trace lines), and
+toggles back on the next press; map cells come back through FocusMapCell (any zoom), grid cells
+through FocusCell, anything else by node id. GameKeySuppression keeps Alt+1..4 and Alt+` from the
+game on these two screens (the toolbar reads 1-4 / Backquote without modifiers). Verified live
+2026-10-07 on a 5-reactor production level and its reactor, including PostMessage'd Alt+1 / Alt+2 /
+Alt+` (no run started: cycles stayed 0).
 THE MARKED RECTANGLE ON THE MAP (`PipelineEditorScreen.Mark.cs`, user request 2026-10-07; the
 reactor's keys and rules: Shift+Space corners, Ctrl+A the whole map, Ctrl+Space clears, cells
 read "Marked" first, a take / delete / landing paste clears it; Shift/Ctrl+Space kept from the

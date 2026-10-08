@@ -63,6 +63,8 @@ namespace SpeechChem.Patches
         private const int SpaceScancode = 44;
 
         private static bool CtrlHeld() => Input.SdlKeyboard.Held(224) || Input.SdlKeyboard.Held(228); // LCtrl, RCtrl
+        private static bool AltHeld() => Input.SdlKeyboard.Held(226) || Input.SdlKeyboard.Held(230); // LAlt, RAlt
+        private const int BackquoteScancode = 53;
         private const int BackspaceScancode = 42;
         private const int PasteKey = 515; // Impeller.Keys.Paste, the engine's Ctrl+V
 
@@ -110,6 +112,10 @@ namespace SpeechChem.Patches
                 // Ctrl+1..4 are step keys (assignable, a no-op when not): the game reads 1-4 as its
                 // play speeds whatever the modifiers.
                 if (scancode >= Numrow1 && scancode <= Numrow4 && CtrlHeld()) return true;
+                // Alt+1..4 and Alt+` are stop jumps on the reactor and pipeline screens; the toolbar
+                // reads 1-4 (speeds) and ` (stop) whatever the modifiers.
+                if (((scancode >= Numrow1 && scancode <= Numrow4) || scancode == BackquoteScancode) && AltHeld()
+                    && (cur is Screens.Reactor.ReactorEditorScreen || cur is Screens.Pipeline.PipelineEditorScreen)) return true;
                 // Shift+Space / Ctrl+Space mark / clear the reactor grid's or the pipeline map's
                 // rectangle; the toolbar reads Space as play / pause whatever the modifiers.
                 if (scancode == SpaceScancode && (Input.SdlKeyboard.ShiftHeld || CtrlHeld())

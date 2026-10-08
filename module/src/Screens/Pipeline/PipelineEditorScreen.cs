@@ -81,6 +81,17 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.reactor.mark", MarkCorner); // the marked rectangle (Mark.cs)
             yield return new ElementAction("screen.reactor.unmark", ClearMark);
             yield return new ElementAction("screen.reactor.markall", MarkAll);
+            // Stop jumps (user request 2026-10-07): Alt+1 map (from a Components row: that
+            // building's top-left cell), Alt+` the Components table (from the map on a building:
+            // its row), Alt+2 shelf / Reactor Controls, Alt+3 tools, Alt+4 run log, Alt+5 the enemy;
+            // Alt+Backspace back.
+            yield return new ElementAction("screen.jump.grid", JumpToMap);
+            yield return new ElementAction("screen.jump.table", JumpToTable);
+            yield return new ElementAction("screen.jump.place", () => JumpToStop(DefenseText.ControlsShown ? ControlsStop : ShelfStop));
+            yield return new ElementAction("screen.jump.tools", () => JumpToStop(ToolsStop));
+            yield return new ElementAction("screen.jump.log", () => JumpToStop(LogStop));
+            yield return new ElementAction("screen.jump.extra", () => JumpToStop(EnemyStop));
+            yield return new ElementAction("screen.jump.back", () => _jumps.Back(Here()));
             if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());
             else if (_armed != null) yield return new ElementAction(ActionIds.Back, Unarm);
         }
@@ -149,6 +160,50 @@ namespace SpeechChem.Screens.Pipeline
             _drawPipe = null;
             _dragOpen = false;
             _zoom = 1;
+            _jumps.Clear();
+        }
+
+        // ---- stop jumps and the way back ----
+
+        private readonly JumpBack _jumps = new JumpBack();
+
+        /// <summary>How to come back to where focus is now: the map cell (at any zoom), or the node.</summary>
+        private System.Action Here()
+        {
+            if (OnMap) { int x = _cursorX, y = _cursorY; return () => FocusMapCell(x, y); }
+            var id = Navigation.FocusedNodeId;
+            return id == null ? (System.Action)null : () => Navigation.FocusNode(id);
+        }
+
+        /// <summary>Land on a stop as Tab would. Already there, or a stop not shown now: nothing.</summary>
+        private void JumpToStop(string stop)
+        {
+            if (Equals(Navigation.FocusedStopKey, stop)) return;
+            _jumps.Remember(Here());
+            Navigation.FocusStop(stop);
+        }
+
+        /// <summary>Alt+1: the map; from a Components row, that building's top-left cell.</summary>
+        private void JumpToMap()
+        {
+            var p = Model;
+            if (p == null || OnMap) return;
+            var d = ComponentsStop.Equals(Navigation.FocusedStopKey) ? FocusedComponent() : null;
+            var at = d == null ? null : p.method_9(d);
+            if (!at.HasValue) { JumpToStop(MapStop); return; }
+            _jumps.Remember(Here());
+            FocusMapCell(at.Value.int_0, at.Value.int_1);
+        }
+
+        /// <summary>Alt+`: the Components table; from the map on a building (cell cursor), its row.</summary>
+        private void JumpToTable()
+        {
+            var p = Model;
+            if (p == null || ComponentsStop.Equals(Navigation.FocusedStopKey)) return;
+            var d = OnMap && !Zoomed ? BuildingAt(p, new Impeller.Vector2i(_cursorX, _cursorY)) : null;
+            if (d == null || !PipelineText.Components(p).Exists(kv => ReferenceEquals(kv.Key, d))) { JumpToStop(ComponentsStop); return; }
+            _jumps.Remember(Here());
+            Navigation.FocusNode(ComponentId(d));
         }
 
         public override void OnPop()
@@ -240,7 +295,9 @@ namespace SpeechChem.Screens.Pipeline
         private void JumpToComponent(Draggable d)
         {
             var at = Model?.method_9(d);
-            if (at.HasValue) FocusMapCell(at.Value.int_0, at.Value.int_1);
+            if (!at.HasValue) return;
+            _jumps.Remember(Here());
+            FocusMapCell(at.Value.int_0, at.Value.int_1);
         }
 
         /// <summary>A stable id per component: its type and top-left cell at build time would move

@@ -79,6 +79,34 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.skip.left", () => SkipSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipSideways(1));
             foreach (var a in EditActions()) yield return a;
+            // Stop jumps (user request 2026-10-07): Alt+1 grid, Alt+2 palette / Reactor Controls,
+            // Alt+3 tools, Alt+4 run log, Alt+5 layers; Alt+Backspace back. Alt+` (the pipeline's
+            // table) is not offered here: a no-op.
+            yield return new ElementAction("screen.jump.grid", () => JumpToStop(GridStop));
+            yield return new ElementAction("screen.jump.place", () => JumpToStop(DefenseText.ControlsShown ? "reactor.controls" : PaletteStop));
+            yield return new ElementAction("screen.jump.tools", () => JumpToStop(ToolsStop));
+            yield return new ElementAction("screen.jump.log", () => JumpToStop(LogStop));
+            yield return new ElementAction("screen.jump.extra", () => JumpToStop(LayersStop));
+            yield return new ElementAction("screen.jump.back", () => _jumps.Back(Here()));
+        }
+
+        private readonly JumpBack _jumps = new JumpBack();
+
+        /// <summary>How to come back to where focus is now: the grid cell, or the node.</summary>
+        private Action Here()
+        {
+            if (OnGrid) { int x = _cursorX, y = _cursorY; return () => FocusCell(x, y); }
+            var id = Navigation.FocusedNodeId;
+            return id == null ? (Action)null : () => Navigation.FocusNode(id);
+        }
+
+        /// <summary>A stop jump key: land on the stop as Tab would (where you last were in it).
+        /// Already there, or a stop this screen doesn't show right now: nothing.</summary>
+        private void JumpToStop(string stop)
+        {
+            if (Equals(Navigation.FocusedStopKey, stop)) return;
+            _jumps.Remember(Here());
+            Navigation.FocusStop(stop);
         }
 
         public override void Build(GraphBuilder b)
@@ -119,6 +147,7 @@ namespace SpeechChem.Screens.Reactor
             _lastStep = null;
             _armedKey = -1;
             _pendingJump = null;
+            _jumps.Clear();
             _category = _item = -1;
             ResetEditState();
         }

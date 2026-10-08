@@ -482,7 +482,8 @@ it, each a silent no-op where it does not apply (`Common/LevelStatus`) — Ctrl+
 Symbols n, Reactors n", Ctrl+G progress ("Current Progress: 40 percent", the panel's label),
 Ctrl+Q the reactor quota (production / defense levels, also from inside their reactors; nothing in
 research levels). The run state is not read anywhere (its changes are spoken). P is only the
-pipeline's pipe status while drawing; elsewhere it does nothing.
+pipeline's pipe status: the drawn pipe while drawing, else the pipe under the cell cursor (with
+its molecule count during a run); elsewhere it does nothing.
 VARIANTS VERIFIED LIVE (2026-09-27): standard layout 0 (campaign research), the quantum layout 5
 (QT-1: tunnels, junction), the LARGE OUTPUT layout 3 (Class78, custom `has-large-output`: ψ is
 columns 7-10 on all 8 rows, no ω line, the tall output opens in the viewer). NOT verified: assembly
@@ -731,6 +732,35 @@ the clone; the clipboard keeps the source for more copies; fixed components refu
 menu's delete (method_10 null, method_15, method_66); Backspace = the menu as a list in the game's
 order (DraggableMenu): Reset Pipes (Draggable.method_6 — NO undo step), the reactor's note items,
 Save to Toolbox, Delete — see §16b. Verified live 2026-10-03.
+ZOOM (`PipelineEditorScreen.Zoom.cs`, user design 2026-10-07, after OniAccess's big cursor and
+FactorioAccess's cursor size — both centre an odd square on the cursor because their worlds have
+no meaningful origin and the square doubles as a brush; here FIXED BLOCKS won: a small fixed map,
+reactors exactly 4 x 4). Sizes 1 / 4 / 8: Shift+Up / Shift+Down step, Ctrl+Shift+Up / Down jump to
+8 / 1 (Shift+Up / Down are also the reactor's picker: same-category duplicate bindings both fire,
+each screen takes its own ids). Zoomed, the map stop is one node per block (ids carry the size),
+cut from 1, 1, the last row / column smaller (size 4: 8 x 6, rows 21-22; size 8: 4 x 3). The cell
+cursor rides along keeping its offset inside the block (`_zoomOffX/Y`, clamped in edge blocks), so
+zooming in lands where expected; jumps (categories, Components Enter) focus the block holding the
+cell. A size change says "4 by 4, " + the readout. BLOCK READOUT: "Marked" (block overlaps the
+rectangle), the range "13, 13 to 16, 16", then ONLY IF ANYTHING IS IN IT (user rule: silence is
+faster): buildings in reading order ("part of X" across the edge), "pipes: A output, B psi
+output", "1 crossing", "open end 18, 17", "3 molecules" (run only, > 0), the enemy, "N free"
+(said whenever the block is not entirely free, so "0 free" = full). Shift+Backspace = long form
+(each pipe's run through the block "X output 13, 11 to 13, 16", free cells as runs per row).
+C = the range; Home / End row edges; Ctrl+arrows skip blocks reading the same; Arrows stop at
+edges. Enter = end a drawing, else place the armed item at the block's TOP-LEFT (sticky arms stay);
+nothing else. Delete / Ctrl+X / Ctrl+C with no rectangle take the movable buildings wholly inside
+the block (anchor = its top-left); Ctrl+V pastes at its top-left; Shift+Space marks the whole
+block, the next one stretches the rectangle over both, the one after starts over. M / Backspace
+do nothing zoomed; P only works at size 1. Leaving the level resets to size 1. GAME RULE FOUND
+TESTING: a reactor's output pipes start one column right of its body, so a reactor at a block's
+top-left puts its stubs in the next block — the block to its right refuses another reactor
+("did not fit, Standard Reactor 2 at 13, 2; 13, 3"); stacking vertically is fine. Verified live
+2026-10-07 on a production level: sizes, moves, Home / End, C, details, Ctrl+arrows, block
+marking, place / copy / cut / delete per block, P on a pipe cell (stopped). NOT verified: the
+molecule counts (a run would have completed the user's solved level). One unexplained miss: twice
+in one module generation Ctrl+C on a zoomed block was silent; never again in four tries after a
+reload — watch for it.
 THE MARKED RECTANGLE ON THE MAP (`PipelineEditorScreen.Mark.cs`, user request 2026-10-07; the
 reactor's keys and rules: Shift+Space corners, Ctrl+A the whole map, Ctrl+Space clears, cells
 read "Marked" first, a take / delete / landing paste clears it; Shift/Ctrl+Space kept from the

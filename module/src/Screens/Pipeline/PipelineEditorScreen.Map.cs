@@ -26,6 +26,7 @@ namespace SpeechChem.Screens.Pipeline
 
         private void BuildMap(GraphBuilder b, SpaceChem.Pipeline.Pipeline pipeline)
         {
+            if (Zoomed) { BuildBlocks(b, pipeline); return; } // blocks of 4 or 8 (Zoom.cs)
             var size = pipeline.method_4();
             b.BeginStop(MapStop);
             for (int y = 0; y < size.int_1; y++)
@@ -77,16 +78,19 @@ namespace SpeechChem.Screens.Pipeline
         private void SkipMapSideways(int dx)
         {
             if (!Equals(Navigation.FocusedStopKey, MapStop)) return;
-            SkipMapCells(_cursorX, _cursorY, dx, 0);
+            if (Zoomed) SkipBlocks(_cursorX / _zoom, _cursorY / _zoom, dx, 0);
+            else SkipMapCells(_cursorX, _cursorY, dx, 0);
         }
 
-        /// <summary>Move the map cursor (and focus) to a cell.</summary>
+        /// <summary>Move the map cursor (and focus) to a cell — zoomed, to the block holding it,
+        /// the cursor keeping its place inside.</summary>
         private void FocusMapCell(int x, int y, bool announce = true)
         {
             _cursorX = x;
             _cursorY = y;
+            if (Zoomed) { _zoomOffX = x % _zoom; _zoomOffY = y % _zoom; }
             Navigation.FocusStop(MapStop);
-            Navigation.FocusNode(MapCellId(x, y), announce);
+            Navigation.FocusNode(MapNodeFor(x, y), announce);
         }
 
         /// <summary>Keep the cursor in step with focus that reached the map another way.</summary>
@@ -331,8 +335,11 @@ namespace SpeechChem.Screens.Pipeline
             var cells = CategoryCells(p, _category);
             _item = _item < 0 ? (delta > 0 ? 0 : cells.Count - 1) : ((_item + delta) % cells.Count + cells.Count) % cells.Count;
             var c = cells[_item];
-            if (c.int_0 == _cursorX && c.int_1 == _cursorY && Equals(Navigation.FocusedNodeId, MapCellId(c.int_0, c.int_1)))
-                Speech.Tts.Speak(MapReadout(c.int_0, c.int_1), interrupt: true);
+            if (Equals(Navigation.FocusedNodeId, MapNodeFor(c.int_0, c.int_1)) && (Zoomed || (c.int_0 == _cursorX && c.int_1 == _cursorY)))
+            {
+                FocusMapCell(c.int_0, c.int_1, announce: false); // the cursor moves within the block
+                Speech.Tts.Speak(MapNodeReadout(c.int_0, c.int_1), interrupt: true);
+            }
             else
                 FocusMapCell(c.int_0, c.int_1);
         }
@@ -340,6 +347,11 @@ namespace SpeechChem.Screens.Pipeline
         private void SpeakCoordinates()
         {
             if (!MapStop.Equals(Navigation.FocusedStopKey)) return;
+            if (Zoomed && CursorBlockBounds(out int x0, out int y0, out int x1, out int y1))
+            {
+                Speech.Tts.Speak(BlockRange(x0, y0, x1, y1), interrupt: true);
+                return;
+            }
             Speech.Tts.Speak(PipelineText.Cell(new Vector2i(_cursorX, _cursorY)), interrupt: true);
         }
     }

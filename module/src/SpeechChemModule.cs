@@ -105,7 +105,13 @@ namespace SpeechChem
             Input.InputManager.Register("screen.reactor.cat.next", "Next category", Input.InputCategory.UI).AddBinding(Input.Scancode.RightBracket);
             Input.InputManager.Register("screen.reactor.item.prev", "Previous item in category", Input.InputCategory.UI).AddBinding(Input.Scancode.Comma).Repeating();
             Input.InputManager.Register("screen.reactor.item.next", "Next item in category", Input.InputCategory.UI).AddBinding(Input.Scancode.Period).Repeating();
-            Input.InputManager.Register("screen.reactor.status", "Pipe status while drawing", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
+            Input.InputManager.Register("screen.reactor.status", "Pipe status", Input.InputCategory.UI).AddBinding(Input.Scancode.P);
+            // Pipeline zoom (blocks of 4 / 8); Shift+Up / Down also pick instructions in a reactor —
+            // same-category duplicates both fire, and each screen takes only its own ids.
+            Input.InputManager.Register("screen.pipeline.zoom.out", "Zoom out", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, shift: true);
+            Input.InputManager.Register("screen.pipeline.zoom.in", "Zoom in", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, shift: true);
+            Input.InputManager.Register("screen.pipeline.zoom.max", "Zoom to 8 by 8", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, ctrl: true, shift: true);
+            Input.InputManager.Register("screen.pipeline.zoom.reset", "Zoom to 1 by 1", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, ctrl: true, shift: true);
             Input.InputManager.Register("screen.reactor.score", "Cycles, symbols, reactors", Input.InputCategory.UI).AddBinding(Input.Scancode.S, ctrl: true);
             Input.InputManager.Register("screen.reactor.progress", "Level progress", Input.InputCategory.UI).AddBinding(Input.Scancode.G, ctrl: true);
             Input.InputManager.Register("screen.reactor.quota", "Reactor quota", Input.InputCategory.UI).AddBinding(Input.Scancode.Q, ctrl: true);

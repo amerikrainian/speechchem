@@ -410,17 +410,19 @@ namespace SpeechChem.Screens.Pipeline
             var p = Model;
             if (p == null) return;
             CloseDrag();
-            if (CursorInRectangle)
+            bool inRect = CursorInRectangle;
+            int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+            // Zoomed with no rectangle: the block's buildings, anchored at its top-left (Zoom.cs).
+            if (inRect ? MarkBounds(out x0, out y0, out x1, out y1) : Zoomed && OnMap && CursorBlockBounds(out x0, out y0, out x1, out y1))
             {
-                var marked = MarkedBuildings(p);
+                var marked = BuildingsIn(p, x0, y0, x1, y1);
                 if (marked.Count == 0) return; // nothing movable inside: silent (user rule 2026-10-07)
                 if (!CanEdit()) return;
-                MarkBounds(out int x0, out int y0, out _, out _);
                 _clip.Clear();
                 _clip.AddRange(marked);
                 _clipAnchor = new Vector2i(x0, y0);
                 _copy = copy;
-                DropMark();
+                if (inRect) DropMark();
                 var names = new List<string>();
                 foreach (var d in marked) names.Add(PipelineText.Name(p, d));
                 Speech.Tts.Speak(Loc.T(copy ? "reactor.edit.copied" : "reactor.edit.cut", new { what = Summary(names) }), interrupt: true);
@@ -446,7 +448,7 @@ namespace SpeechChem.Screens.Pipeline
             if (!CanEdit()) return;
             CloseDrag();
             var items = new List<Draggable>(_clip);
-            var at = new Vector2i(_cursorX, _cursorY);
+            var at = PlacementCell(); // zoomed: the block's top-left
             try
             {
                 bool ok;

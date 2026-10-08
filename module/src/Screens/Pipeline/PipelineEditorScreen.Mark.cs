@@ -29,6 +29,8 @@ namespace SpeechChem.Screens.Pipeline
         private void MarkCorner()
         {
             if (!OnMap) return;
+            if (Zoomed) { MarkBlock(); return; } // whole blocks (Zoom.cs)
+            _blockMarkOpen = false;
             var here = new Vector2i(_cursorX, _cursorY);
             if (!_markFirst.HasValue || _markSecond.HasValue)
             {
@@ -47,6 +49,7 @@ namespace SpeechChem.Screens.Pipeline
             var p = Model;
             if (p == null || !OnMap) return;
             var size = p.method_4();
+            _blockMarkOpen = false;
             _markFirst = new Vector2i(0, 0);
             _markSecond = new Vector2i(size.int_0 - 1, size.int_1 - 1);
             SpeakRectangle();
@@ -71,7 +74,11 @@ namespace SpeechChem.Screens.Pipeline
             Speech.Tts.Speak(Loc.T("reactor.mark.cleared"), interrupt: true);
         }
 
-        private void DropMark() => _markFirst = _markSecond = null;
+        private void DropMark()
+        {
+            _markFirst = _markSecond = null;
+            _blockMarkOpen = false;
+        }
 
         private bool CursorInRectangle => _markSecond.HasValue && OnMap && IsMarked(_cursorX, _cursorY);
 
@@ -94,9 +101,12 @@ namespace SpeechChem.Screens.Pipeline
         /// <summary>The movable buildings (not fixed, Draggable.bool_0) whose body (origin +
         /// vector2i_0) lies wholly inside the rectangle, in the Components list's order.</summary>
         private List<Draggable> MarkedBuildings(SpaceChem.Pipeline.Pipeline p)
+            => MarkBounds(out int x0, out int y0, out int x1, out int y1) ? BuildingsIn(p, x0, y0, x1, y1) : new List<Draggable>();
+
+        /// <summary>The movable buildings whose body lies wholly inside the cells (inclusive).</summary>
+        private static List<Draggable> BuildingsIn(SpaceChem.Pipeline.Pipeline p, int x0, int y0, int x1, int y1)
         {
             var list = new List<Draggable>();
-            if (!MarkBounds(out int x0, out int y0, out int x1, out int y1)) return list;
             foreach (var kv in PipelineText.Components(p))
             {
                 var d = kv.Key;
@@ -122,7 +132,19 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null) return;
-            var victims = MarkedBuildings(p);
+            DeleteSet(p, MarkedBuildings(p));
+        }
+
+        /// <summary>Delete zoomed with no rectangle: the movable buildings wholly inside the block.</summary>
+        private void DeleteBlock()
+        {
+            var p = Model;
+            if (p == null || !CursorBlockBounds(out int x0, out int y0, out int x1, out int y1)) return;
+            DeleteSet(p, BuildingsIn(p, x0, y0, x1, y1));
+        }
+
+        private void DeleteSet(SpaceChem.Pipeline.Pipeline p, List<Draggable> victims)
+        {
             if (victims.Count == 0) return;
             if (!CanEdit()) return;
             CloseDrag();

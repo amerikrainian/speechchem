@@ -65,9 +65,14 @@ namespace SpeechChem.Screens.Pipeline
                 var design = FocusedDesign();
                 if (design != null) DeleteDesign(design);
                 else if (CursorInRectangle) DeleteMarked();
+                else if (Zoomed && OnMap) DeleteBlock();
                 else Delete(FocusedComponent());
             });
-            yield return new ElementAction("screen.reactor.status", SpeakDrawStatus); // P: the drawn pipe
+            yield return new ElementAction("screen.reactor.status", SpeakPipeStatus); // P: the drawn pipe, or the pipe under the cursor
+            yield return new ElementAction("screen.pipeline.zoom.out", () => ZoomStep(1)); // Zoom.cs
+            yield return new ElementAction("screen.pipeline.zoom.in", () => ZoomStep(-1));
+            yield return new ElementAction("screen.pipeline.zoom.max", () => SetZoom(8));
+            yield return new ElementAction("screen.pipeline.zoom.reset", () => SetZoom(1));
             foreach (var a in LevelStatus.Actions()) yield return a; // Ctrl+S score, Ctrl+G progress, Ctrl+Q quota
             yield return new ElementAction("screen.reactor.molecule", OpenFocusedMolecules); // M on a port cell
             foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
@@ -143,6 +148,7 @@ namespace SpeechChem.Screens.Pipeline
             _designs = null;
             _drawPipe = null;
             _dragOpen = false;
+            _zoom = 1;
         }
 
         public override void OnPop()

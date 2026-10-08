@@ -746,7 +746,9 @@ rectangle), the range "13, 13 to 16, 16", then ONLY IF ANYTHING IS IN IT (user r
 faster): buildings in reading order ("part of X" across the edge), "pipes: A output, B psi
 output", "1 crossing", "open end 18, 17", "3 molecules" (run only, > 0), the enemy, "N free"
 (said whenever the block is not entirely free, so "0 free" = full). Shift+Backspace = long form
-(each pipe's run through the block "X output 13, 11 to 13, 16", free cells as runs per row).
+(each pipe's run through the block "X output 13, 11 to 13, 16", the free cells as
+rectangles in the range format "free: 9, 9 to 9, 12; 11, 10 to 12, 12" — greedy cover, across-first
+or down-first, whichever needs fewer; per-row runs were too verbose, user 2026-10-07).
 C = the range; Home / End row edges; Ctrl+arrows skip blocks reading the same; Arrows stop at
 edges. Enter = end a drawing, else place the armed item at the block's TOP-LEFT (sticky arms stay);
 nothing else. Delete / Ctrl+X / Ctrl+C with no rectangle take the movable buildings wholly inside

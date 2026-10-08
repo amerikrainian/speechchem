@@ -292,28 +292,81 @@ namespace SpeechChem.Screens.Pipeline
             }
 
             // Free cells: nothing at all in the block says nothing (silence is faster — user rule).
-            int free = 0, total = (x1 - x0 + 1) * (y1 - y0 + 1);
-            var freeRuns = new List<string>();
-            for (int y = y0; y <= y1; y++)
+            int w = x1 - x0 + 1, h = y1 - y0 + 1, free = 0;
+            var isFree = new bool[w, h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    if (isFree[x, y] = p.method_7(new Vector2i(x0 + x, y0 + y)) == null) free++;
+            if (free < w * h || parts.Count > 0)
             {
-                int start = -1;
-                for (int x = x0; x <= x1 + 1; x++)
+                if (!details) parts.Add(Loc.T("pipeline.block.free", new { n = free }));
+                else if (free > 0)
                 {
-                    bool isFree = x <= x1 && p.method_7(new Vector2i(x, y)) == null;
-                    if (isFree) { free++; if (start < 0) start = x; continue; }
-                    if (start < 0) continue;
-                    freeRuns.Add(start == x - 1
-                        ? Loc.T("pipeline.block.freecell", new { row = y + 1, col = start + 1 })
-                        : Loc.T("pipeline.block.freerun", new { row = y + 1, from = start + 1, to = x }));
-                    start = -1;
+                    // As rectangles in the range format (user report 2026-10-07: row-by-row runs
+                    // repeated the same columns on every row).
+                    var rects = new List<string>();
+                    foreach (var r in FreeRectangles(isFree, w, h))
+                        rects.Add(r.int_0 == r.int_2 && r.int_1 == r.int_3
+                            ? PipelineText.Cell(new Vector2i(x0 + r.int_0, y0 + r.int_1))
+                            : BlockRange(x0 + r.int_0, y0 + r.int_1, x0 + r.int_2, y0 + r.int_3));
+                    parts.Add(Loc.T("pipeline.block.freelist", new { runs = string.Join("; ", rects.ToArray()) }));
                 }
             }
-            if (free < total || parts.Count > 0)
-            {
-                if (details) { if (freeRuns.Count > 0) parts.Add(Loc.T("pipeline.block.freelist", new { runs = string.Join("; ", freeRuns.ToArray()) })); }
-                else parts.Add(Loc.T("pipeline.block.free", new { n = free }));
-            }
             return parts;
+        }
+
+        private struct Rect4
+        {
+            public int int_0, int_1, int_2, int_3; // x0, y0, x1, y1 (block-relative, inclusive)
+        }
+
+        /// <summary>Cover the free cells with rectangles, greedily in reading order: each uncovered
+        /// free cell grows across then down (or down then across); the orientation giving fewer
+        /// rectangles wins, across on a tie.</summary>
+        private static List<Rect4> FreeRectangles(bool[,] isFree, int w, int h)
+        {
+            var across = Cover(isFree, w, h, acrossFirst: true);
+            var down = Cover(isFree, w, h, acrossFirst: false);
+            return down.Count < across.Count ? down : across;
+        }
+
+        private static List<Rect4> Cover(bool[,] isFree, int w, int h, bool acrossFirst)
+        {
+            var taken = new bool[w, h];
+            var rects = new List<Rect4>();
+            Func<int, int, bool> open = (x, y) => x < w && y < h && isFree[x, y] && !taken[x, y];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    if (!open(x, y)) continue;
+                    int x1 = x, y1 = y;
+                    if (acrossFirst)
+                    {
+                        while (open(x1 + 1, y)) x1++;
+                        while (RowOpen(open, x, x1, y1 + 1)) y1++;
+                    }
+                    else
+                    {
+                        while (open(x, y1 + 1)) y1++;
+                        while (ColumnOpen(open, x1 + 1, y, y1)) x1++;
+                    }
+                    for (int yy = y; yy <= y1; yy++)
+                        for (int xx = x; xx <= x1; xx++) taken[xx, yy] = true;
+                    rects.Add(new Rect4 { int_0 = x, int_1 = y, int_2 = x1, int_3 = y1 });
+                }
+            return rects;
+        }
+
+        private static bool RowOpen(Func<int, int, bool> open, int xa, int xb, int y)
+        {
+            for (int x = xa; x <= xb; x++) if (!open(x, y)) return false;
+            return true;
+        }
+
+        private static bool ColumnOpen(Func<int, int, bool> open, int x, int ya, int yb)
+        {
+            for (int y = ya; y <= yb; y++) if (!open(x, y)) return false;
+            return true;
         }
 
         /// <summary>"Storage Tank 1 output 13, 11 to 13, 16" ("… at 13, 11" for one cell).</summary>

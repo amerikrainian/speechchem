@@ -137,8 +137,6 @@
   "pipeline.block.end": "open end {cell}",
   "pipeline.block.free": "{n} free",
   "pipeline.block.freelist": "free: {runs}",
-  "pipeline.block.freerun": "row {row}, {from} to {to}",
-  "pipeline.block.freecell": "row {row}, {col}",
   "pipeline.block.segment": "{pipe} {from} to {to}",
   "pipeline.block.segment1": "{pipe} at {cell}",
   "pipeline.molecules": "{n} molecules",

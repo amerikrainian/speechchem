@@ -56,7 +56,6 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null) return false;
-            if (_drawPipe != null) return true; // no jumps while drawing: the cursor is the pipe's end
             FocusMapCell(first ? 0 : p.method_4().int_0 - 1, y);
             return true;
         }
@@ -66,7 +65,6 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null) return false;
-            if (_drawPipe != null) return true; // no jumps while drawing: the cursor is the pipe's end
             var size = p.method_4();
             GridSkip.Target(x, y, dx, dy, size.int_0, size.int_1,
                 (cx, cy) => string.Join(", ", CellContents(p, new Vector2i(cx, cy)).ToArray()), out int tx, out int ty);
@@ -302,7 +300,7 @@ namespace SpeechChem.Screens.Pipeline
         private void StepCategory(int delta)
         {
             var p = Model;
-            if (p == null || _drawPipe != null) return;
+            if (p == null) return;
             int next = CategoryCycle.Next(_category, delta, Categories.Length, i => CategoryCells(p, i).Count);
             if (next < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
             _category = next;
@@ -313,7 +311,7 @@ namespace SpeechChem.Screens.Pipeline
         private void StepItem(int delta)
         {
             var p = Model;
-            if (p == null || _drawPipe != null) return;
+            if (p == null) return;
             int category = CategoryCycle.ForItems(_category, Categories.Length, i => CategoryCells(p, i).Count);
             if (category < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
             if (category != _category) { _category = category; _item = -1; }

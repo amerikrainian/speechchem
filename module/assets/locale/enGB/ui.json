@@ -163,7 +163,6 @@
   "pipeline.draw.own": "own pipe",
   "pipeline.draw.noturn": "no turns on a crossing",
   "pipeline.draw.rightangle": "pipes cross only at right angles",
-  "pipeline.draw.notnext": "not next to the end",
   "pipeline.draw.fixed": "This pipe is fixed in place.",
   "pipeline.draw.status": "{pipe}, {state}",
   "instr.control": "control {letter} {dir}",

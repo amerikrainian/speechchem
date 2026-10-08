@@ -28,7 +28,7 @@ namespace SpeechChem.Screens.Pipeline
 
         private void MarkCorner()
         {
-            if (!OnMap || _drawPipe != null) return;
+            if (!OnMap) return;
             var here = new Vector2i(_cursorX, _cursorY);
             if (!_markFirst.HasValue || _markSecond.HasValue)
             {
@@ -45,7 +45,7 @@ namespace SpeechChem.Screens.Pipeline
         private void MarkAll()
         {
             var p = Model;
-            if (p == null || !OnMap || _drawPipe != null) return;
+            if (p == null || !OnMap) return;
             var size = p.method_4();
             _markFirst = new Vector2i(0, 0);
             _markSecond = new Vector2i(size.int_0 - 1, size.int_1 - 1);
@@ -125,6 +125,7 @@ namespace SpeechChem.Screens.Pipeline
             var victims = MarkedBuildings(p);
             if (victims.Count == 0) return;
             if (!CanEdit()) return;
+            CloseDrag();
             var names = new List<string>();
             foreach (var d in victims) names.Add(PipelineText.Name(p, d));
             try

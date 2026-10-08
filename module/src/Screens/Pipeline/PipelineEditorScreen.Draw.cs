@@ -21,13 +21,21 @@ namespace SpeechChem.Screens.Pipeline
         // the coordinates, then only what changed ("back", "crossing …", "connected, …"); a refused
         // step says why and the cursor returns to the end (FactorioAccess lessons: an explicit mode,
         // terse steps, a reason for every refusal, the connection spoken once when it forms).
-        // Enter or Escape ends it; so does leaving the map. ----
+        // Enter on the map or Escape ends it; so do a run, or the pipe's owner going away (a delete,
+        // an undo's reload). DRAWING IS ONLY WHAT ARROWS ON THE MAP DO (user rule 2026-10-07):
+        // Tab out and back, M, the menu, a reactor opened from here - the mode survives them all,
+        // and every other map key (jumps, categories, marking) works as without it. Only an arrow
+        // pressed with the cursor ON the pipe's end draws; elsewhere arrows just move.
+        // The game's drag (its undo scope, which also blocks undo) is open only while arrows are
+        // drawing: the first step opens it, focus leaving the map or a mod edit closes it, so a
+        // session away from the map splits the drawing into separate undo steps. ----
 
         private PipeDraggable _drawPipe;
+        private bool _dragOpen;             // the game's drag state + undo scope are open
+        private bool _drawOnMap;            // focus was on the map last frame: a landing now is an arrow
         private string _drawStep;           // the readout of the cell just stepped onto
         private Vector2i? _drawStepCell;
         private Vector2i? _drawRefocus;     // a refused step: put the cursor back on the end, silently
-        private bool _drawFocusPending;     // the focus move onto the map lands a frame after StartDraw
 
         public override bool ModalCapturesEscape => _drawPipe != null || _armed != null; // Escape ends drawing / unarms
 
@@ -51,15 +59,9 @@ namespace SpeechChem.Screens.Pipeline
             var p = Model;
             if (p == null || pipe == null || !CanEdit()) return;
             if (pipe.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.draw.fixed"), interrupt: true); return; }
-            try
-            {
-                pipe.class381_0 = Locals.smethod_0().smethod_0().method_49(); // one undo step, as a drag
-                pipe.enum145_0 = (Enum145)1;
-                pipe.vector2i_3 = EndCell(pipe);
-            }
-            catch (System.Exception ex) { Log.Error("[pipeline] draw start failed", ex); return; }
+            EndDraw(quiet: true);
             _drawPipe = pipe;
-            _drawFocusPending = true;
+            _drawOnMap = false;
             _drawStep = null;
             _drawStepCell = null;
             var end = EndCell(pipe);
@@ -72,16 +74,51 @@ namespace SpeechChem.Screens.Pipeline
 
         private void EndDraw(bool quiet = false)
         {
-            var pipe = _drawPipe;
-            if (pipe == null) return;
+            if (_drawPipe == null) return;
+            CloseDrag();
             _drawPipe = null;
+            if (quiet) return;
+            Speech.Tts.Speak(Loc.T("pipeline.draw.done"), interrupt: true); // connections were spoken as they happened (user rule)
+        }
+
+        /// <summary>Open the game's drag on the drawn pipe, as a mouse press on its end does
+        /// (PipeDraggable.method_16): one undo scope until <see cref="CloseDrag"/>.</summary>
+        private bool OpenDrag()
+        {
+            var pipe = _drawPipe;
+            if (pipe == null) return false;
+            if (_dragOpen) return true;
+            try
+            {
+                pipe.class381_0 = Locals.smethod_0().smethod_0().method_49();
+                pipe.enum145_0 = (Enum145)1;
+                pipe.vector2i_3 = EndCell(pipe);
+                _dragOpen = true;
+            }
+            catch (System.Exception ex) { Log.Error("[pipeline] draw start failed", ex); }
+            return _dragOpen;
+        }
+
+        /// <summary>Close the game's drag (the release, vmethod_5: commits the undo step); draw mode
+        /// stays. The last step's readout goes too, so the end reads as a plain cell again.</summary>
+        private void CloseDrag()
+        {
             _drawStep = null;
             _drawStepCell = null;
             _drawRefocus = null;
-            try { pipe.vmethod_5(); } catch (System.Exception ex) { Log.Error("[pipeline] draw end failed", ex); }
-            if (quiet) return;
-            var p = Model;
-            Speech.Tts.Speak(Loc.T("pipeline.draw.done"), interrupt: true); // connections were spoken as they happened (user rule)
+            if (!_dragOpen) return;
+            _dragOpen = false;
+            try { _drawPipe?.vmethod_5(); } catch (System.Exception ex) { Log.Error("[pipeline] draw end failed", ex); }
+        }
+
+        /// <summary>The drawn pipe is still one of its owner's, and the owner still on the map.</summary>
+        private static bool PipeAlive(SpaceChem.Pipeline.Pipeline p, PipeDraggable pipe)
+        {
+            var owner = pipe.draggable_0;
+            if (owner == null || pipe.linkedList_0.Count == 0 || !p.method_9(owner).HasValue) return false;
+            foreach (var o in owner.class485_1.Values)
+                if (ReferenceEquals(o.pipeDraggable_0, pipe)) return true;
+            return false;
         }
 
         /// <summary>"Storage Tank output", "Assembly Reactor 2 psi output".</summary>
@@ -104,22 +141,20 @@ namespace SpeechChem.Screens.Pipeline
             if (p == null || pipe == null) return;
             var target = new Vector2i(x, y);
             var end = EndCell(pipe);
-            if (target == end) return;
+            // Only an arrow FROM the end draws: a landing from another stop, a jump, or an arrow
+            // anywhere else on the map is a plain cursor move.
+            if (!_drawOnMap || _cursorX != end.int_0 || _cursorY != end.int_1) return;
+            if (System.Math.Abs(target.int_0 - end.int_0) + System.Math.Abs(target.int_1 - end.int_1) != 1) return;
+            if (!OpenDrag()) return;
             int before = pipe.linkedList_0.Count;
             bool wasConnected = pipe.pipelineOutput_0?.vmethod_0() != null;
-            string refusal = null;
-            if (System.Math.Abs(target.int_0 - end.int_0) + System.Math.Abs(target.int_1 - end.int_1) != 1)
-                refusal = Loc.T("pipeline.draw.notnext");
-            else
+            string refusal = WhyRefused(p, pipe, target);
+            try
             {
-                refusal = WhyRefused(p, pipe, target);
-                try
-                {
-                    p.vector2i_3 = target;
-                    pipe.vmethod_4();
-                }
-                catch (System.Exception ex) { Log.Error("[pipeline] draw step failed", ex); }
+                p.vector2i_3 = target;
+                pipe.vmethod_4();
             }
+            catch (System.Exception ex) { Log.Error("[pipeline] draw step failed", ex); }
             int after = pipe.linkedList_0.Count;
             var parts = new List<string> { PipelineText.Cell(target) };
             if (after == before || EndCell(pipe) != target)
@@ -173,16 +208,17 @@ namespace SpeechChem.Screens.Pipeline
             return Loc.T("pipeline.edit.blockedby", new { what = name });
         }
 
-        /// <summary>Per frame: leaving the map ends drawing; a refused step's cursor goes back to the end.</summary>
+        /// <summary>Per frame: a run or a vanished pipe ends drawing; leaving the map closes the
+        /// game's drag (the mode stays); a refused step's cursor goes back to the end.</summary>
         private void UpdateDraw()
         {
             if (_drawPipe == null) return;
-            if (_drawFocusPending)
-            {
-                if (!MapStop.Equals(Navigation.FocusedStopKey)) return;
-                _drawFocusPending = false;
-            }
-            if (Running || !MapStop.Equals(Navigation.FocusedStopKey) || ActiveChild != null) { EndDraw(quiet: !MapStop.Equals(Navigation.FocusedStopKey)); return; }
+            var p = Model;
+            bool onMap = OnMap && ActiveChild == null;
+            if (p == null || !PipeAlive(p, _drawPipe)) { EndDraw(quiet: true); return; }
+            if (Running) { EndDraw(quiet: !onMap); return; }
+            _drawOnMap = onMap;
+            if (!onMap) { CloseDrag(); return; }
             if (_drawRefocus.HasValue)
             {
                 var c = _drawRefocus.Value;

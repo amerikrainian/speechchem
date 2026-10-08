@@ -143,14 +143,16 @@ namespace SpeechChem.Screens.Pipeline
             _copy = false;
             _designs = null;
             _drawPipe = null;
+            _dragOpen = false;
         }
 
         public override void OnPop()
         {
-            EndDraw(quiet: true);
+            CloseDrag(); // a covered pipeline keeps drawing for the return (user rule 2026-10-07)
             _covered = false;
             foreach (var s in GameState.ScreenStack())
                 if (s is PipelineEditor e && ReferenceEquals(e.pipeline_0, _pipeline)) { _covered = true; return; }
+            EndDraw(quiet: true);
             _pipeline = null;
         }
 

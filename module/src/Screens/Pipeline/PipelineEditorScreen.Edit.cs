@@ -287,6 +287,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null || !CanEdit()) return false;
+            CloseDrag(); // edits never run inside the drawing's undo step
             try
             {
                 template.method_8();
@@ -373,6 +374,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null) return;
+            CloseDrag();
             if (CursorInRectangle)
             {
                 var marked = MarkedBuildings(p);
@@ -407,6 +409,7 @@ namespace SpeechChem.Screens.Pipeline
             _clip.RemoveAll(d => !p.method_9(d).HasValue); // deleted, or gone in an undo's reload
             if (_clip.Count == 0) return;
             if (!CanEdit()) return;
+            CloseDrag();
             var items = new List<Draggable>(_clip);
             var at = new Vector2i(_cursorX, _cursorY);
             try
@@ -473,6 +476,7 @@ namespace SpeechChem.Screens.Pipeline
             if (p == null || d == null) return;
             if (!CanEdit()) return;
             if (d.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.edit.fixed", new { what = PipelineText.Name(p, d) }), interrupt: true); return; }
+            CloseDrag();
             string name = PipelineText.Name(p, d);
             // Deleted from the Components list: its entry vanishes, so land on the next building
             // (the previous one when it was last) instead of wherever the navigator re-seats.
@@ -512,6 +516,7 @@ namespace SpeechChem.Screens.Pipeline
             var p = Model;
             var d = FocusedComponent();
             if (p == null || d == null || !CanEdit()) return;
+            CloseDrag();
             var items = new List<ActionListScreen.Item>();
             bool lockedPipe = false;
             foreach (var o in d.class485_1.Values) if (o.pipeDraggable_0 != null && o.pipeDraggable_0.bool_0) lockedPipe = true;

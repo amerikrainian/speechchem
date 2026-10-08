@@ -725,16 +725,26 @@ anchor (the rectangle's top-left; a single item's origin), so the paste is ONE m
 whole set (`vector2i_4` = anchor): all or nothing, one undo step; refusals name each item in
 `hashSet_1` with its blockers. Delete = the game's multi-delete (method_10 each, method_15,
 method_66 of the set), "Deleted A, B" (3 named, else "N items"). Verified live by the user 2026-10-07.
-DRAW MODE (PipelineEditorScreen.Draw.cs): StartDraw opens the undo scope a drag would
-(pipe.class381_0 = worker.method_49(), enum145_0 = 1, vector2i_3 = end); each arrow landing sets
-Pipeline.vector2i_3 to the neighbour and calls pipe.vmethod_4 (the game's own extend / retract /
-crossing rules); vmethod_5 ends it. A step speaks coordinates + only what changed
-("crossing Storage Tank 2 output", "connected, X input" once, "disconnected"; a retraction is silent — the game
-plays a sound for it, user rule); a refusal gives the reason (own pipe,
-no turns on a crossing, pipes cross only at right angles, X in the way) and the cursor returns
-to the end silently. P = pipe status. Enter / Escape (ModalCapturesEscape while drawing) / leaving
-the map ends it, saying only "Done" (the connection was already spoken — user rule). Focus lands a frame after StartDraw: _drawFocusPending guards the "left the map"
-check (without it drawing ended at once).
+DRAW MODE (PipelineEditorScreen.Draw.cs): Enter on a pipe end starts it. DRAWING IS ONLY WHAT
+ARROWS ON THE MAP DO (user rule 2026-10-07): the mode survives Tab out and back, M on a port cell,
+the menu, a covering screen; every other key (jumps, categories, marking) works as without it.
+Only an arrow pressed with the cursor ON the pipe's end, focus on the map the frame before
+(`_drawOnMap`), draws; a landing from another stop, a jump or an arrow elsewhere is a plain move.
+The game's drag opens lazily on the first step (OpenDrag: pipe.class381_0 = worker.method_49(),
+enum145_0 = 1, vector2i_3 = end) and closes (CloseDrag, vmethod_5: commits the undo step; the
+open scope also blocks the game's undo, method_48) whenever focus leaves the map or a child opens,
+and before every mod edit (place, cut / copy / paste, delete, menu) — so time away from the map
+splits a drawing into several undo steps. Each step sets Pipeline.vector2i_3 to the neighbour and
+calls pipe.vmethod_4 (the game's own extend / retract / crossing rules). A step speaks
+coordinates + only what changed ("crossing Storage Tank 2 output", "connected, X input" once,
+"disconnected"; a retraction is silent — the game plays a sound for it, user rule); a refusal
+gives the reason (own pipe, no turns on a crossing, pipes cross only at right angles, X in the
+way) and the cursor returns to the end silently. P = pipe status. Enter on the map / Escape
+anywhere on the pipeline (ModalCapturesEscape while drawing) ends it, saying only "Done" (the
+connection was already spoken — user rule); a run ends it, and so does the pipe's owner leaving
+the map (PipeAlive: a delete, an undo's reload), quietly. Verified live 2026-10-07 on An
+Introduction to Pipelines: Tab out / back, M + Escape from a Components port cell, Home / End
+mid-draw, a refusal, reconnecting.
 Undo on the pipeline (Patches/UndoCapture): components by type + cell and pipe ends relative to
 the owner; a component undo reloads the level synchronously and focus survives it. An undo of a
 reactor edit from the pipeline makes the game open that reactor (its own behaviour).

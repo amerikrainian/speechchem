@@ -476,7 +476,7 @@ the wrong molecule's produced/accepted molecules). Probe: `push exitprompt|react
 
 ## 16. Reactor editor (`Screens/Reactor/ReactorEditorScreen.*.cs`) — verified live 2026-09-27
 Generic over every Class77 variant (research, production, disassembly, laser). Tab stops: Grid, Palette,
-Layers, Tools (shared `Common/ToolbarSection`), Molecules, Tutorial, Run log. Game Tab rebound to L
+Layers, Tools (shared `Common/ToolbarSection`), Tutorial, Run log. Game Tab rebound to L
 (switch active layer). NO STATUS STOP (user decision 2026-10-07; reactor and pipeline): keys read
 it, each a silent no-op where it does not apply (`Common/LevelStatus`) — Ctrl+S "Cycles n,
 Symbols n, Reactors n", Ctrl+G progress ("Current Progress: 40 percent", the panel's label),
@@ -488,8 +488,7 @@ VARIANTS VERIFIED LIVE (2026-09-27): standard layout 0 (campaign research), the 
 columns 7-10 on all 8 rows, no ω line, the tall output opens in the viewer). NOT verified: assembly
 (2) / disassembly (1) — production only — and the laser reactor (4) — defense only.
 LASER REACTOR (Class80, from the decompile, UNTESTED): its draggable has a third input port, the
-discharge gas (Xe); the panel draws only the first two, so the Molecules stop lists only α and β
-there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is not read yet.
+discharge gas (Xe); the panel draws only the first two, so only α and β are read there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is not read yet.
 - GRID: a cell reads bare "x, y" (1-based) FIRST, the region on the first readout or when crossed (a
   zone, or "chamber" — the mod's name for the unlabelled middle — so LEAVING an input / output
   is announced too; user request 2026-10-04; `UI/ZoneCrossing`, shared with the crash snapshot), then
@@ -610,17 +609,24 @@ there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is no
   cursor — the user asked for a stable order). Grid items move the cursor; waldo items read like
   Shift+R / Shift+B. No Instructions category (removed 2026-10-07, user: the palette letters cover it).
 - LEVEL START (user request 2026-10-06): opening a RESEARCH level (a Class84 in the chain) speaks the
-  Molecules stop's lines (`MoleculeLines`), one utterance each, after the screen name and the cell
+  panel lines (`MoleculeLines`, what Alt+A / B / P / O read), one utterance each, after the screen name and the cell
   (a frame late: the navigator reads the cell at the end of the focus frame). Once per level
   instance (Class83): closing a dialog or Story & Info doesn't repeat it. Verified live 2026-10-06 on a real level entry.
-- MOLECULES stop: input/output lines from the port annotations; Enter opens `Screens/MoleculeViewerScreen`
+- MOLECULES — KEYS, NO TAB STOP (user decision 2026-10-07): Alt+A / Alt+B / Alt+P / Alt+O speak the
+  alpha / beta / psi / omega panel line (from the port annotations), Alt+Shift+the same letter opens
+  its molecule (`OpenPort`, also what M on a zone cell runs), Ctrl+Shift+P / O open the psi / omega
+  output NOTE (production levels; a research level or a missing output: nothing). Viewer and note
+  are separate keys because both apply to one output: a production output piped to a fixed output
+  shows that target (the viewer) while the note is the reactor's own; piped to a reactor or open,
+  the panel shows the note itself. Every key is a silent no-op when the reactor has no such port.
+  The viewer is `Screens/MoleculeViewerScreen`
   (a molecule as a navigable mini-grid, reusable anywhere a molecule is drawn). INPUTS open in
   landing mode: the whole zone-shaped box the panel draws (4 x 4, 4 x 8 when tall) with every cell
   read as the REACTOR cell it lands on — the molecule's own positions plus the zone offset
   (β 4 rows down; Class80 6 columns across), as InputInstruction.vmethod_7 places it. Outputs stay
   shape-only (an output zone accepts a molecule anywhere in it). M on a grid cell opens the
   molecule of the zone under the cursor the same way (ZoneOf → the panel's port index); nothing
-  outside a zone; a disabled output or a panel without a molecule speaks its Molecules line instead
+  outside a zone; a disabled output or a panel without a molecule speaks its panel line instead
   (user: silence read as broken); Escape returns to the cell. A port piped to or from ANOTHER
   REACTOR with no note shows no molecule in the game either, so its line names the connection,
   as the pipeline does: "psi output: to Standard Reactor 1 beta input", "beta input: from Standard
@@ -781,7 +787,7 @@ defense-style levels, GoalTracker.int_1 percent; Class148's own measure).
   THREE molecules on 4 x 4 grids (`molecule_0[0..2]`) + Show in Pipeline (`bool_1`); no text. Opened
   from the pipeline menu ("Add Note to Upper Output" / "Edit Upper Note (Visible)" / "(Hidden)",
   Lower likewise; `Editor.method_3(new InlineAnnotationEditor(note, false))`) and from a reactor's
-  output line in its Molecules stop on Backspace (the panel's right-click, `Class53.smethod_1(...,
+  output with Ctrl+Shift+P / O (the panel's right-click, `Class53.smethod_1(...,
   true)`; never with a Class84 research host). The game's grid cells (Class468) are bound straight to
   the molecules, so the mod edits the molecules with the cell drop's own calls: place =
   `method_19(MoleculePart.smethod_0(atom))`, `method_28`, single `method_30` toward the 4 neighbours

@@ -18,10 +18,11 @@ namespace SpeechChem.Screens.Reactor
     /// and defense reactors all come through this class.
     ///
     /// Tab stops (user-approved layout, 2026-09-27): grid (a 2D cursor; initial) → palette → layer
-    /// controls → run and tools (the shared ToolbarSection) → molecules (input/output panels) →
-    /// tutorial (only while a tutorial step is active) → run log (the shared WindowedLogView over
-    /// Patches/RunCapture; only once a run has logged events). No status stop: Ctrl+S / Ctrl+G /
-    /// Ctrl+Q read it (Common/LevelStatus).
+    /// controls → run and tools (the shared ToolbarSection) → tutorial (only while a tutorial step
+    /// is active) → run log (the shared WindowedLogView over Patches/RunCapture; only once a run
+    /// has logged events). No status stop: Ctrl+S / Ctrl+G / Ctrl+Q read it (Common/LevelStatus).
+    /// No molecules stop: Alt+A / B / P / O read the alpha / beta / psi / omega panels, Alt+Shift
+    /// opens their molecule, Ctrl+Shift+P / O edit the output notes (Panels.cs).
     /// Screen keys: C coordinates, Shift+R / Shift+B red / blue waldo (Ctrl+Shift also jumps
     /// the cursor there, Ctrl alone traces its path),
     /// Ctrl+T repeats the tutorial step, L switches the active layer (the game's Tab, which is
@@ -34,7 +35,6 @@ namespace SpeechChem.Screens.Reactor
         private const string PaletteStop = "reactor.palette";
         private const string LayersStop = "reactor.layers";
         private const string ToolsStop = "reactor.tools";
-        private const string MoleculesStop = "reactor.molecules";
         private const string TutorialStop = "reactor.tutorial";
 
         public override string Key => "reactor";
@@ -65,6 +65,16 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
             yield return new ElementAction("screen.reactor.molecule", OpenZoneMolecules);
+            yield return new ElementAction("screen.reactor.port.alpha", () => SayPort(InputLine(0)));
+            yield return new ElementAction("screen.reactor.port.beta", () => SayPort(InputLine(1)));
+            yield return new ElementAction("screen.reactor.port.psi", () => SayPort(OutputLine(0)));
+            yield return new ElementAction("screen.reactor.port.omega", () => SayPort(OutputLine(1)));
+            yield return new ElementAction("screen.reactor.view.alpha", () => OpenPort(true, 0));
+            yield return new ElementAction("screen.reactor.view.beta", () => OpenPort(true, 1));
+            yield return new ElementAction("screen.reactor.view.psi", () => OpenPort(false, 0));
+            yield return new ElementAction("screen.reactor.view.omega", () => OpenPort(false, 1));
+            yield return new ElementAction("screen.reactor.note.psi", () => EditNote(0));
+            yield return new ElementAction("screen.reactor.note.omega", () => EditNote(1));
             foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
             yield return new ElementAction("screen.reactor.skip.left", () => SkipSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipSideways(1));
@@ -84,7 +94,6 @@ namespace SpeechChem.Screens.Reactor
             else BuildPalette(b, editor);
             BuildLayers(b, editor);
             ToolbarSection.Build(b, ToolsStop, "reactor.tools");
-            BuildMolecules(b, editor);
             BuildTutorial(b, editor);
             BuildLog(b);
         }

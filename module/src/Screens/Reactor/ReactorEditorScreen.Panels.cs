@@ -167,26 +167,14 @@ namespace SpeechChem.Screens.Reactor
 
         // ---- molecules: the side panels — each input (α, β) and output (ψ, ω) of this reactor, read
         // the way Class77.vmethod_7 / vmethod_8 draw them: through each port's connection to its
-        // annotation (research inputs, production tanks, another reactor's output note…). ----
+        // annotation (research inputs, production tanks, another reactor's output note…). Keys,
+        // not a Tab stop (user decision 2026-10-07): Alt+A / B / P / O speak a panel's line,
+        // Alt+Shift+A / B / P / O open its molecule (as M on a cell of that zone), each a silent
+        // no-op when the reactor has no such port. ----
 
-        private void BuildMolecules(GraphBuilder b, Class77 editor)
+        private static void SayPort(string line)
         {
-            var rd = editor.reactorDraggable_0;
-            if (rd == null) return;
-            b.BeginStop(MoleculesStop);
-            foreach (int index in InputPanels(editor))
-            {
-                var vt = ProfileUi.Text(true, () => InputLine(index));
-                vt.OnActivate = () => OpenInput(index);
-                b.AddItem(ControlId.Structural("reactor.mol.in." + index), vt);
-            }
-            foreach (int index in rd.class485_1.Keys)
-            {
-                var vt = ProfileUi.Text(true, () => OutputLine(index));
-                vt.OnActivate = () => OpenMolecules(PanelAnnotation(false, index), "reactor.mol.out." + index);
-                vt.OnSecondary = () => EditNote(index);
-                b.AddItem(ControlId.Structural("reactor.mol.out." + index), vt);
-            }
+            if (!string.IsNullOrEmpty(line)) Speech.Tts.Speak(line, interrupt: true);
         }
 
         /// <summary>The input ports the panel draws, in order. The laser reactor (Class636
@@ -204,7 +192,7 @@ namespace SpeechChem.Screens.Reactor
             return indices;
         }
 
-        /// <summary>The Molecules stop's lines, in its order (inputs, then outputs).</summary>
+        /// <summary>Every panel's line, inputs then outputs (spoken on entering a research level).</summary>
         private static List<string> MoleculeLines(Class77 editor)
         {
             var lines = new List<string>();
@@ -216,9 +204,10 @@ namespace SpeechChem.Screens.Reactor
             return lines;
         }
 
-        /// <summary>Backspace on an output line: the game's right-click on that output panel
+        /// <summary>Ctrl+Shift+P / Ctrl+Shift+O: the game's right-click on that output panel
         /// (Class77.vmethod_2) — this reactor's own note for the output, in the Output Note Editor
-        /// (NoteEditorScreen), centred. Research levels (a Class84 host) can't edit notes.</summary>
+        /// (NoteEditorScreen), centred. Research levels (a Class84 host) can't edit notes: a no-op,
+        /// as is a reactor without that output.</summary>
         private static void EditNote(int index)
         {
             var rd = Editor?.reactorDraggable_0;
@@ -252,8 +241,8 @@ namespace SpeechChem.Screens.Reactor
         private static Vector2i InputLanding(int index)
             => Editor is Class80 ? new Vector2i(index * 6, 0) : new Vector2i(0, index * 4);
 
-        /// <summary>Enter on a panel row: its molecule in the mini-grid viewer (a chooser first when
-        /// the panel lists several). Inputs pass their zone's landing offset.</summary>
+        /// <summary>A panel's molecule in the mini-grid viewer (a chooser first when the panel lists
+        /// several). Inputs pass their zone's landing offset.</summary>
         private void OpenMolecules(Annotation a, string key, Vector2i? landing = null) => OpenMolecules(this, a, key, landing);
 
         /// <summary>Open an annotation's molecules on <paramref name="owner"/>: one straight into the
@@ -323,17 +312,27 @@ namespace SpeechChem.Screens.Reactor
             return rd.class485_1[index].vmethod_0() is Class582 research && research.method_15();
         }
 
-        /// <summary>M on the grid: the molecule of the zone under the cursor, opened exactly like
-        /// Enter on its Molecules line (inputs in landing mode). Nothing outside a zone; a disabled
-        /// output or a zone without a molecule speaks its Molecules line instead (user request
-        /// 2026-10-01: silence read as broken). Closing returns to the cell.</summary>
+        /// <summary>M on the grid: the molecule of the zone under the cursor (inputs in landing
+        /// mode). Nothing outside a zone; a disabled output or a zone without a molecule speaks its
+        /// panel line instead (user request 2026-10-01: silence read as broken). Closing returns to
+        /// the cell.</summary>
         private void OpenZoneMolecules()
         {
             if (!OnGrid) return;
             bool input;
             int index;
             if (!ZoneOf(Model, _cursorX, _cursorY, out input, out index)) return;
-            var rd = Editor?.reactorDraggable_0;
+            OpenPort(input, index);
+        }
+
+        /// <summary>A port's molecule, from M on its zone or Alt+Shift+A / B / P / O anywhere in
+        /// the reactor. Nothing when the reactor has no such port (or the laser reactor's
+        /// undrawn third input).</summary>
+        private void OpenPort(bool input, int index)
+        {
+            var editor = Editor;
+            var rd = editor?.reactorDraggable_0;
+            if (input && (editor == null || !InputPanels(editor).Contains(index))) return;
             if (rd == null) return;
             // A panel with no molecule (an output piped to another reactor with no note, a disabled
             // output, an unfed input) has nothing to open: say its line instead of nothing.
@@ -359,7 +358,7 @@ namespace SpeechChem.Screens.Reactor
             return false;
         }
 
-        /// <summary>Enter on an input's Molecules line, or M on its zone: the panel's molecules in
+        /// <summary>M on an input zone: the panel's molecules in
         /// landing mode; for an input fed by another reactor (no panel of its own), the molecule
         /// waiting at its pipe's end — the one the next "in" takes (ReactorDraggable.method_17:
         /// the pipe's last slot), drawn in the pipe during a run; else the line itself.</summary>

@@ -127,6 +127,7 @@
   "pipeline.cat.other": "Other components",
   "pipeline.cat.ends": "Open pipe ends",
   "pipeline.cat.defenses": "Defenses",
+  "pipeline.cat.shelf": "Shelf",
   "pipeline.edit.running": "Stop the run to edit.",
   "pipeline.edit.nofit": "{what} did not fit, {why}",
   "pipeline.edit.blockedby": "{what} in the way",

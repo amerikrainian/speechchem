@@ -136,6 +136,7 @@ namespace SpeechChem.Screens.Pipeline
             _cursorX = _cursorY = 0;
             _category = _item = -1;
             _armed = null;
+            _armedSticky = false;
             _clip.Clear();
             DropMark();
             _copy = false;

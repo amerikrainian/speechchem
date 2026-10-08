@@ -256,17 +256,23 @@ namespace SpeechChem.Screens.Pipeline
         }
 
         // ---- categories ([ ] and , . — the reactor editor's keys): components by role and the
-        // open pipe ends, each in reading order; an item moves the map cursor there. ----
+        // open pipe ends, each in reading order; an item moves the map cursor there. Last, the
+        // Shelf (user request 2026-10-07): the shelf's tiles, then the saved designs, in the
+        // Shelf stop's order; an item ARMS it, sticky (ArmFromCategory). ----
 
         private int _category = -1, _item = -1;
 
         // Roles: 0 reactors, 1 inputs, 2 outputs, 3 other, 4 open pipe ends, 5 defenses (the
         // special buildings, Class598: the Control Center, weapons — defense levels only; an
-        // Oxygen Tank has only an input, which made it an "Output").
+        // Oxygen Tank has only an input, which made it an "Output"), 6 the shelf.
+        private const int ShelfRole = 6;
         private static readonly string[] RoleNames =
-            { "pipeline.cat.reactors", "pipeline.cat.inputs", "pipeline.cat.outputs", "pipeline.cat.other", "pipeline.cat.ends", "pipeline.cat.defenses" };
+            { "pipeline.cat.reactors", "pipeline.cat.inputs", "pipeline.cat.outputs", "pipeline.cat.other", "pipeline.cat.ends", "pipeline.cat.defenses", "pipeline.cat.shelf" };
 
-        private static int[] Categories => DefenseText.IsDefense ? new[] { 0, 1, 2, 5, 3, 4 } : new[] { 0, 1, 2, 3, 4 };
+        private static int[] Categories => DefenseText.IsDefense ? new[] { 0, 1, 2, 5, 3, 4, ShelfRole } : new[] { 0, 1, 2, 3, 4, ShelfRole };
+
+        private int CategoryCount(SpaceChem.Pipeline.Pipeline p, int category)
+            => Categories[category] == ShelfRole ? ShelfItems().Count : CategoryCells(p, category).Count;
 
         private static string CategoryName(int category) => RoleNames[Categories[category]];
 
@@ -301,20 +307,27 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null) return;
-            int next = CategoryCycle.Next(_category, delta, Categories.Length, i => CategoryCells(p, i).Count);
+            int next = CategoryCycle.Next(_category, delta, Categories.Length, i => CategoryCount(p, i));
             if (next < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
             _category = next;
             _item = -1;
-            Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryName(_category)), n = CategoryCells(p, _category).Count }), interrupt: true);
+            Speech.Tts.Speak(Loc.T("reactor.cat", new { name = Loc.T(CategoryName(_category)), n = CategoryCount(p, _category) }), interrupt: true);
         }
 
         private void StepItem(int delta)
         {
             var p = Model;
             if (p == null) return;
-            int category = CategoryCycle.ForItems(_category, Categories.Length, i => CategoryCells(p, i).Count);
+            int category = CategoryCycle.ForItems(_category, Categories.Length, i => CategoryCount(p, i));
             if (category < 0) { Speech.Tts.Speak(Loc.T("reactor.cat.none"), interrupt: true); return; }
             if (category != _category) { _category = category; _item = -1; }
+            if (Categories[_category] == ShelfRole)
+            {
+                var shelf = ShelfItems();
+                _item = _item < 0 ? (delta > 0 ? 0 : shelf.Count - 1) : ((_item + delta) % shelf.Count + shelf.Count) % shelf.Count;
+                ArmFromCategory(shelf[_item]);
+                return;
+            }
             var cells = CategoryCells(p, _category);
             _item = _item < 0 ? (delta > 0 ? 0 : cells.Count - 1) : ((_item + delta) % cells.Count + cells.Count) % cells.Count;
             var c = cells[_item];

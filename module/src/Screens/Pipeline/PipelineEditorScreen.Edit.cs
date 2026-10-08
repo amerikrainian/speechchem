@@ -13,10 +13,42 @@ namespace SpeechChem.Screens.Pipeline
     {
         // ---- the shelf (Class717: one Class472 tile per component type the level allows, each
         // holding a locked template). Enter arms a type; the next Enter on the map places it with
-        // its top-left corner on that cell (one shot) — the reactor palette's rule. ----
+        // its top-left corner on that cell (one shot) — the reactor palette's rule. Armed from the
+        // Shelf category instead it is STICKY (user rule 2026-10-07): every Enter on the map places
+        // another, until Escape, arming something else, or starting a pipe drawing (Enter on an
+        // open pipe end draws instead of placing). ----
 
         private const string ShelfStop = "pipeline.shelf";
         private Draggable _armed;
+        private bool _armedSticky;
+
+        /// <summary>The Shelf category's items: the stock tiles, then the saved designs.</summary>
+        private sealed class ShelfItem
+        {
+            public Draggable Template;
+            public string Label;
+            public bool Locked;
+        }
+
+        private List<ShelfItem> ShelfItems()
+        {
+            var items = new List<ShelfItem>();
+            var editor = Editor;
+            if (editor == null || DefenseText.ControlsShown) return items; // a defense run shows Reactor Controls instead
+            foreach (var t in ShelfTemplates(editor)) items.Add(new ShelfItem { Template = t, Label = ShelfLabel(t) });
+            foreach (var d in SavedDesigns()) items.Add(new ShelfItem { Template = d.Template, Label = DesignLabel(d), Locked = d.Locked });
+            return items;
+        }
+
+        /// <summary>, / . in the Shelf category: name the item and arm it, sticky. A locked design
+        /// is only named (its label says "(LOCKED)").</summary>
+        private void ArmFromCategory(ShelfItem item)
+        {
+            Speech.Tts.Speak(item.Label, interrupt: true);
+            if (item.Locked) return;
+            _armed = item.Template;
+            _armedSticky = true;
+        }
 
         private static List<Draggable> ShelfTemplates(PipelineEditor editor)
         {
@@ -53,6 +85,7 @@ namespace SpeechChem.Screens.Pipeline
                     OnActivate = () =>
                     {
                         _armed = template;
+                        _armedSticky = false;
                         Speech.Tts.Speak(Loc.T("pipeline.armed"), interrupt: true); // the focused tile already names it (user rule)
                     },
                     OnTooltip = () => Speech.Tts.Speak(PipelineText.Tooltip(template) ?? Loc.T("nav.no_tooltip"), interrupt: true),
@@ -82,6 +115,7 @@ namespace SpeechChem.Screens.Pipeline
                         // has members this level forbids) draws "(LOCKED)" and won't drag.
                         if (design.Locked) { Speech.Tts.Speak(Loc.T("value.unavailable"), interrupt: true); return; }
                         _armed = design.Template;
+                        _armedSticky = false;
                         Speech.Tts.Speak(Loc.T("pipeline.armed"), interrupt: true);
                     },
                     OnSecondary = () => DesignMenu(design),
@@ -237,6 +271,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             if (_armed == null) return;
             _armed = null;
+            _armedSticky = false;
             Speech.Tts.Speak(Loc.T("pipeline.unarmed"), interrupt: true);
         }
 
@@ -245,14 +280,14 @@ namespace SpeechChem.Screens.Pipeline
         private void ActivateMapCell(int x, int y)
         {
             if (_drawPipe != null) { EndDraw(); return; }
-            if (_armed != null)
-            {
-                var template = _armed;
-                if (Place(template, new Vector2i(x, y))) _armed = null;
-                return;
-            }
             var p = Model;
             var pipe = p == null ? null : PipeEndingAt(p, new Vector2i(x, y));
+            if (_armed != null && !(_armedSticky && pipe != null)) // a sticky arm yields to a pipe end: draw
+            {
+                var template = _armed;
+                if (Place(template, new Vector2i(x, y)) && !_armedSticky) _armed = null;
+                return;
+            }
             if (pipe != null) { StartDraw(pipe); return; }
             var reactor = p == null ? null : ReactorBodyAt(p, new Vector2i(x, y));
             if (reactor != null) OpenReactor(reactor); // the double-click, as Enter on its Components entry (user rule)

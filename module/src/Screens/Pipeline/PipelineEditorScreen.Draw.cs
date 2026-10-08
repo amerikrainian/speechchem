@@ -60,6 +60,8 @@ namespace SpeechChem.Screens.Pipeline
             if (p == null || pipe == null || !CanEdit()) return;
             if (pipe.bool_0) { Speech.Tts.Speak(Loc.T("pipeline.draw.fixed"), interrupt: true); return; }
             EndDraw(quiet: true);
+            _armed = null; // drawing ends any arm (a sticky one from the Shelf category included)
+            _armedSticky = false;
             _drawPipe = pipe;
             _drawOnMap = false;
             _drawStep = null;

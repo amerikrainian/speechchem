@@ -695,8 +695,14 @@ Tab stops:
   decoration). Shift+Backspace on a building's cell (map) or its row (Components table) = the
   hover tooltip the game draws over a PLACED component (Draggable.class713_0, PipelineText.Tooltip,
   minus the title) — "Accepts any compound, …" on the Recycler; pipe cells / terrain have none. [ ] / , . (the reactor bindings) cycle Reactors / Inputs / Outputs / Other
-  components / Open pipe ends; C reads the cell; Ctrl+arrows skip identical cells (as the reactor
-  grid; not while drawing). Enter: end drawing / place the armed shelf item /
+  components / Open pipe ends / Shelf; C reads the cell; Ctrl+arrows skip identical cells (as the reactor
+  grid). SHELF CATEGORY (user request 2026-10-07): the shelf's tiles then the saved designs; , / .
+  name the item and ARM it STICKY — every Enter on the map places another (refusals as usual), until
+  Escape ("Canceled"), arming from the Shelf stop (one-shot again), or a pipe drawing: Enter on an
+  open pipe end with a sticky arm starts drawing that pipe and drops the arm (StartDraw drops any
+  arm). A locked design is only named. Empty during a defense run (Reactor Controls replace the
+  shelf). Verified live 2026-10-07: two reactors placed, then a pipe end drew, then Enter placed
+  nothing. Enter: end drawing / place the armed shelf item /
   on a pipe end start drawing / on a reactor's body open it (user rule).
 - Shelf: the Class717 tiles (Class472.draggable_0 templates). The game's tile is only the picture
   and the name; the mod adds the body size (Draggable.vector2i_0; outputs' pipes start a column

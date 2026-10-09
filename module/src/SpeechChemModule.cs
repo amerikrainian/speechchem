@@ -116,6 +116,8 @@ namespace SpeechChem
             Input.InputManager.Register("screen.jump.log", "Jump to the run log", Input.InputCategory.UI).AddBinding(Input.Scancode.Num4, alt: true);
             Input.InputManager.Register("screen.jump.extra", "Jump to the layers or the enemy", Input.InputCategory.UI).AddBinding(Input.Scancode.Num5, alt: true);
             Input.InputManager.Register("screen.jump.back", "Jump back", Input.InputCategory.UI).AddBinding(Input.Scancode.Backspace, alt: true);
+            // Backquote = the game's stop key; in production / defense levels it also ends the crash view.
+            Input.InputManager.Register("screen.crash.end", "Leave the crash view", Input.InputCategory.UI).AddBinding(Input.Scancode.Grave);
             Input.InputManager.Register("screen.pipeline.zoom.out", "Zoom out", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, shift: true);
             Input.InputManager.Register("screen.pipeline.zoom.in", "Zoom in", Input.InputCategory.UI).AddBinding(Input.Scancode.Down, shift: true);
             Input.InputManager.Register("screen.pipeline.zoom.max", "Zoom to 8 by 8", Input.InputCategory.UI).AddBinding(Input.Scancode.Up, ctrl: true, shift: true);

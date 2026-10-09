@@ -21,8 +21,9 @@ namespace SpeechChem.Screens.Reactor
         // EVERY REACTOR (user request 2026-10-09): in production / defense levels the error also
         // freezes the level's other reactors, so each is captured too; switching to one (Ctrl+Tab,
         // Ctrl+1-9, or from the pipeline) shows its own snapshot ("Reactor at cycle N" after its
-        // name, no cell moved to — only the failed one has an error cell). Each reactor's ends on
-        // its own Escape or edit; a new run (or another level) drops them all. ----
+        // name, no cell moved to — only the failed one has an error cell). An edit anywhere (any
+        // reactor's program, the pipeline's layout — editing acts as stopping the run, user rule
+        // 2026-10-09), a new run, another level or ` drops them all. ----
 
         /// <summary>The reactors as they stood at the last Reaction Error, by reactor; set by
         /// Patches/RunCapture (<see cref="RecordCrash"/>).</summary>
@@ -35,7 +36,11 @@ namespace SpeechChem.Screens.Reactor
         private ReactorSnapshot _crash;
         private int _crashSignature;
 
-        public override bool ModalCapturesEscape => _crash != null;
+        // Escape ends the overlay in research levels only; in production / defense it is the
+        // game's (back to the pipeline, which shows its own snapshot) and Backquote ends them all.
+        public override bool ModalCapturesEscape => _crash != null && InResearch;
+
+        private static bool InResearch => Class53.smethod_5<Class84>() != null;
 
         /// <summary>A Reaction Error opened (the run is paused under it): keep the failed reactor's
         /// snapshot and capture every other reactor of the level's pipeline (research levels have
@@ -45,7 +50,8 @@ namespace SpeechChem.Screens.Reactor
             CrashSnapshots.Clear();
             PendingCrashReactor = failed;
             if (failed != null && snapshot != null) CrashSnapshots[failed] = snapshot;
-            if (Class53.smethod_5<Class84>() != null) return;
+            if (InResearch) return;
+            Pipeline.PipelineEditorScreen.RecordCrash(cycle);
             var pipeline = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
             if (pipeline == null) return;
             foreach (var rd in PipelineText.Reactors(pipeline))
@@ -66,6 +72,26 @@ namespace SpeechChem.Screens.Reactor
         {
             CrashSnapshots.Clear();
             PendingCrashReactor = null;
+            Pipeline.PipelineEditorScreen.ClearCrash();
+        }
+
+        /// <summary>Backquote in production / defense levels (the game's stop key, which also
+        /// reaches the game, a no-op once stopped): every snapshot goes, reactors and pipeline.
+        /// False when there was none (or in research, where Escape keeps the job).</summary>
+        internal static bool EndAllCrashes()
+        {
+            if (InResearch || (CrashSnapshots.Count == 0 && !Pipeline.PipelineEditorScreen.HasCrash)) return false;
+            ClearCrashes();
+            return true;
+        }
+
+        /// <summary>Backquote: the live reactor again, re-reading the cell when on the grid.</summary>
+        private void EndAllCrashesHere()
+        {
+            if (!EndAllCrashes() || _crash == null) return;
+            _crash = null;
+            _zones.Forget();
+            if (OnGrid) Speech.Tts.Speak(CellReadout(_cursorX, _cursorY), interrupt: true);
         }
 
         /// <summary>Per frame: show this reactor's snapshot once the box is gone and the run
@@ -78,8 +104,9 @@ namespace SpeechChem.Screens.Reactor
             {
                 if (Live || Signature(r) != _crashSignature)
                 {
+                    // An edit acts as stopping the run (user rule 2026-10-09): every snapshot goes.
                     _crash = null;
-                    CrashSnapshots.Remove(r);
+                    ClearCrashes();
                 }
                 return;
             }

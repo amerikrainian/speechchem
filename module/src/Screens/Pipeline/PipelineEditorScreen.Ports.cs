@@ -17,7 +17,7 @@ namespace SpeechChem.Screens.Pipeline
         private NodeVtable InputCell(Draggable d, PipelineInput input, int index)
         {
             var panel = Panel(d, false, index, input.method_0());
-            var vt = Cell(() => WithPanel(InputLine(Model, d, input, index, named: d is ReactorDraggable), panel));
+            var vt = Cell(() => CrashPort(d, false, index) ?? WithPanel(InputLine(Model, d, input, index, named: d is ReactorDraggable), panel));
             vt.OnActivate = () => JumpToInput(d, input); // Enter: the input's cell on the map
             vt.OnTooltip = () => SpeakTooltip(d); // the component's, as on its component cell
             return vt;
@@ -26,11 +26,15 @@ namespace SpeechChem.Screens.Pipeline
         private NodeVtable OutputCell(Draggable d, PipelineOutput output, int index)
         {
             var panel = Panel(d, true, index, output.method_0());
-            var vt = Cell(() => WithPanel(OutputLine(Model, d, output, index, named: d is ReactorDraggable), panel));
+            var vt = Cell(() => CrashPort(d, true, index) ?? WithPanel(OutputLine(Model, d, output, index, named: d is ReactorDraggable), panel));
             vt.OnActivate = () => JumpToOutput(d, output); // Enter: the pipe's end on the map (Enter there draws)
             vt.OnTooltip = () => SpeakTooltip(d);
             return vt;
         }
+
+        /// <summary>The port cell as the crash snapshot has it, or null (live).</summary>
+        private string CrashPort(Draggable d, bool output, int index)
+            => _crashView != null && _crashView.Ports.TryGetValue((string)PortId(d, output, index).StructuralKey, out var text) ? text : null;
 
         private void JumpToInput(Draggable d, PipelineInput input)
         {

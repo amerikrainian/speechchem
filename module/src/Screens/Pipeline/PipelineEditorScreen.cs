@@ -30,7 +30,9 @@ namespace SpeechChem.Screens.Pipeline
         private const string ControlsStop = "pipeline.controls";
 
         public override string Key => "pipeline";
-        public override string ScreenName => Loc.T("screen.PipelineEditor");
+        /// <summary>"Pipeline"; while the crash view is up (or about to be, the run stopped),
+        /// "Pipeline at cycle N" in its place (Crash.cs).</summary>
+        public override string ScreenName => CrashTitle() ?? Loc.T("screen.PipelineEditor");
         public override object InitialFocusStop => ComponentsStop;
         public override bool KeepStateOnPop => _covered;
 
@@ -93,6 +95,7 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.jump.log", () => JumpToStop(LogStop));
             yield return new ElementAction("screen.jump.extra", () => JumpToStop(EnemyStop));
             yield return new ElementAction("screen.jump.back", () => _jumps.Back(Here()));
+            yield return new ElementAction("screen.crash.end", EndAllCrashes); // Backquote (the game's stop key too)
             if (_drawPipe != null) yield return new ElementAction(ActionIds.Back, () => EndDraw());
             else if (_armed != null) yield return new ElementAction(ActionIds.Back, Unarm);
         }
@@ -126,6 +129,7 @@ namespace SpeechChem.Screens.Pipeline
                 _deleteFocus = null;
             }
             TrackMapCursor();
+            WatchCrash(pipeline); // the crash view (Crash.cs), before the invalid-molecule landing reads a cell
             // A Reaction Error box that closed over the pipeline: no error cell to land on (the game
             // opens the failing reactor before the box, so this is a safety net). The snapshots
             // stay: each reactor still shows its own when opened.
@@ -252,6 +256,7 @@ namespace SpeechChem.Screens.Pipeline
         public override void OnPop()
         {
             CloseDrag(); // a covered pipeline keeps drawing for the return (user rule 2026-10-07)
+            _crashView = null; // retaken on the return, saying "Pipeline at cycle N" again, as a reactor does
             _covered = false;
             foreach (var s in GameState.ScreenStack())
                 if (s is PipelineEditor e && ReferenceEquals(e.pipeline_0, _pipeline)) { _covered = true; return; }
@@ -325,7 +330,7 @@ namespace SpeechChem.Screens.Pipeline
         /// to any other building's top-left cell on the map.</summary>
         private NodeVtable ComponentCell(Draggable d)
         {
-            var vt = Cell(() => ComponentLabel(Model, d));
+            var vt = Cell(() => _crashView != null && _crashView.Components.TryGetValue(d, out var text) ? text : ComponentLabel(Model, d));
             vt.ControlType = d is ReactorDraggable ? ControlTypes.Button : ControlTypes.Text;
             if (d is ReactorDraggable rd) vt.OnActivate = () => OpenReactor(rd);
             else vt.OnActivate = () => JumpToComponent(d);

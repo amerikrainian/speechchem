@@ -221,6 +221,7 @@
   "run.progress": "{label}: {percent} percent",
   "run.percent": "{percent} percent",
   "snapshot.title": "Reactor at cycle {n}",
+  "snapshot.pipeline": "Pipeline at cycle {n}",
   "snapshot.marked": "error here",
   "undo.placed": "{what} at {cell}",
   "undo.removed": "removed {what} at {cell}",

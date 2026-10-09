@@ -729,6 +729,10 @@ namespace SpeechChem.Patches
         {
             try
             {
+                // The run pauses under the box like a Reaction Error: keep the level as it stands
+                // (every reactor and the pipeline; ReactorEditorScreen.RecordCrash).
+                try { Screens.Reactor.ReactorEditorScreen.RecordCrash(null, null, Cycle); }
+                catch (Exception ex) { SpeechChem.Log.Error("[run] invalid molecule snapshot", ex); }
                 var e = new NarrationEvent("output.invalid") { Concerns = ConcernsOpen(__instance) };
                 e.Part("action", GameText.T("An invalid molecule was passed to")).Part("target", OutputLabel(__instance), ":").Molecule(__0);
                 Narrator.Emit(e);

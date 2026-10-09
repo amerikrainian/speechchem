@@ -106,7 +106,8 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.jump.log", () => JumpToStop(LogStop));
             yield return new ElementAction("screen.jump.extra", () => JumpToStop(LayersStop));
             yield return new ElementAction("screen.jump.back", () => _jumps.Back(Here()));
-            if (_crash != null) yield return new ElementAction(ActionIds.Back, EndCrash); // Escape: the live grid
+            yield return new ElementAction("screen.crash.end", EndAllCrashesHere); // Backquote: production / defense (Crash.cs)
+            if (_crash != null && InResearch) yield return new ElementAction(ActionIds.Back, EndCrash); // Escape: the live grid
         }
 
         private readonly JumpBack _jumps = new JumpBack();

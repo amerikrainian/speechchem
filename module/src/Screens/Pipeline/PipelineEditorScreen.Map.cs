@@ -68,7 +68,7 @@ namespace SpeechChem.Screens.Pipeline
             if (p == null) return false;
             var size = p.method_4();
             GridSkip.Target(x, y, dx, dy, size.int_0, size.int_1,
-                (cx, cy) => string.Join(", ", CellContents(p, new Vector2i(cx, cy)).ToArray()), out int tx, out int ty);
+                (cx, cy) => string.Join(", ", ViewContents(p, cx, cy).ToArray()), out int tx, out int ty);
             if (tx == x && ty == y) Speech.Tts.Speak(MapReadout(x, y), interrupt: true);
             else FocusMapCell(tx, ty);
             return true;
@@ -116,7 +116,7 @@ namespace SpeechChem.Screens.Pipeline
             var parts = new List<string>();
             if (IsMarked(x, y)) parts.Add(Loc.T("reactor.marked")); // first, before the coordinates (the reactor's rule)
             parts.Add(PipelineText.Cell(new Vector2i(x, y)));
-            parts.AddRange(CellContents(p, new Vector2i(x, y)));
+            parts.AddRange(ViewContents(p, x, y)); // the crash snapshot's while shown (Crash.cs)
             return string.Join(", ", parts.ToArray());
         }
 

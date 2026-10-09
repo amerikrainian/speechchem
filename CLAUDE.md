@@ -1039,8 +1039,8 @@ the snapshot PENDING; once the box is closed (Okay — which stops the run) and 
 is back on top, its GRID shows the snapshot, cursor on the first marked cell: "Reactor at cycle 4, 1,
 2, alpha input, red waldo, facing left, Oxygen, double bond left, error here". Not modal, like pipe
 drawing: only the grid cells change (readout, Shift+Backspace details, Ctrl+arrow skips read the
-snapshot); other stops and keys are live. Escape (ModalCapturesEscape while shown) returns the grid
-to live, re-reading the cell; any edit (a Signature over the members, their cells / layers and
+snapshot); other stops and keys are live. In RESEARCH levels Escape (ModalCapturesEscape while
+shown) returns the grid to live, re-reading the cell; in production / defense see below; any edit (a Signature over the members, their cells / layers and
 instruction labels, changes) or a new run ends it silently. A box closed over the pipeline drops
 the pending error-cell landing — a safety net only: the game itself opens the failing reactor before the
 box (GoalTracker.smethod_11 -> Class77.method_6 pops to the pipeline and pushes it), so a crash
@@ -1049,15 +1049,39 @@ the error freezes the whole level, so `RecordCrash` also snapshots every other r
 pipeline (`PipelineText.Reactors`; none in research levels), keyed by reactor model. Any reactor
 opened afterwards (Ctrl+Tab / Ctrl+1-9, from the pipeline) shows its own: its name, "Reactor at
 cycle N", then the landing reads the snapshot (the failed reactor lands on its error cell again;
-the others where a fresh arrival lands). Each reactor's ends on its own Escape or an edit (the
-Signature is taken the first time a grid shows it, stored on the snapshot); a run starting from
-stopped or another level (`ClearCrashes`, RunCapture.AfterState / SyncLevel) drops them all.
+the others where a fresh arrival lands). An EDIT ANYWHERE drops them all, reactors and pipeline
+(user rule 2026-10-09: editing acts as stopping the run) — a reactor's Signature (taken the first
+time a grid shows it, stored on the snapshot) or the pipeline's layout Signature changing calls
+`ClearCrashes`; so do a run starting from stopped and another level (RunCapture.AfterState /
+SyncLevel). ESCAPE / BACKQUOTE (user
+rule 2026-10-09, production / defense only — research keeps Escape): Escape in a reactor is the
+game's (back to the pipeline) and leaves every snapshot standing, so the player can look at the
+pipeline as the run left it; ` (Backquote, `screen.crash.end`, the game's stop key — it reaches the
+game too, a no-op once stopped) ends ALL of them, reactors and pipeline, re-reading the grid cell /
+the focused pipeline node (`EndAllCrashes`); silent when there is nothing to end. THE PIPELINE'S OWN
+SNAPSHOT (`Screens/Pipeline/PipelineEditorScreen.Crash.cs`, PipelineSnapshot, captured in
+RecordCrash): per map cell the contents (molecules in pipes, meters, the enemy), molecule and enemy
+flags (zoomed blocks' counts and enemy, P's count), the Components table's component and port
+cells, the Enemy stop's rows. Shown once the run is stopped: the screen name itself becomes
+"Pipeline at cycle N" (CrashTitle; never both — user rule 2026-10-09) on every arrival (OnPop
+drops the view, WatchCrash retakes it); ends silently, with every reactor's, on a pipeline edit (a layout Signature:
+components, origins, pipe cells, links — placing, moving, deleting, drawing, Reset Pipes; notes and
+Save to Toolbox are no layout change), a new run, another level or `. Edits are allowed as usual
+(CanEdit only refuses during a run, and the view only shows while stopped). An INVALID
+MOLECULE records the same set (RecordCrash with no failed reactor; nothing in research).
 Instruction details in a snapshot use the reactor's OWN palette tooltips (`InstructionDetails(i,
 editor)`), not the open reactor's. Probe `crash <n>` raises the game's own Reaction Error
 (GoalTracker.smethod_12, marker at cell 4, 3) in pipeline reactor n — only during a run; step
 once (0) to get a paused one, Okay stops it. Verified live 2026-10-09 on a 5-reactor production
 level: crash in reactor 3 → its error cell as before; reactor 4 showed its waldo mid-run; Escape
-there went live while 3 and 1 kept theirs; a new run cleared all. INVALID MOLECULE (Class69, raised by the
+there went live while 3 and 1 kept theirs; a new run cleared all. Then (Escape / ` rules, pipeline
+snapshot): crash in reactor 2 at cycle 15, real Escape → "Pipeline, Pipeline at cycle 15"; 8 by 8
+blocks counted "2 molecules", a pipe cell read its Sodium Chloride, P "1 molecule"; reactors 4 / 2
+kept theirs; real ` in reactor 2 re-read the live cell, reactor 4 and the pipeline live after, no
+run started; an invalid molecule (probe) gave "Pipeline at cycle 11" and reactor 1's snapshot. Later the same day: arrival said only "Pipeline at cycle 13"; placing a Sensor Reactor ended the
+view (an 8 by 8 block's "1 molecule" gone); deleted again. Since editing acts as stopping: the
+same placement left reactor 3 live, and a bond plus placed in the failed reactor 2 left reactor 4
+and the pipeline live (both edits undone by hand). INVALID MOLECULE (Class69, raised by the
 refusing building's Draggable.method_7 — output counters Class578, defense buildings Class598, the
 laser reactor's gas input Class636; DialogCapture records the building and its input's marker, map
 pixels -> cell): in production / defense the game closes any reactor and the box sits over the

@@ -198,7 +198,7 @@ namespace SpeechChem.Screens.Pipeline
         {
             var p = Model;
             if (p == null || !BlockBounds(bx, by, out int x0, out int y0, out int x1, out int y1)) return new List<string>();
-            return BlockContents(p, x0, y0, x1, y1, details: false);
+            return BlockContents(p, x0, y0, x1, y1, details: false, _crashView);
         }
 
         /// <summary>Shift+Backspace on a block: the range, then each pipe's run through the block
@@ -208,14 +208,16 @@ namespace SpeechChem.Screens.Pipeline
             var p = Model;
             if (p == null || !BlockBounds(bx, by, out int x0, out int y0, out int x1, out int y1)) return null;
             var parts = new List<string> { BlockRange(x0, y0, x1, y1) };
-            parts.AddRange(BlockContents(p, x0, y0, x1, y1, details: true));
+            parts.AddRange(BlockContents(p, x0, y0, x1, y1, details: true, _crashView));
             return string.Join("; ", parts.ToArray());
         }
 
         private static bool Inside(Vector2i c, int x0, int y0, int x1, int y1)
             => c.int_0 >= x0 && c.int_0 <= x1 && c.int_1 >= y0 && c.int_1 <= y1;
 
-        private static List<string> BlockContents(SpaceChem.Pipeline.Pipeline p, int x0, int y0, int x1, int y1, bool details)
+        /// <summary>A block's contents; <paramref name="crash"/> (the crash view) supplies what a
+        /// run changes: molecules in pipes and the enemy's place.</summary>
+        private static List<string> BlockContents(SpaceChem.Pipeline.Pipeline p, int x0, int y0, int x1, int y1, bool details, PipelineSnapshot crash)
         {
             var parts = new List<string>();
 
@@ -236,7 +238,7 @@ namespace SpeechChem.Screens.Pipeline
             var ends = new List<string>();
             var crossings = new HashSet<int>();
             int molecules = 0;
-            bool running = Running;
+            bool running = Running && crash == null;
             foreach (var kv in PipelineText.Components(p))
                 foreach (var o in kv.Key.class485_1)
                 {
@@ -254,7 +256,7 @@ namespace SpeechChem.Screens.Pipeline
                         {
                             through = true;
                             if (pipe.dictionary_4.ContainsKey(local)) crossings.Add(c.int_1 * 1000 + c.int_0);
-                            if (slots != null && i < slots.Count && slots[i].HasMolecule) molecules++;
+                            if (crash != null ? Snap(crash.Molecule, c) : slots != null && i < slots.Count && slots[i].HasMolecule) molecules++;
                             if (!runStart.HasValue) runStart = c;
                             runEnd = c;
                         }
@@ -287,7 +289,7 @@ namespace SpeechChem.Screens.Pipeline
                 bool covers = false;
                 for (int y = y0; y <= y1 && !covers; y++)
                     for (int x = x0; x <= x1 && !covers; x++)
-                        covers = DefenseText.Covers(enemy, new Vector2i(x, y));
+                        covers = crash != null ? Snap(crash.Enemy, new Vector2i(x, y)) : DefenseText.Covers(enemy, new Vector2i(x, y));
                 if (covers) parts.Add(DefenseText.EnemyName(level));
             }
 
@@ -375,6 +377,9 @@ namespace SpeechChem.Screens.Pipeline
                 ? Loc.T("pipeline.block.segment1", new { pipe = DrawName(p, pipe), cell = PipelineText.Cell(from) })
                 : Loc.T("pipeline.block.segment", new { pipe = DrawName(p, pipe), from = PipelineText.Cell(from), to = PipelineText.Cell(to) });
 
+        private static bool Snap(bool[,] cells, Vector2i c)
+            => c.int_0 >= 0 && c.int_1 >= 0 && c.int_0 < cells.GetLength(0) && c.int_1 < cells.GetLength(1) && cells[c.int_0, c.int_1];
+
         private static string MoleculeCount(int n) => Loc.T(n == 1 ? "pipeline.molecules.one" : "pipeline.molecules", new { n });
 
         private struct PipeSlotView
@@ -417,7 +422,15 @@ namespace SpeechChem.Screens.Pipeline
             var pipe = PipeAt(p, new Vector2i(_cursorX, _cursorY));
             if (pipe == null) return;
             string text = Loc.T("pipeline.draw.status", new { pipe = DrawName(p, pipe), state = PipeState(p, pipe) });
-            if (Running)
+            var crash = _crashView;
+            if (crash != null)
+            {
+                int n = 0;
+                var origin = pipe.method_14();
+                foreach (var local in pipe.linkedList_0) if (Snap(crash.Molecule, local + origin)) n++;
+                text += ", " + MoleculeCount(n);
+            }
+            else if (Running)
             {
                 int n = 0;
                 foreach (var s in Slots(pipe)) if (s.HasMolecule) n++;

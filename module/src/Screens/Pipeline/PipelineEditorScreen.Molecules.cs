@@ -22,9 +22,16 @@ namespace SpeechChem.Screens.Pipeline
         /// <summary>The port's panel when it shows molecules (recorded for M), else null.</summary>
         private Annotation Panel(Draggable d, bool output, int index, Annotation a)
         {
+            a = PanelOf(a);
+            if (a != null) _panels[(string)PortId(d, output, index).StructuralKey] = a;
+            return a;
+        }
+
+        /// <summary>The annotation when its panel shows molecules, else null.</summary>
+        private static Annotation PanelOf(Annotation a)
+        {
             if (a is ReactorAnnotation note && note.method_4()) return null; // no note on this output
             if (!HasMolecules(a)) return null;                              // e.g. the recycler's inputs: an empty panel
-            _panels[(string)PortId(d, output, index).StructuralKey] = a;
             return a;
         }
 

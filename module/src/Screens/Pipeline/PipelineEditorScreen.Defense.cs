@@ -25,16 +25,19 @@ namespace SpeechChem.Screens.Pipeline
             {
                 var lvl = DefenseText.Level;
                 string text = DefenseText.EnemyName(lvl) + ", " + DefenseText.EnemyTitle(lvl);
+                if (_crashView != null) return text; // as it stood at the crash: still standing
                 return DefenseText.Defeated(DefenseText.Enemy(lvl)) ? text + ", " + Loc.T("defense.state.destroyed") : text;
             }));
             var enemy = DefenseText.Enemy(level);
             if (enemy == null) return;
-            LiveRow(b, "pipeline.enemy.span", () => DefenseText.Span(DefenseText.Enemy(DefenseText.Level)));
+            // The crash view (Crash.cs): the rows as they stood at the error.
+            LiveRow(b, "pipeline.enemy.span", () => _crashView != null ? _crashView.EnemySpan : DefenseText.Span(DefenseText.Enemy(DefenseText.Level)));
             if (DefenseText.PartFlags(enemy) != null)
-                LiveRow(b, "pipeline.enemy.parts", () => DefenseText.PartsText(DefenseText.Enemy(DefenseText.Level)));
+                LiveRow(b, "pipeline.enemy.parts", () => _crashView != null ? _crashView.EnemyParts : DefenseText.PartsText(DefenseText.Enemy(DefenseText.Level)));
             if (DefenseText.HasEnemyState(enemy.GetType()))
                 LiveRow(b, "pipeline.enemy.state", () =>
                 {
+                    if (_crashView != null) return _crashView.EnemyState;
                     var lvl = DefenseText.Level;
                     return DefenseText.EnemyState(lvl, DefenseText.Enemy(lvl)) ?? Loc.T("defense.state.none");
                 });

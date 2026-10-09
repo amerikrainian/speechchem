@@ -137,8 +137,9 @@ namespace SpeechChem.Screens.Reactor
             }
             if (x == _cursorX && y == _cursorY) PickPlaced(clone, layer);
             Class428.class14_11.vmethod_0(); // the drop sound (Reactor.method_11 leaving the drag state)
-            // Just the new instruction, replacement or not (user rule).
-            string placed = ColourWord(layer) + " " + ReactorText.Label(clone);
+            // Just the new instruction, replacement or not (user rule), without its colour: placing
+            // always uses the active colour (user rule 2026-10-09).
+            string placed = ReactorText.Label(clone);
             Speech.Tts.Speak(Loc.T("reactor.edit.placed", new { placed }), interrupt: true);
             return true;
         }

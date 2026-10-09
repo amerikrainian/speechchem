@@ -14,7 +14,8 @@ namespace SpeechChem.Narration
     ///   4. speech, in the Speech format — during a step by the step key's "speaks" set and scope;
     ///      otherwise by the event's own rule: its Speak checkbox for the moment (running at
     ///      play speed 1-4, or paused / stopped), and inside a reactor only when it concerns that
-    ///      reactor unless its scope is "all reactors".
+    ///      reactor unless its scope is "all reactors". A waldo's events of one cycle are joined
+    ///      into one utterance (<see cref="SpeechMerge"/>; always — user rule 2026-10-09).
     /// Settings come compiled per revision (<see cref="Rules"/>); an event nothing wants is
     /// muted while it is built (<see cref="Wants"/>).
     /// </summary>
@@ -32,14 +33,34 @@ namespace SpeechChem.Narration
                 var rules = Rules.Of(kind);
                 if (kind.Waldo && e.Colour >= 0 && !rules.Source(e.Colour)) return;
                 e.Cycle = cycle ?? Class258.int_1;
+                bool merges = kind.Waldo && e.Colour >= 0;
+                // Anything but the held waldo's next event speaks the held utterance first (before
+                // the step's "Cycle N", which belongs to this event).
+                if (SpeechMerge.Pending && !(merges && SpeechMerge.Continues(e))) Flush();
                 if (rules.Log) Patches.RunCapture.Log.Add(e.Cycle, e);
                 bool stepping = Patches.StepControl.Active;
                 Patches.StepControl.OnEvent(e);
                 if (!speakable) return;
                 bool speak = stepping ? Patches.StepControl.Speaks(e) : SpeaksInRun(e, rules);
-                if (speak) Speech.Tts.Speak(Formatter.Format(e, FormatLayer.Speech, OpenReactor()));
+                if (!speak) return;
+                var open = OpenReactor();
+                if (!merges) Speech.Tts.Speak(Formatter.Format(e, FormatLayer.Speech, open));
+                else if (SpeechMerge.Continues(e)) SpeechMerge.Append(Formatter.Format(e, FormatLayer.Speech, open, continuation: true));
+                else SpeechMerge.Start(e, Formatter.Format(e, FormatLayer.Speech, open));
             }
             catch (Exception ex) { Log.Error("[narration] emit", ex); }
+        }
+
+        /// <summary>Speak the held utterance (FrameLoop, first step: last frame's run events
+        /// before anything this frame's keys say).</summary>
+        public static void Flush()
+        {
+            try
+            {
+                string text = SpeechMerge.Take();
+                if (text != null) Speech.Tts.Speak(text);
+            }
+            catch (Exception ex) { Log.Error("[narration] flush", ex); }
         }
 
 #if DEBUG

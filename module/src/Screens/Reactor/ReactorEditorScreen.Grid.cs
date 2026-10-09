@@ -225,15 +225,16 @@ namespace SpeechChem.Screens.Reactor
             }
             if (Live)
             {
-                // Waldos read short here — name and facing (user rule); the rest of their state is
+                // Waldos read short here — name and facing, "red waldo down" (user rules; no "facing"
+                // since 2026-10-09); the rest of their state is
                 // Shift+Backspace (CellDetailsOf) and Shift+R / Shift+B.
                 foreach (var w in r.dictionary_2)
                 {
                     var p = w.Value.method_0();
                     if (p.int_0 != x || p.int_1 != y) continue;
-                    parts.Add(Loc.T((int)w.Key == ReactorText.Red ? "reactor.waldo.red" : "reactor.waldo.blue"));
+                    string waldo = Loc.T((int)w.Key == ReactorText.Red ? "reactor.waldo.red" : "reactor.waldo.blue");
                     string facing = Heading(w.Value.vector2i_1);
-                    if (facing != null) parts.Add(Loc.T("reactor.waldo.facing", new { dir = facing }));
+                    parts.Add(facing != null ? Loc.T("reactor.waldo.facing", new { waldo, dir = facing }) : waldo);
                 }
                 parts.AddRange(AtomsAt(r, x, y));
             }
@@ -284,13 +285,18 @@ namespace SpeechChem.Screens.Reactor
                 if (i is ToggleInstruction flip && Live)
                     labels.Add(Loc.T(flip.bool_3 ? "reactor.flipflop.on" : "reactor.flipflop.off"));
             }
+            // The arrow is its bare direction joined with "and" ("red grab and up"; alone "red up"):
+            // it always follows its colour's instruction, so the word "arrow" says nothing (user
+            // request 2026-10-09; the picker, palette and undo keep "arrow up").
+            string dir = null;
             if (allLayers || Visible(r, arrowLayer))
             {
                 var a = InstructionAt(r, x, y, arrowLayer);
-                if (a != null) labels.Add(ReactorText.Label(a));
+                if (a != null) dir = ReactorText.Direction(a.vmethod_5()) ?? ReactorText.Label(a);
             }
-            if (labels.Count > 0)
-                parts.Add(Loc.T(colourKey) + " " + string.Join(", ", labels.ToArray()));
+            string instr = labels.Count > 0 ? string.Join(", ", labels.ToArray()) : null;
+            string text = dir == null ? instr : instr == null ? dir : Loc.T("reactor.arrow.and", new { instr, dir });
+            if (text != null) parts.Add(Loc.T(colourKey) + " " + text);
         }
 
         /// <summary>The atoms in a cell during a run, each with its bonds ("Oxygen, double bond

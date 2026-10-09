@@ -29,7 +29,9 @@ namespace SpeechChem.Narration
 
         /// <param name="openReactor">The reactor whose view this is (the one open for speech, the
         /// reactor whose Run log is shown), or null (the pipeline's view: every reactor named).</param>
-        public static string Format(NarrationEvent e, FormatLayer layer, object openReactor)
+        /// <param name="continuation">Leave out the common parts (reactor, waldo): the event
+        /// continues an utterance that already named them (Narrator's per-cycle merge).</param>
+        public static string Format(NarrationEvent e, FormatLayer layer, object openReactor, bool continuation = false)
         {
             if (e?.Kind == null) return null;
             var plan = Rules.Of(e.Kind).Plan(layer);
@@ -46,6 +48,7 @@ namespace SpeechChem.Narration
                 string key = plan.Order[o];
                 var common = Find(e.Common, key);
                 if (common == null) { if (!itemsSeen && AnyItemHas(e, key)) itemsSeen = true; continue; }
+                if (continuation) continue;
                 var text = Render(e, plan, o, common, openReactor);
                 if (text == null) continue;
                 (itemsSeen ? trail : lead).Add(new Piece(text, common.Suffix));

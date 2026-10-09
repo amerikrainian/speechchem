@@ -438,7 +438,7 @@ pre-settings behaviour exactly; only changed values are stored.
   fission, swap: done / none; defense.effect: hit / miss / part — hit and miss LOG-ONLY by default,
   never spoken, steps neither stop on nor speak them, user rule 2026-10-09); LEAVES are what the capture code
   emits, each listing its PARTS in default order (some with detail variants: molecule
-  name/formula/both, bond atoms with cells / names, reactor "not in its own" / always), Waldo
+  name/formula/both, bond atoms with cells / names / cells only / symbols, names and symbols also without the "and" ("F F"), reactor "not in its own" / always), Waldo
   (red/blue filters), ReactorScoped (scope), and defaults (log, speak level, step stops/speaks); a
   branch's parts are its leaves' union, its flags any leaf's. A TAG (waldo.noeffect, "Failed or did
   nothing, any instruction": every none / full / holding leaf) is a cross-cutting view with no
@@ -523,7 +523,13 @@ discharge gas (Xe); the panel draws only the first two, so only α and β are re
   is announced too; user request 2026-10-04; `UI/ZoneCrossing`, shared with the crash snapshot), then
   contents (red/blue instruction + arrow labels from `Game/ReactorText`, hardware feature, waldos and
   atoms with bonds while running), "highlighted" (tutorial target), "selected". Empty cell =
-  coordinates only. While running a waldo reads SHORT: "red waldo, facing down" (user rule).
+  coordinates only. While running a waldo reads SHORT: "red waldo down" (user rule; no "facing" since 2026-10-09).
+  SHORT WORDING (user request 2026-10-09, from a player's "red grab and up"): no word "arrow" on the
+  grid — a colour's arrow is its bare direction joined with "and" ("3, 2, red grab drop and up, blue
+  bond and right, bonder"; alone "red up"); the picker, palette, undo and clipboard keep "arrow up".
+  Instruction labels (`instr.*`) are the short ones everywhere: alpha / beta / psi / omega (no
+  in / out), bond / unbond, clockwise / counter; grab drop unchanged (user still choosing a word).
+  Placing says only the instruction, no colour (it is always the active colour); deletes already did.
   QUANTUM JUNCTION (Reactor.bool_1 — QT levels, Teleporters, Precursor Compounds, Collapsar; custom
   puzzles never get it): the line between columns 5 and 6 (395 px, 79 px cells); the cell the cursor
   lands on after crossing it adds "crossed quantum junction" (arrows, Home/End, jumps). Carrying an
@@ -641,7 +647,7 @@ discharge gas (Xe); the panel draws only the first two, so only α and β are re
   panel lines (`MoleculeLines`, what Alt+A / B / P / O read), one utterance each, after the screen name and the cell
   (a frame late: the navigator reads the cell at the end of the focus frame). Once per level
   instance (Class83): closing a dialog or Story & Info doesn't repeat it. Verified live 2026-10-06 on a real level entry.
-- MOLECULES — KEYS, NO TAB STOP (user decision 2026-10-07): Alt+A / Alt+B / Alt+P / Alt+O speak the
+- MOLECULES — KEYS, NO TAB STOP (user decision 2026-10-07): Alt+A / Alt+B / Alt+P / Alt+O speak the (lines start with the bare zone letter, "alpha: Oxygen, O, 100 percent" — `panel.*`; the grid region and pipeline ports keep "alpha input")
   alpha / beta / psi / omega panel line (from the port annotations), Alt+Shift+the same letter opens
   its molecule (`OpenPort`, also what M on a zone cell runs), Ctrl+Shift+P / O open the psi / omega
   output NOTE (production levels; a research level or a missing output: nothing). Viewer and note
@@ -1022,9 +1028,9 @@ bonds — BondInstruction → Class668.smethod_1 bonds immediately over the conn
 (Class668.smethod_0), so a BondBoard snapshot is diffed per pair: "bonded Fluorine at 2, 6 and
 Fluorine at 3, 6, single bond", "… now double bond", "unbonded …", "could not bond …" (the game's
 failure flash: atoms full or already triple), "nothing to bond / unbond";
-any heading change "blue: heading up" — an arrow the waldo already follows logs nothing; SENSOR
+any heading change "blue: up" (no "heading" since 2026-10-09; Shift+R / B keep it) — an arrow the waldo already follows logs nothing; SENSOR
 (SensorInstruction.vmethod_7 branches when any Class673 has the trigger element above it,
-method_10): "sensed Nickel, heading down" on a match — also when already heading that way, which
+method_10): "sensed Nickel, down" on a match — also when already heading that way, which
 the waldo alone can't show — else "sensed Carbon" / "sensed nothing", the atom the sensor saw;
 verified live 2026-09-27 on a `custom` test puzzle, all three cases; FLIP-FLOP (ToggleInstruction,
 on custom research palettes: vmethod_7 branches when bool_3 is set and clears it, else sets it —
@@ -1127,6 +1133,14 @@ grid cursor lands in the output zone feeding that building and its Alt+P / O lin
 while stopped). Verified live 2026-10-07 on the pipeline. 
 the pending snapshot. Verified live 2026-10-07 on a tutorial level (atom out of bounds at 1, 2):
 arrival, arrows, details, skip, Tools and back, Escape, an edit ending it.
+ONE UTTERANCE PER WALDO PER CYCLE (`Narration/SpeechMerge`, always on — user rule 2026-10-09): a
+waldo's consecutive events of one cycle (instruction, then its turn; a bond's outcomes) stay
+separate log entries, but their SPEECH is held and joined, the follow-ups without the common parts:
+"red: grabbed Oxygen, O and right" (`narr.t.merge`). Spoken when another waldo's / cycle's / no
+waldo's event comes, and at the start of each frame (FrameLoop "merge", first). Wall stops come from
+the later move pass (Reactor.method_34 after method_35) and stay their own. The input's landing cell
+is off by default (PartDef.DefaultOn). Verified live 2026-10-09 by stepping a custom puzzle:
+"Cycle 5, red: grabbed Oxygen, O and heading right" (before "heading" was dropped), the log separate.
 GroupedLog (ported from Echopunks) keeps the whole run under
 a 10M-entry insurance cap; WindowedLogView is the reusable Tab stop: one region per cycle, a window of
 51 groups / 1200 rows re-centred on focus every rebuild, tail-follow when focus is elsewhere, Home/End

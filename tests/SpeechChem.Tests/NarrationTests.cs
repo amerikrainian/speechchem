@@ -45,10 +45,67 @@ namespace SpeechChem.Tests
             Assert.Equal("reactor 2, red: bonded A at 1, 2 and B at 2, 2, single bond; unbonded C at 3, 3 and D at 4, 3",
                 Formatter.Format(Bond(), FormatLayer.Log, null));
             var input = new NarrationEvent("waldo.input");
-            input.CommonPart("waldo", "blue", ":").Part("instruction", "in alpha", ",").Part("molecule", "Oxygen, O2").Part("place", "at 2, 1");
-            Assert.Equal("blue: in alpha, Oxygen, O2 at 2, 1", Formatter.Format(input, FormatLayer.Speech, null));
+            input.CommonPart("waldo", "blue", ":").Part("instruction", "alpha", ",").Part("molecule", "Oxygen, O2").Part("place", "at 2, 1");
+            Assert.Equal("blue: alpha, Oxygen, O2", Formatter.Format(input, FormatLayer.Speech, null)); // the landing cell is off by default
             var move = new NarrationEvent("defense.move").Part("enemy", "Isambard MMD").Part("column", "21", ",").Part("row", "5");
             Assert.Equal("Isambard MMD 21, 5", Formatter.Format(move, FormatLayer.Speech, null));
+        }
+
+        [Fact]
+        public void APartOffByDefaultCanBeTurnedOn()
+        {
+            var kind = EventKinds.Get("waldo.input");
+            Assert.False(EventSettings.PartOn(kind, FormatLayer.Default, "place"));
+            Assert.True(EventSettings.PartOn(EventKinds.Get("waldo.wall"), FormatLayer.Default, "place"));
+            NarrationStore.BeginEdit();
+            EventSettings.SetPartOn(EventKinds.Root(EventKinds.Waldo), FormatLayer.Default, "place", true);
+            NarrationStore.Commit();
+            Assert.True(EventSettings.PartOn(kind, FormatLayer.Default, "place"));
+            var input = new NarrationEvent("waldo.input");
+            input.CommonPart("waldo", "blue", ":").Part("instruction", "alpha", ",").Part("molecule", "Oxygen, O2").Part("place", "at 2, 1");
+            Assert.Equal("blue: alpha, Oxygen, O2 at 2, 1", Formatter.Format(input, FormatLayer.Speech, null));
+        }
+
+        [Fact]
+        public void BondAtomsOfferCellsOnlyAndSymbols()
+        {
+            var kind = EventKinds.Get("waldo.bond.made");
+            var atoms = Array.Find(kind.Parts, p => p.Key == "atoms");
+            Assert.Equal(new[] { "cells", "names", "places", "symbols", "namesbare", "symbolsbare" }, atoms.Variants);
+            NarrationStore.BeginEdit();
+            EventSettings.SetVariant(kind, FormatLayer.Default, atoms, "places");
+            NarrationStore.Commit();
+            var e = new NarrationEvent("waldo.bond.made");
+            var v = new Dictionary<string, string> { { "cells", "F at 2, 6 and F at 3, 6" }, { "places", "2, 6 and 3, 6" }, { "symbols", "F and F" } };
+            e.CommonPart("waldo", "red", ":").Part("action", "bonded").Part("atoms", v, v["cells"], ",").Part("result", "single bond");
+            Assert.Equal("red: bonded 2, 6 and 3, 6, single bond", Formatter.Format(e, FormatLayer.Speech, null));
+        }
+
+        [Fact]
+        public void AContinuationLeavesOutTheCommonParts()
+        {
+            var heading = new NarrationEvent("waldo.heading");
+            heading.CommonPart("reactor", "reactor 2", ",").CommonPart("waldo", "red", ":").Part("heading", "heading up");
+            Assert.Equal("reactor 2, red: heading up", Formatter.Format(heading, FormatLayer.Speech, null));
+            Assert.Equal("heading up", Formatter.Format(heading, FormatLayer.Speech, null, continuation: true));
+        }
+
+        [Fact]
+        public void OneWaldosEventsInACycleMergeIntoOneUtterance()
+        {
+            SpeechMerge.Take();
+            var reactor = new object();
+            var grab = new NarrationEvent("waldo.grab") { Reactor = reactor, Colour = 0, Cycle = 5 };
+            var turn = new NarrationEvent("waldo.heading") { Reactor = reactor, Colour = 0, Cycle = 5 };
+            var blue = new NarrationEvent("waldo.heading") { Reactor = reactor, Colour = 1, Cycle = 5 };
+            var later = new NarrationEvent("waldo.heading") { Reactor = reactor, Colour = 0, Cycle = 6 };
+            Assert.False(SpeechMerge.Continues(grab));
+            SpeechMerge.Start(grab, "red: grabbed Oxygen, O2");
+            Assert.True(SpeechMerge.Continues(turn));
+            Assert.False(SpeechMerge.Continues(blue));
+            Assert.False(SpeechMerge.Continues(later));
+            Assert.Equal("red: grabbed Oxygen, O2", SpeechMerge.Take()); // (the join itself is ui.json's "narr.t.merge")
+            Assert.False(SpeechMerge.Pending);
         }
 
         [Fact]

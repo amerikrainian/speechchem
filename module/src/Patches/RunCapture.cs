@@ -26,7 +26,7 @@ namespace SpeechChem.Patches
     ///                      (vmethod_7), then the arrow. Prefix snapshots the waldo (held molecule,
     ///                      waiting / sync flags, heading) and the reactor's molecule count; postfix
     ///                      diffs → "red: in alpha, took Oxygen", "red: grabbed Oxygen",
-    ///                      "red: sync, waiting", "red: heading down" (a turn, whatever made it).
+    ///                      "red: sync, waiting", "red: down" (a turn, whatever made it).
     ///                      A wait is reported once when it starts, not every cycle it lasts; so is
     ///                      a rotation (two cycles: "red: rotate clockwise, rotated Oxygen").
     ///   Class188.method_4  the move: a waldo that should move but stays put is at the wall →
@@ -556,6 +556,7 @@ namespace SpeechChem.Patches
         {
             public readonly Dictionary<long, int> Bonds = new Dictionary<long, int>();
             public readonly Dictionary<long, string> Atoms = new Dictionary<long, string>();
+            public readonly Dictionary<long, string> Symbols = new Dictionary<long, string>();
 
             public static long Cell(Vector2i c) => ((long)c.int_0 << 32) | (uint)c.int_1;
             public static long Bond(Vector2i c, bool right) => (Cell(c) << 1) | (right ? 1L : 0L);
@@ -565,7 +566,11 @@ namespace SpeechChem.Patches
                 var b = new BondBoard();
                 foreach (MoleculeSheet sheet in r.class201_0)
                 {
-                    foreach (var kv in sheet.method_14()) b.Atoms[Cell(kv.Key)] = kv.Value.method_0();
+                    foreach (var kv in sheet.method_14())
+                    {
+                        b.Atoms[Cell(kv.Key)] = kv.Value.method_0();
+                        b.Symbols[Cell(kv.Key)] = kv.Value.element_0.smethod_2();
+                    }
                     foreach (var kv in sheet.method_15()) b.Bonds[Bond(kv.Key.vector2i_0, kv.Key.enum128_0 == Enum128.Right)] = (int)kv.Value;
                 }
                 return b;
@@ -573,6 +578,7 @@ namespace SpeechChem.Patches
 
             public int Order(Vector2i c, bool right) { int n; return Bonds.TryGetValue(Bond(c, right), out n) ? n : 0; }
             public string Atom(Vector2i c) { string a; return Atoms.TryGetValue(Cell(c), out a) ? a : null; }
+            public string Symbol(Vector2i c) { string a; return Symbols.TryGetValue(Cell(c), out a) ? a : null; }
         }
 
         /// <summary>Each pair's outcome is its own event type (bonded, bond changed, unbonded, could
@@ -617,10 +623,15 @@ namespace SpeechChem.Patches
                     case "waldo.bond.broken": action = Loc.T("narr.t.unbonded"); break;
                     default: result = Loc.T("narr.t.bondnow", new { kind = ReactorText.BondWord(now) }); break;
                 }
+                string sa = before.Symbol(c1) ?? after.Symbol(c1), sb = before.Symbol(c2) ?? after.Symbol(c2);
                 var atoms = new Dictionary<string, string>
                 {
                     { "cells", Loc.T("narr.t.atoms", new { a, b, c1 = CellText(c1), c2 = CellText(c2) }) },
                     { "names", Loc.T("narr.t.and", new { a, b }) },
+                    { "places", Loc.T("narr.t.and", new { a = CellText(c1), b = CellText(c2) }) },
+                    { "symbols", Loc.T("narr.t.and", new { a = sa, b = sb }) },
+                    { "namesbare", Loc.T("narr.t.pair", new { a, b }) },
+                    { "symbolsbare", Loc.T("narr.t.pair", new { a = sa, b = sb }) },
                 };
                 e.NextItem().Part("action", action).Part("atoms", atoms, atoms["cells"], result != null ? "," : null).Part("result", result);
             }

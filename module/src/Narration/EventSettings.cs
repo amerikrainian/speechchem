@@ -224,7 +224,9 @@ namespace SpeechChem.Narration
         public static bool PartOn(EventKind k, FormatLayer layer, string part, bool draft = false)
         {
             bool b;
-            return bool.TryParse(FormatValue(k, layer, part + ".on", draft), out b) ? b : true;
+            if (bool.TryParse(FormatValue(k, layer, part + ".on", draft), out b)) return b;
+            foreach (var p in k.Parts) if (p.Key == part) return p.DefaultOn;
+            return true;
         }
 
         public static void SetPartOn(EventKind node, FormatLayer layer, string part, bool on)

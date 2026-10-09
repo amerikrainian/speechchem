@@ -39,6 +39,7 @@ namespace SpeechChem
             // the screen stack (which drives the navigator), then the synthetic-click release. The
             // Escape latch sits between the snapshot and dispatch: it must see the modal still open.
             // (The dev pump is host-side, first.)
+            FrameLoop.Register("merge", Narration.Narrator.Flush); // last frame's merged run events, before this frame's keys
             FrameLoop.Register("keyboard", Input.SdlKeyboard.Update);
             FrameLoop.Register("escape", Patches.GameKeySuppression.LatchEscape);
             FrameLoop.Register("input", Input.InputManager.Tick);

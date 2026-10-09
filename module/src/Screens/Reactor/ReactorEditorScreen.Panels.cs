@@ -276,7 +276,7 @@ namespace SpeechChem.Screens.Reactor
         {
             var rd = Editor?.reactorDraggable_0;
             if (rd == null || !rd.class485_0.ContainsKey(index)) return null;
-            string zone = Loc.T(index == 0 ? "zone.alpha" : "zone.beta");
+            string zone = Loc.T(index == 0 ? "panel.alpha" : "panel.beta"); // the bare letter (user request 2026-10-09)
             var port = rd.class485_0[index];
             var upstream = port.vmethod_0();
             var annotation = upstream?.class485_1.method_4(port.pipeDraggable_0)?.method_0();
@@ -393,7 +393,7 @@ namespace SpeechChem.Screens.Reactor
         {
             var rd = Editor?.reactorDraggable_0;
             if (rd == null || !rd.class485_1.ContainsKey(index)) return null;
-            string zone = Loc.T(index == 0 ? "zone.psi" : "zone.omega");
+            string zone = Loc.T(index == 0 ? "panel.psi" : "panel.omega");
             var port = rd.class485_1[index];
             var downstream = port.vmethod_0();
             if (OutputDisabled(index))

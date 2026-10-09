@@ -42,8 +42,9 @@ namespace SpeechChem.Game
             }
         }
 
-        /// <summary>The short, icon-transcribing label of an instruction: "in α", "arrow down",
-        /// "grab drop", "start left", "sense hydrogen up".</summary>
+        /// <summary>The short, icon-transcribing label of an instruction: "alpha", "arrow down",
+        /// "grab drop", "bond", "clockwise", "start left", "sense hydrogen up" (input / output say
+        /// only the zone letter, bonds and rotations only the variant — user request 2026-10-09).</summary>
         public static string Label(Instruction i)
         {
             if (i == null) return null;

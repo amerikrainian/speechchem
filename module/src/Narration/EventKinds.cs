@@ -14,6 +14,8 @@ namespace SpeechChem.Narration
         public string Key;
         public string[] Variants;     // null = no detail choice
         public string DefaultVariant;
+        /// <summary>Included unless the player turns it on (the input's landing cell).</summary>
+        public bool DefaultOn = true;
 
         public PartDef(string key, string[] variants = null, string defaultVariant = null)
         {
@@ -98,13 +100,14 @@ namespace SpeechChem.Narration
 
         // Shared parts.
         public static readonly string[] MoleculeVariants = { "both", "name", "formula" };
-        public static readonly string[] AtomsVariants = { "cells", "names" };
+        public static readonly string[] AtomsVariants = { "cells", "names", "places", "symbols", "namesbare", "symbolsbare" }; // bare: no "and" (user request 2026-10-09)
         public static readonly string[] ReactorVariants = { "unnamed", "named" }; // in the open reactor's own views
 
         private static PartDef Reactor() => new PartDef("reactor", ReactorVariants);
         private static PartDef Colour() => new PartDef("waldo");
         private static PartDef Molecule() => new PartDef("molecule", MoleculeVariants);
         private static PartDef P(string key) => new PartDef(key);
+        private static PartDef Off(string key) => new PartDef(key) { DefaultOn = false };
 
         /// <summary>A waldo's leaf: reactor and colour first.</summary>
         private static EventKind W(string key, params PartDef[] parts)
@@ -142,7 +145,8 @@ namespace SpeechChem.Narration
             {
                 // ---- waldo actions (spoken at speed 1, only the open reactor's inside a reactor) ----
                 B(Waldo,
-                    W("waldo.input", P("instruction"), Molecule(), P("place")),
+                    // The landing cell is off by default (user request 2026-10-09: the zone is fixed).
+                    W("waldo.input", P("instruction"), Molecule(), Off("place")),
                     W("waldo.wait", P("instruction"), P("state")),
                     W("waldo.instruction", P("instruction")),
                     B("waldo.grabdrop",

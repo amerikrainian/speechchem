@@ -285,7 +285,7 @@ namespace SpeechChem.Patches
         {
             public int Cycle = -1;
             public Vector2i? At;
-            public string State;
+            public List<string> State;
         }
 
         private static readonly ConditionalWeakTable<Class310, Watch> Watches = new ConditionalWeakTable<Class310, Watch>();
@@ -307,7 +307,7 @@ namespace SpeechChem.Patches
                 var level = Level;
                 var watch = Watches.GetValue(__instance, _ => new Watch());
                 var at = DefenseText.Anchor(__instance);
-                string state = DefenseText.EnemyState(level, __instance);
+                var state = DefenseText.EnemyStateParts(level, __instance);
                 int cycle = Class258.int_1;
                 bool fresh = watch.Cycle < 0 || cycle < watch.Cycle;
                 watch.Cycle = cycle;
@@ -318,10 +318,12 @@ namespace SpeechChem.Patches
                         var move = DefenseText.MoveEvent(EnemyName, watch.At, at);
                         if (move != null) Narrator.Emit(move);
                     }
-                    // A state clearing is a change too: back to "normal" (the shield coming back up on an
-                    // undamaged enemy used to pass silently — user report 2026-10-06).
-                    if (state != watch.State)
-                        Narrator.Emit(new NarrationEvent("defense.state").Part("enemy", EnemyName, ":").Part("state", state ?? Loc.T("defense.state.none")));
+                    // Only what changed (Narration/StateChange); a state clearing is a change too:
+                    // back to "normal" (the shield coming back up on an undamaged enemy used to pass
+                    // silently — user report 2026-10-06), or "… ended" while something else remains.
+                    string change = StateChange.Describe(watch.State, state);
+                    if (change != null)
+                        Narrator.Emit(new NarrationEvent("defense.state").Part("enemy", EnemyName, ":").Part("state", change));
                 }
                 watch.At = at;
                 watch.State = state;

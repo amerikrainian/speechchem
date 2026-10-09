@@ -983,8 +983,11 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   damage), thruster left / right); Bodies — which drawn rectangle is each enemy's body (some draw
   attacks, water or a shadow too; one is drawn by its LEVEL, not itself; one is absent until it
   arrives = "off the map"); EnemyStates — visible states (an eye's opening and colour, a shield
-  down, a mouth opening / firing, walking, phasing / stunned, damage stages, lightning; a state
-  clearing is logged as "{enemy}: normal" — user report 2026-10-06); Parts —
+  down, a mouth opening / firing, walking, phasing / stunned, damage stages, lightning — each a
+  LIST of components; the map / Enemy stop read them all, but the run event says ONLY WHAT
+  CHANGED (Narration/StateChange, user rule 2026-10-09: "badly damaged, shield down" → "shield
+  down"): the components that appeared, else "{enemy}: normal" when all cleared (user report
+  2026-10-06), else "lightning ended"; the eye and its colour are one component); Parts —
   only the robot. Bodies / states read the enemy's OWN level (Class310.defenseLevelEditor_0).
   Multi-bar meters read every bar ("H2 0 percent, O2 0 percent, Pu 0 percent"; formula markup
   stripped with MoleculeText.Clean).

@@ -125,45 +125,52 @@ namespace SpeechChem.Game
 
         private static Rectangle Centred(Vector2i centre, Vector2i size) => new Rectangle(centre - size / 2, size);
 
-        /// <summary>An enemy's visible state the game shows only as sprites ("eye open, red",
-        /// "shield down"); a change while running is a run event.</summary>
-        private static readonly Dictionary<Type, Func<DefenseLevelEditor, Class310, string>> EnemyStates = new Dictionary<Type, Func<DefenseLevelEditor, Class310, string>>
+        /// <summary>An enemy's visible state the game shows only as sprites, as COMPONENTS
+        /// ("eye open, red" — the eye and its colour are one — "laser firing"; "badly damaged",
+        /// "shield down"): the map and the Enemy stop read them all, a run event only the ones
+        /// that changed (DefenseCapture). Empty = nothing to show.</summary>
+        private static readonly Dictionary<Type, Func<DefenseLevelEditor, Class310, List<string>>> EnemyStates = new Dictionary<Type, Func<DefenseLevelEditor, Class310, List<string>>>
         {
             { typeof(Class311), (l, e) =>
                 {
                     var b = (Class311)e;
-                    if (b.method_1()) return null;
+                    var parts = new List<string>();
+                    if (b.method_1()) return parts;
                     int eye = (int)b.enum92_0;
                     string text = Loc.T("defense.eye." + eye);
                     if (eye != 0) text += ", " + Loc.T("defense.colour." + (int)b.eyeColor_0);
-                    return b.bool_0 ? text + ", " + Loc.T("defense.state.laser") : text;
+                    parts.Add(text);
+                    if (b.bool_0) parts.Add(Loc.T("defense.state.laser"));
+                    return parts;
                 } },
             { typeof(Class312), (l, e) =>
                 {
                     var w = l as Class150;
-                    if (w == null || e.method_1()) return null;
                     var parts = new List<string>();
+                    if (w == null || e.method_1()) return parts;
                     if (w.int_5 > 0) parts.Add(Loc.T("defense.state.phasing"));
                     if (w.int_4 > 0) parts.Add(Loc.T("defense.state.stunned"));
-                    return parts.Count == 0 ? null : string.Join(", ", parts.ToArray());
+                    return parts;
                 } },
             { typeof(Ktrechtasach), (l, e) =>
                 {
                     var s = (Ktrechtasach)e;
-                    if (s.method_1()) return null;
-                    string mouth = Loc.T("defense.mouth." + Math.Max(0, Math.Min(2, s.int_3)));
-                    return s.bool_0 ? Loc.T("defense.state.walking") + ", " + mouth : mouth;
+                    var parts = new List<string>();
+                    if (s.method_1()) return parts;
+                    if (s.bool_0) parts.Add(Loc.T("defense.state.walking"));
+                    parts.Add(Loc.T("defense.mouth." + Math.Max(0, Math.Min(2, s.int_3))));
+                    return parts;
                 } },
             { typeof(Quororque), (l, e) =>
                 {
                     var q = (Quororque)e;
-                    if (q.method_1()) return null;
                     var parts = new List<string>();
+                    if (q.method_1()) return parts;
                     int stage = q.class249_0.method_0();
                     if (stage > 0) parts.Add(Loc.T(stage == 1 ? "defense.state.damaged" : "defense.state.damaged2"));
                     if (q.bool_0) parts.Add(Loc.T("defense.state.shielddown"));
                     if (q.int_2 > 0) parts.Add(Loc.T("defense.state.lightning"));
-                    return parts.Count == 0 ? null : string.Join(", ", parts.ToArray());
+                    return parts;
                 } },
         };
 
@@ -221,13 +228,22 @@ namespace SpeechChem.Game
             try { return enemy != null && enemy.method_1(); } catch { return false; }
         }
 
-        /// <summary>The enemy's visible state, or null (none, or no entry).</summary>
+        /// <summary>The enemy's visible state, all of it ("badly damaged, shield down"), or null
+        /// (none, or no entry).</summary>
         public static string EnemyState(DefenseLevelEditor level, Class310 enemy)
         {
-            Func<DefenseLevelEditor, Class310, string> f;
+            var parts = EnemyStateParts(level, enemy);
+            return parts == null || parts.Count == 0 ? null : string.Join(", ", parts.ToArray());
+        }
+
+        /// <summary>The state's components, or null (no entry).</summary>
+        public static List<string> EnemyStateParts(DefenseLevelEditor level, Class310 enemy)
+        {
+            Func<DefenseLevelEditor, Class310, List<string>> f;
             if (enemy == null || !EnemyStates.TryGetValue(enemy.GetType(), out f)) return null;
             try { return f(enemy.defenseLevelEditor_0 ?? level, enemy); } catch { return null; }
         }
+
 
         /// <summary>The enemy's part flags (true = intact), or null when it has no parts entry.</summary>
         public static bool[] PartFlags(Class310 enemy)

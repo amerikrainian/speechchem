@@ -22,7 +22,7 @@ namespace SpeechChem.Screens.Pipeline
         public SpaceChem.Pipeline.Pipeline Pipeline;
         public int Width, Height, Cycle;
         public string[,] Contents;  // spoken cell contents (no coordinates), "" when empty
-        public bool[,] Molecule;    // a molecule in the pipe cell
+        public string[,] Molecules; // the molecule in the pipe cell (name and formula), null when none
         public bool[,] Enemy;       // the enemy's drawing covers the cell
         public readonly Dictionary<Draggable, string> Components = new Dictionary<Draggable, string>();
         public readonly Dictionary<string, string> Ports = new Dictionary<string, string>(); // port cell key -> text
@@ -66,7 +66,7 @@ namespace SpeechChem.Screens.Pipeline
                 Height = size.int_1,
                 Cycle = cycle,
                 Contents = new string[size.int_0, size.int_1],
-                Molecule = new bool[size.int_0, size.int_1],
+                Molecules = new string[size.int_0, size.int_1],
                 Enemy = new bool[size.int_0, size.int_1],
             };
             var level = DefenseText.Level;
@@ -76,7 +76,7 @@ namespace SpeechChem.Screens.Pipeline
                 {
                     var c = new Vector2i(x, y);
                     s.Contents[x, y] = string.Join(", ", CellContents(p, c).ToArray());
-                    s.Molecule[x, y] = MoleculeAt(p, c);
+                    s.Molecules[x, y] = MoleculeAt(p, c);
                     s.Enemy[x, y] = level != null && enemy != null && DefenseText.Covers(enemy, c);
                 }
             foreach (var kv in PipelineText.Components(p))
@@ -105,11 +105,11 @@ namespace SpeechChem.Screens.Pipeline
             return s;
         }
 
-        /// <summary>A molecule in the pipe slot of this cell, during a run.</summary>
-        private static bool MoleculeAt(SpaceChem.Pipeline.Pipeline p, Vector2i cell)
+        /// <summary>The molecule in the pipe slot of this cell during a run (name and formula), or null.</summary>
+        private static string MoleculeAt(SpaceChem.Pipeline.Pipeline p, Vector2i cell)
         {
             var pipe = PipeAt(p, cell);
-            if (pipe == null) return false;
+            if (pipe == null) return null;
             var local = cell - pipe.method_14();
             int i = 0;
             foreach (var c in pipe.linkedList_0)
@@ -119,8 +119,8 @@ namespace SpeechChem.Screens.Pipeline
             }
             int j = 0;
             foreach (var slot in Slots(pipe))
-                if (j++ == i) return slot.HasMolecule;
-            return false;
+                if (j++ == i) return slot.Text;
+            return null;
         }
 
         /// <summary>The layout as one number: every component and pipe, where it is and how its

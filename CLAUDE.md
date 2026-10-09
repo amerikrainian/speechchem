@@ -745,7 +745,9 @@ zooming in lands where expected; jumps (categories, Components Enter) focus the 
 cell. A size change says "4 by 4, " + the readout. BLOCK READOUT: "Marked" (block overlaps the
 rectangle), the range "13, 13 to 16, 16", then ONLY IF ANYTHING IS IN IT (user rule: silence is
 faster): buildings in reading order ("part of X" across the edge), "pipes: A output, B psi
-output", "1 crossing", "open end 18, 17", "3 molecules" (run only, > 0), the enemy, "N free"
+output", "1 crossing", "open end 18, 17", the molecules in transit as a tally by the game's names
+("2 Oxygen, O; 1 Water, H2O" — MoleculeTally, user request 2026-10-09; run only, also P's and the
+crash view's; verified live), the enemy, "N free"
 (said whenever the block is not entirely free, so "0 free" = full). Shift+Backspace = long form
 (each pipe's run through the block "X output 13, 11 to 13, 16", the free cells as
 rectangles in the range format "free: 9, 9 to 9, 12; 11, 10 to 12, 12" — greedy cover, across-first

@@ -237,7 +237,7 @@ namespace SpeechChem.Screens.Pipeline
             var pipes = new List<string>();
             var ends = new List<string>();
             var crossings = new HashSet<int>();
-            int molecules = 0;
+            var molecules = new List<string>();
             bool running = Running && crash == null;
             foreach (var kv in PipelineText.Components(p))
                 foreach (var o in kv.Key.class485_1)
@@ -256,7 +256,8 @@ namespace SpeechChem.Screens.Pipeline
                         {
                             through = true;
                             if (pipe.dictionary_4.ContainsKey(local)) crossings.Add(c.int_1 * 1000 + c.int_0);
-                            if (crash != null ? Snap(crash.Molecule, c) : slots != null && i < slots.Count && slots[i].HasMolecule) molecules++;
+                            string carried = crash != null ? SnapText(crash.Molecules, c) : slots != null && i < slots.Count ? slots[i].Text : null;
+                            if (carried != null) molecules.Add(carried);
                             if (!runStart.HasValue) runStart = c;
                             runEnd = c;
                         }
@@ -279,7 +280,7 @@ namespace SpeechChem.Screens.Pipeline
                 parts.Add(details ? string.Join("; ", pipes.ToArray()) : Loc.T("pipeline.block.pipes", new { pipes = string.Join(", ", pipes.ToArray()) }));
             if (crossings.Count > 0) parts.Add(Loc.T(crossings.Count == 1 ? "pipeline.block.crossing" : "pipeline.block.crossings", new { n = crossings.Count }));
             parts.AddRange(ends);
-            if (molecules > 0) parts.Add(MoleculeCount(molecules));
+            if (molecules.Count > 0) parts.Add(MoleculeTally(molecules));
 
             // A defense level's enemy, when its drawing covers part of the block.
             var level = DefenseText.Level;
@@ -380,18 +381,42 @@ namespace SpeechChem.Screens.Pipeline
         private static bool Snap(bool[,] cells, Vector2i c)
             => c.int_0 >= 0 && c.int_1 >= 0 && c.int_0 < cells.GetLength(0) && c.int_1 < cells.GetLength(1) && cells[c.int_0, c.int_1];
 
+        private static string SnapText(string[,] cells, Vector2i c)
+            => c.int_0 >= 0 && c.int_1 >= 0 && c.int_0 < cells.GetLength(0) && c.int_1 < cells.GetLength(1) ? cells[c.int_0, c.int_1] : null;
+
         private static string MoleculeCount(int n) => Loc.T(n == 1 ? "pipeline.molecules.one" : "pipeline.molecules", new { n });
+
+        /// <summary>The molecules in transit, counted per molecule in the order first met: "2
+        /// Nitrogen Dioxide, NO2; 1 Oxygen, O2" (the game's names, MoleculeText — user request
+        /// 2026-10-09, replacing the bare "3 molecules").</summary>
+        private static string MoleculeTally(List<string> molecules)
+        {
+            var order = new List<string>();
+            var counts = new Dictionary<string, int>();
+            foreach (var m in molecules)
+            {
+                if (counts.TryGetValue(m, out int n)) counts[m] = n + 1;
+                else { counts[m] = 1; order.Add(m); }
+            }
+            var parts = new List<string>();
+            foreach (var m in order) parts.Add(Loc.T("pipeline.molecules.tally", new { n = counts[m], molecule = m }));
+            return string.Join("; ", parts.ToArray());
+        }
 
         private struct PipeSlotView
         {
             public bool HasMolecule;
+            public string Text; // its name and formula (MoleculeText), null when empty
         }
 
         /// <summary>The pipe's molecule slots, one per cell in the cells' order (linkedList_1).</summary>
         private static IEnumerable<PipeSlotView> Slots(PipeDraggable pipe)
         {
             foreach (var slot in pipe.linkedList_1)
-                yield return new PipeSlotView { HasMolecule = slot.molecule_0 != null && !slot.molecule_0.method_6() };
+            {
+                bool has = slot.molecule_0 != null && !slot.molecule_0.method_6();
+                yield return new PipeSlotView { HasMolecule = has, Text = has ? MoleculeText.NameAndFormula(slot.molecule_0) : null };
+            }
         }
 
         /// <summary>The pipe one of whose cells is <paramref name="cell"/> (its owner's), or null.</summary>
@@ -425,16 +450,20 @@ namespace SpeechChem.Screens.Pipeline
             var crash = _crashView;
             if (crash != null)
             {
-                int n = 0;
+                var molecules = new List<string>();
                 var origin = pipe.method_14();
-                foreach (var local in pipe.linkedList_0) if (Snap(crash.Molecule, local + origin)) n++;
-                text += ", " + MoleculeCount(n);
+                foreach (var local in pipe.linkedList_0)
+                {
+                    string carried = SnapText(crash.Molecules, local + origin);
+                    if (carried != null) molecules.Add(carried);
+                }
+                text += ", " + (molecules.Count > 0 ? MoleculeTally(molecules) : MoleculeCount(0));
             }
             else if (Running)
             {
-                int n = 0;
-                foreach (var s in Slots(pipe)) if (s.HasMolecule) n++;
-                text += ", " + MoleculeCount(n);
+                var molecules = new List<string>();
+                foreach (var s in Slots(pipe)) if (s.Text != null) molecules.Add(s.Text);
+                text += ", " + (molecules.Count > 0 ? MoleculeTally(molecules) : MoleculeCount(0));
             }
             Speech.Tts.Speak(text, interrupt: true);
         }

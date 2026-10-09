@@ -141,6 +141,7 @@
   "pipeline.block.segment1": "{pipe} at {cell}",
   "pipeline.molecules": "{n} molecules",
   "pipeline.molecules.one": "1 molecule",
+  "pipeline.molecules.tally": "{n} {molecule}",
   "pipeline.edit.running": "Stop the run to edit.",
   "pipeline.edit.nofit": "{what} did not fit, {why}",
   "pipeline.edit.blockedby": "{what} in the way",

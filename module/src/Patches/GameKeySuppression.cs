@@ -109,8 +109,8 @@ namespace SpeechChem.Patches
                 if (cur == null || cur.CapturesRawInput) return false;
                 if (scancode == EscapeScancode) return _escapeLatched || cur.ModalCapturesEscape;
                 if (scancode == BackspaceScancode && UI.Navigation.TextEntryFocused) return false;
-                // Ctrl+1..4 are step keys (assignable, a no-op when not): the game reads 1-4 as its
-                // play speeds whatever the modifiers.
+                // Ctrl+1..4 switch reactors (Common/ReactorSwitch): the game reads 1-4 as its play
+                // speeds whatever the modifiers.
                 if (scancode >= Numrow1 && scancode <= Numrow4 && CtrlHeld()) return true;
                 // Alt+1..4 and Alt+` are stop jumps on the reactor and pipeline screens; the toolbar
                 // reads 1-4 (speeds) and ` (stop) whatever the modifiers.

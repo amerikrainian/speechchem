@@ -75,7 +75,8 @@ namespace SpeechChem.Screens.Pipeline
             yield return new ElementAction("screen.pipeline.zoom.reset", () => SetZoom(1));
             foreach (var a in LevelStatus.Actions()) yield return a; // Ctrl+S score, Ctrl+G progress, Ctrl+Q quota
             yield return new ElementAction("screen.reactor.molecule", OpenFocusedMolecules); // M on a port cell
-            foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
+            foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9 (Narration/StepKeys)
+            foreach (var a in ReactorSwitch.Actions()) yield return a; // Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1-9
             yield return new ElementAction("screen.reactor.skip.left", () => SkipMapSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipMapSideways(1));
             yield return new ElementAction("screen.reactor.mark", MarkCorner); // the marked rectangle (Mark.cs)

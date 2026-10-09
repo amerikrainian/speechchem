@@ -29,7 +29,7 @@ namespace SpeechChem.Patches
     /// reaction error or a completion ends it normally. With no event for
     /// <see cref="MaxCycles"/> cycles (both waldos stuck in a sync, say) it pauses and says so.
     ///
-    /// Step KEYS (user design 2026-10-04, Narration/StepKeys): 0, Ctrl+0, 5-9 and Ctrl+1 to Ctrl+9,
+    /// Step KEYS (user design 2026-10-04, Narration/StepKeys): 0, Ctrl+0 and 5-9,
     /// each with its own rules from the Settings dialog — unassigned does nothing; which event
     /// types stop it and which it speaks (separate sets); its scope (the open reactor's events, or
     /// every reactor's — an event "concerns" the open reactor as RunCapture decides); whether it

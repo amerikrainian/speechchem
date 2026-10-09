@@ -139,14 +139,18 @@ namespace SpeechChem
             // Step to the next event on 0 (this reactor) / Ctrl+0 (any), beside the game's speed keys 1-4 (the game doesn't use 0).
             Input.InputManager.Register("screen.reactor.step", "Step to next event of this reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0).Repeating();
             Input.InputManager.Register("screen.reactor.step.all", "Step to next event of any reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.Num0, ctrl: true).Repeating();
-            // The other configurable step keys (Narration/StepKeys): 5-9 and Ctrl+1 to Ctrl+9 (1-4 bare
-            // stay the game's speeds). Unassigned in the settings, they do nothing.
+            // The other configurable step keys (Narration/StepKeys): 5-9 (1-4 bare stay the game's
+            // speeds). Unassigned in the settings, they do nothing.
             var digits = new[] { Input.Scancode.Num1, Input.Scancode.Num2, Input.Scancode.Num3, Input.Scancode.Num4, Input.Scancode.Num5,
                 Input.Scancode.Num6, Input.Scancode.Num7, Input.Scancode.Num8, Input.Scancode.Num9 };
             for (int d = 5; d <= 9; d++)
                 Input.InputManager.Register("screen.reactor.step.key." + d, "Step key " + d, Input.InputCategory.UI).AddBinding(digits[d - 1]).Repeating();
+            // Reactor switching (Screens/Common/ReactorSwitch): Ctrl+Tab / Ctrl+Shift+Tab next /
+            // previous, Ctrl+1 to Ctrl+9 reactor N.
+            Input.InputManager.Register("screen.reactor.switch.next", "Next reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.Tab, ctrl: true);
+            Input.InputManager.Register("screen.reactor.switch.prev", "Previous reactor", Input.InputCategory.UI).AddBinding(Input.Scancode.Tab, ctrl: true, shift: true);
             for (int d = 1; d <= 9; d++)
-                Input.InputManager.Register("screen.reactor.step.key.c" + d, "Step key Ctrl+" + d, Input.InputCategory.UI).AddBinding(digits[d - 1], ctrl: true).Repeating();
+                Input.InputManager.Register("screen.reactor.switch." + d, "Reactor " + d, Input.InputCategory.UI).AddBinding(digits[d - 1], ctrl: true);
             // Palette letters place that instruction at the grid cursor (the scancode is the id).
             foreach (var letter in new[] { Input.Scancode.Q, Input.Scancode.W, Input.Scancode.E, Input.Scancode.R, Input.Scancode.T,
                 Input.Scancode.Y, Input.Scancode.U, Input.Scancode.I, Input.Scancode.A, Input.Scancode.S, Input.Scancode.D,

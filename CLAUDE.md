@@ -444,10 +444,11 @@ pre-settings behaviour exactly; only changed values are stored.
   `event.K.speak.1..4|idle`); In a reactor (its own events / all reactors) when ReactorScoped; Red /
   Blue waldo when Waldo; Format / Log format / Speech format pages (one row per part: Included,
   Detail combo, Up, Down — Move speaks "moved between A and B"); Reset this event.
-- STEP KEYS (`Narration/StepKeys`, `Patches/StepControl.Step(id)`): ids 0, c0, 5-9, c1-c9 (bindings
-  `screen.reactor.step.key.*`, Repeating). Per key: Assigned, Events of (scope), Stops on / Speaks
+- STEP KEYS (`Narration/StepKeys`, `Patches/StepControl.Step(id)`): ids 0, c0, 5-9 (bindings
+  `screen.reactor.step.key.*`, Repeating; Ctrl+1..9 were step keys c1-c9 until 2026-10-09 and
+  switch reactors now, §16a — their stored settings are simply ignored). Per key: Assigned, Events of (scope), Stops on / Speaks
   per group (checkbox = whole group, "(some)" drawn / "partly on" spoken, Customize = per kind),
-  Say the cycle number, Give up after (100-10000 cycles), Reset. Ctrl+1..4 are suppressed from the
+  Say the cycle number, Give up after (100-10000 cycles), Reset. Ctrl+1..4 (reactor switching) are suppressed from the
   game while modeled (`GameKeySuppression`: the toolbar reads 1-4 with no modifier check).
 - WIDGETS (`Patches/OptionsInjection`): a postfix on Class74's vmethod_8 rebuilds the widget tree:
   Game / Mod tab buttons; Game = the game's own layout over its widgets; Mod = sub-tabs General /
@@ -582,7 +583,7 @@ discharge gas (Xe); the panel draws only the first two, so only α and β are re
   1000 cycles (a deadlocked sync) pauses with "No events in 1000 cycles"; FrameLoop "step" is the
   safety net (overshoot or 10 s after the event). Verified live 2026-10-03 on Sleepless on
   Sernimir IV: from stopped, Cycle 1 (the waits), then Cycle 5, 6, 7 (2-4 silent).
-  STEP KEYS ARE SETTINGS now (§14a): the defaults below are keys 0 and Ctrl+0; 5-9 and Ctrl+1..9 are
+  STEP KEYS ARE SETTINGS now (§14a): the defaults below are keys 0 and Ctrl+0; 5-9 are
   unassigned (a no-op) until set up. TWO KINDS (user rule 2026-10-03): 0 (and the toolbar button) stops only on an event that CONCERNS
   THE OPEN REACTOR and speaks only those; Ctrl+0 stops on any event and speaks the cycle's events of
   every reactor. With no reactor open (pipeline screen) they are the same. RunCapture.Add decides
@@ -763,6 +764,17 @@ marking, place / copy / cut / delete per block, P on a pipe cell (stopped). NOT 
 molecule counts (a run would have completed the user's solved level). One unexplained miss: twice
 in one module generation Ctrl+C on a zoomed block was silent; never again in four tries after a
 reload — watch for it.
+REACTOR SWITCHING (`Screens/Common/ReactorSwitch`, user request 2026-10-09; reactor and pipeline
+screens): Ctrl+Tab / Ctrl+Shift+Tab open the next / previous reactor (wrapping; from the pipeline the
+first / last), Ctrl+1..9 reactor N by the pipeline's numbers (`PipelineText.Reactors`: the
+"#reactors" group in first-seen order). Opening = the double-click (`ReactorDraggable.vmethod_2` →
+`Class77.method_6`, works mid-run); the open reactor, a number past the last, or a research level =
+nothing. The reactor screen's NAME is now the pipeline name ("Sensor Reactor 2"; "Reactor" in
+research levels), so Enter from the Components table says it too. A reactor replaced under the
+still-focused reactor screen (a switch, or a pause instruction's own switch) re-arrives fresh in
+OnUpdate (navigator state dropped, OnFocus): the name, then the grid's first cell. Verified live
+2026-10-09 on a 5-reactor level: Ctrl+Tab from the pipeline, next / prev wrapping, Ctrl+1 on reactor 1
+silent, Ctrl+9 past the last silent; real Ctrl+Tab / Ctrl+3 through PostMessage (no run started).
 STOP JUMPS (reactor and pipeline, user request 2026-10-07; ids `screen.jump.*`, each screen offers
 the ones it has, the rest no-op): Alt+1 grid / map, Alt+` the Components table (pipeline only),
 Alt+2 palette / shelf (Reactor Controls during a defense run), Alt+3 tools, Alt+4 run log, Alt+5

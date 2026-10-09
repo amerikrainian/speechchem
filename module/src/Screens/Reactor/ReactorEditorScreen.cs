@@ -38,7 +38,24 @@ namespace SpeechChem.Screens.Reactor
         private const string TutorialStop = "reactor.tutorial";
 
         public override string Key => "reactor";
-        public override string ScreenName => Loc.T("screen.reactor");
+        /// <summary>The reactor's pipeline name ("Assembly Reactor 2", Game/PipelineText) in a
+        /// production level, so a switch says which one; "Reactor" in research levels.</summary>
+        public override string ScreenName
+        {
+            get
+            {
+                try
+                {
+                    var editor = Editor;
+                    var pipeline = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+                    if (editor != null && pipeline != null && Class53.smethod_5<Class84>() == null)
+                        foreach (var rd in PipelineText.Reactors(pipeline))
+                            if (ReferenceEquals(rd.class77_0, editor)) return PipelineText.Name(pipeline, rd);
+                }
+                catch (Exception ex) { Log.Error("[reactor] name failed", ex); }
+                return Loc.T("screen.reactor");
+            }
+        }
         public override object InitialFocusStop => GridStop;
 
         /// <summary>The top screen as a reactor editor (any variant), or null.</summary>
@@ -75,7 +92,8 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.view.omega", () => OpenPort(false, 1));
             yield return new ElementAction("screen.reactor.note.psi", () => EditNote(0));
             yield return new ElementAction("screen.reactor.note.omega", () => EditNote(1));
-            foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9, Ctrl+1-9 (Narration/StepKeys)
+            foreach (var a in Patches.StepControl.Actions()) yield return a; // 0, Ctrl+0, 5-9 (Narration/StepKeys)
+            foreach (var a in ReactorSwitch.Actions()) yield return a; // Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1-9
             yield return new ElementAction("screen.reactor.skip.left", () => SkipSideways(-1));
             yield return new ElementAction("screen.reactor.skip.right", () => SkipSideways(1));
             foreach (var a in EditActions()) yield return a;
@@ -181,7 +199,18 @@ namespace SpeechChem.Screens.Reactor
         {
             var editor = Editor;
             if (editor?.reactor_0 == null) return;
+            // Another reactor replaced this one with the screen still on top (Ctrl+Tab / Ctrl+1-9,
+            // Common/ReactorSwitch, or a pause instruction switching to its reactor): arrive afresh,
+            // as from the pipeline — its name, then the grid's first landing.
+            bool swapped = _reactor != null && !ReferenceEquals(editor.reactor_0, _reactor);
             EnsureReactor(editor.reactor_0);
+            if (swapped)
+            {
+                Navigation.Attach(null);
+                Navigation.ScreenClosed(this);
+                Navigation.Attach(this);
+                OnFocus();
+            }
             WatchCrash(editor); // the crash overlay (Crash.cs)
             WatchInvalidMolecule(editor);
             TrackCursor();

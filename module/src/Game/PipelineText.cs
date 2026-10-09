@@ -202,6 +202,17 @@ namespace SpeechChem.Game
             return count < 2 ? 0 : index;
         }
 
+        /// <summary>The pipeline's reactors in number order (reactor 1 first).</summary>
+        public static List<ReactorDraggable> Reactors(Pipeline p)
+        {
+            var list = new List<ReactorDraggable>();
+            if (p == null) return list;
+            Sync(p);
+            foreach (var e in Order)
+                if (e.D is ReactorDraggable rd) list.Add(rd);
+            return list;
+        }
+
         /// <summary>"Assembly Reactor 2", "Recycler", "Storage Tank".</summary>
         public static string Name(Pipeline p, Draggable d)
         {

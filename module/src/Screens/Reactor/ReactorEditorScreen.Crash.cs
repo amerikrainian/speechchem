@@ -17,11 +17,19 @@ namespace SpeechChem.Screens.Reactor
         // was pressed on the log". Not modal, like pipe drawing: only the grid's cells change (their
         // readout, Shift+Backspace, Ctrl+arrows); every other stop and key works as usual. Escape
         // returns the grid to the live reactor; any edit (the program's members change) or a new
-        // run ends it silently, the snapshot no longer matching. ----
+        // run ends it silently, the snapshot no longer matching.
+        // EVERY REACTOR (user request 2026-10-09): in production / defense levels the error also
+        // freezes the level's other reactors, so each is captured too; switching to one (Ctrl+Tab,
+        // Ctrl+1-9, or from the pipeline) shows its own snapshot ("Reactor at cycle N" after its
+        // name, no cell moved to — only the failed one has an error cell). Each reactor's ends on
+        // its own Escape or edit; a new run (or another level) drops them all. ----
 
-        /// <summary>Set by Patches/RunCapture when a Reaction Error opens; taken by the reactor the
-        /// box returns to (or dropped by the pipeline, when the box closes over it).</summary>
-        internal static ReactorSnapshot PendingCrash;
+        /// <summary>The reactors as they stood at the last Reaction Error, by reactor; set by
+        /// Patches/RunCapture (<see cref="RecordCrash"/>).</summary>
+        private static readonly Dictionary<ReactorModel, ReactorSnapshot> CrashSnapshots = new Dictionary<ReactorModel, ReactorSnapshot>();
+
+        /// <summary>The reactor that failed: its grid lands on the error cell once the box is closed
+        /// (dropped by the pipeline when the box closes over it instead).</summary>
         internal static ReactorModel PendingCrashReactor;
 
         private ReactorSnapshot _crash;
@@ -29,29 +37,75 @@ namespace SpeechChem.Screens.Reactor
 
         public override bool ModalCapturesEscape => _crash != null;
 
-        /// <summary>Per frame: take a pending crash once the box is gone and the run stopped; end
-        /// the overlay on an edit or a new run.</summary>
+        /// <summary>A Reaction Error opened (the run is paused under it): keep the failed reactor's
+        /// snapshot and capture every other reactor of the level's pipeline (research levels have
+        /// only the one).</summary>
+        internal static void RecordCrash(ReactorModel failed, ReactorSnapshot snapshot, int cycle)
+        {
+            CrashSnapshots.Clear();
+            PendingCrashReactor = failed;
+            if (failed != null && snapshot != null) CrashSnapshots[failed] = snapshot;
+            if (Class53.smethod_5<Class84>() != null) return;
+            var pipeline = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+            if (pipeline == null) return;
+            foreach (var rd in PipelineText.Reactors(pipeline))
+            {
+                var r = rd.class77_0?.reactor_0;
+                if (r == null || CrashSnapshots.ContainsKey(r)) continue;
+                try
+                {
+                    var s = ReactorSnapshot.Capture(r, null, cycle);
+                    if (s != null) CrashSnapshots[r] = s;
+                }
+                catch (System.Exception ex) { Log.Error("[run] crash snapshot of another reactor", ex); }
+            }
+        }
+
+        /// <summary>A new run or another level: the snapshots no longer apply.</summary>
+        internal static void ClearCrashes()
+        {
+            CrashSnapshots.Clear();
+            PendingCrashReactor = null;
+        }
+
+        /// <summary>Per frame: show this reactor's snapshot once the box is gone and the run
+        /// stopped (the failed one lands on its error cell); end the overlay on an edit or a new
+        /// run.</summary>
         private void WatchCrash(Class77 editor)
         {
             var r = editor.reactor_0;
             if (_crash != null)
             {
-                if (Live || Signature(r) != _crashSignature) _crash = null;
+                if (Live || Signature(r) != _crashSignature)
+                {
+                    _crash = null;
+                    CrashSnapshots.Remove(r);
+                }
                 return;
             }
-            var s = PendingCrash;
-            if (s == null || Live) return; // the box's close stops the run; wait for it
-            PendingCrash = null;
-            if (!ReferenceEquals(PendingCrashReactor, r)) return;
-            PendingCrashReactor = null;
+            if (Live || r == null) return; // the box's close stops the run; wait for it
+            if (!CrashSnapshots.TryGetValue(r, out var s)) return;
+            bool failed = ReferenceEquals(PendingCrashReactor, r);
+            if (failed) PendingCrashReactor = null;
+            // Taken the first time a grid shows it; a later return compares against that.
+            if (!s.Signature.HasValue) s.Signature = Signature(r);
             _crash = s;
-            _crashSignature = Signature(r);
+            _crashSignature = s.Signature.Value;
+            _zones.Forget(); // the landing names the zone
             int mx = _cursorX, my = _cursorY;
             bool found = false;
             for (int y = 0; y < s.Height && !found; y++)
                 for (int x = 0; x < s.Width && !found; x++)
                     if (s.Marked[x, y]) { mx = x; my = y; found = true; }
-            _zones.Forget(); // the landing names the zone
+            if (!failed)
+            {
+                // Arriving by a switch: the screen name is spoken and the landing reads the
+                // snapshot's cell (the error cell, back in the failed reactor); say what the grid
+                // shows in between.
+                Speech.Tts.Speak(Loc.T("snapshot.title", new { n = s.Cycle }));
+                if (found) FocusCell(mx, my);
+                return;
+            }
             FocusCell(mx, my, announce: false);
             Speech.Tts.Speak(Loc.T("snapshot.title", new { n = s.Cycle }) + ", " + CrashReadout(mx, my), interrupt: true);
         }
@@ -92,6 +146,7 @@ namespace SpeechChem.Screens.Reactor
         {
             if (_crash == null) return;
             _crash = null;
+            CrashSnapshots.Remove(_reactor);
             _zones.Forget();
             Speech.Tts.Speak(CellReadout(_cursorX, _cursorY), interrupt: true);
         }

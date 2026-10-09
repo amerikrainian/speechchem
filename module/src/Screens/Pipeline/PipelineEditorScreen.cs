@@ -126,9 +126,10 @@ namespace SpeechChem.Screens.Pipeline
                 _deleteFocus = null;
             }
             TrackMapCursor();
-            // A Reaction Error box that closed over the pipeline: no reactor grid to show it on (the
-            // game opens the failing reactor before the box, so this is a safety net).
-            if (Reactor.ReactorEditorScreen.PendingCrash != null && !Running) Reactor.ReactorEditorScreen.PendingCrash = null;
+            // A Reaction Error box that closed over the pipeline: no error cell to land on (the game
+            // opens the failing reactor before the box, so this is a safety net). The snapshots
+            // stay: each reactor still shows its own when opened.
+            if (Reactor.ReactorEditorScreen.PendingCrashReactor != null && !Running) Reactor.ReactorEditorScreen.PendingCrashReactor = null;
             // An invalid-molecule box closed (it stops the run): land on the input that refused it.
             // At once, before focus resumes: the old cell's re-announcement is never heard (user
             // rule 2026-10-07); Alt+Backspace returns to the last place seen before the box (Here).

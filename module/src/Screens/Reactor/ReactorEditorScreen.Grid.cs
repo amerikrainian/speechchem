@@ -359,7 +359,7 @@ namespace SpeechChem.Screens.Reactor
             {
                 if (!allLayers && !Visible(r, layer)) continue;
                 var i = InstructionAt(r, x, y, layer);
-                if (i != null) parts.Add(InstructionDetails(i));
+                if (i != null) parts.Add(InstructionDetails(i, r.class77_0)); // its own palette: the crash snapshot reads reactors that are not open
             }
             if (r.method_15(new Vector2i(x, y), (Enum114)ReactorText.Background) is ReactorFeature f)
                 parts.Add(Patches.TooltipCapture.Speech(f.class713_0) ?? ReactorText.FeatureLabel(f));
@@ -369,17 +369,18 @@ namespace SpeechChem.Screens.Reactor
 
         /// <summary>An instruction's description: the palette tooltip of the matching slot (same
         /// type; arrows also match direction), else the game's name for its type.</summary>
-        internal static string InstructionDetails(Instruction i)
+        internal static string InstructionDetails(Instruction i, Class77 editor = null)
         {
-            string tip = Patches.TooltipCapture.Speech(Slot(Editor, SlotKeyFor(i))?.class713_0);
+            editor = editor ?? Editor;
+            string tip = Patches.TooltipCapture.Speech(Slot(editor, SlotKeyFor(i, editor))?.class713_0);
             return tip ?? ReactorText.GameName(i.GetType()) ?? ReactorText.Label(i);
         }
 
         /// <summary>The palette key (scancode) of the slot an instruction comes from: same type;
         /// arrows also match direction (one slot each). -1 when no enabled slot offers it.</summary>
-        internal static int SlotKeyFor(Instruction i)
+        internal static int SlotKeyFor(Instruction i, Class77 editor = null)
         {
-            var palette = Editor?.class715_0;
+            var palette = (editor ?? Editor)?.class715_0;
             if (palette == null || i == null) return -1;
             foreach (var kv in palette.dictionary_0)
             {

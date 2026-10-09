@@ -125,6 +125,7 @@ namespace SpeechChem.Dev
                 }
                 case "blast": return Blast(argument);
                 case "invalid": return Invalid();
+                case "crash": return Crash(argument);
                 case "profile": return LiveAudit.Profile(argument);
                 case "openlevel": return LiveAudit.OpenLevel(argument);
                 case "fire": return LiveAudit.Fire(argument);
@@ -180,6 +181,22 @@ namespace SpeechChem.Dev
                 return "blast from column " + x + "; robot x " + robot.vector2i_0.int_0 + ", " + Game.DefenseText.PartsText(robot) +"\n";
             }
             return "[no tank at column " + x + "]\n";
+        }
+
+        /// <summary>The game's own Reaction Error (GoalTracker.smethod_12) in reactor n of the
+        /// pipeline, marked at its cell (4, 3): opens that reactor and the box exactly as a crash.
+        /// Only during a run (paused is safest); Okay stops it.</summary>
+        private static string Crash(string argument)
+        {
+            if ((int)Class258.smethod_16() == 0) return "[no run: start one and pause it first]\n";
+            var p = Class53.smethod_5<SpaceChem.Pipeline.PipelineEditor>()?.pipeline_0;
+            var reactors = Game.PipelineText.Reactors(p);
+            if (!int.TryParse((argument ?? "").Trim(), out int n) || n < 1 || n > reactors.Count) return "[usage: crash <reactor 1.." + reactors.Count + ">]\n";
+            var editor = reactors[n - 1].class77_0;
+            if (editor?.reactor_0 == null) return "[reactor has no editor]\n";
+            var marker = editor.reactor_0.vector2i_0 + new Impeller.Vector2i(3 * 79 + 40, 2 * 79 + 40);
+            GoalTracker.smethod_12(editor, "Probe reaction error.", Struct7.struct7_0, new[] { marker });
+            return "reaction error in reactor " + n + "\n";
         }
 
         /// <summary>The game's own invalid-molecule error on the first output building's first

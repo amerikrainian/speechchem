@@ -186,7 +186,7 @@ open, stopped reactor for the read, then removed and forgotten),
 component's ports, pipe ends and links), `focus <stop> <id>` (focus a node by structural id, e.g.
 `focus pipeline.map pipeline.cell.15.11`; with `key` it drives the pipeline editor's cut / paste /
 menu / drawing exactly as the keys do — how a layout was rebuilt 2026-10-04),
-`runlog [n]` (the last n cycle groups of the run log as text), `logstress fill <n> [reactors] | burst <per frame> <frames> [reactors] | frames <n> | report | clear | mem | mode normal|mute|bypass` (Dev/LogStress: synthetic waldo events through the real Narrator, never spoken; frame / mod-tick times, GC counts, allocation, memory held; `clear` also empties older module generations' logs, which hot reload never frees), `blast <x>` (first defense level only,
+`crash <n>` (a real Reaction Error in pipeline reactor n during a run, §17), `runlog [n]` (the last n cycle groups of the run log as text), `logstress fill <n> [reactors] | burst <per frame> <frames> [reactors] | frames <n> | report | clear | mem | mode normal|mute|bypass` (Dev/LogStress: synthetic waldo events through the real Narrator, never spoken; frame / mod-tick times, GC counts, allocation, memory held; `clear` also empties older module generations' logs, which hot reload never frees), `blast <x>` (first defense level only,
 during a run: the Oxygen Tank at map column x — 12, 18, 24 — raises its blast event (`method_15`)
 without being filled, so the level's handler hits or misses the robot exactly as a real blast; destroying all 3 motors starts the 700-cycle win timer, so STOP
 the run right after — never let a test win the level),
@@ -1042,9 +1042,22 @@ drawing: only the grid cells change (readout, Shift+Backspace details, Ctrl+arro
 snapshot); other stops and keys are live. Escape (ModalCapturesEscape while shown) returns the grid
 to live, re-reading the cell; any edit (a Signature over the members, their cells / layers and
 instruction labels, changes) or a new run ends it silently. A box closed over the pipeline drops
-the pending snapshot — a safety net only: the game itself opens the failing reactor before the
+the pending error-cell landing — a safety net only: the game itself opens the failing reactor before the
 box (GoalTracker.smethod_11 -> Class77.method_6 pops to the pipeline and pushes it), so a crash
-while on the pipeline still ends on that reactor's grid. INVALID MOLECULE (Class69, raised by the
+while on the pipeline still ends on that reactor's grid. EVERY REACTOR (user request 2026-10-09):
+the error freezes the whole level, so `RecordCrash` also snapshots every other reactor of the
+pipeline (`PipelineText.Reactors`; none in research levels), keyed by reactor model. Any reactor
+opened afterwards (Ctrl+Tab / Ctrl+1-9, from the pipeline) shows its own: its name, "Reactor at
+cycle N", then the landing reads the snapshot (the failed reactor lands on its error cell again;
+the others where a fresh arrival lands). Each reactor's ends on its own Escape or an edit (the
+Signature is taken the first time a grid shows it, stored on the snapshot); a run starting from
+stopped or another level (`ClearCrashes`, RunCapture.AfterState / SyncLevel) drops them all.
+Instruction details in a snapshot use the reactor's OWN palette tooltips (`InstructionDetails(i,
+editor)`), not the open reactor's. Probe `crash <n>` raises the game's own Reaction Error
+(GoalTracker.smethod_12, marker at cell 4, 3) in pipeline reactor n — only during a run; step
+once (0) to get a paused one, Okay stops it. Verified live 2026-10-09 on a 5-reactor production
+level: crash in reactor 3 → its error cell as before; reactor 4 showed its waldo mid-run; Escape
+there went live while 3 and 1 kept theirs; a new run cleared all. INVALID MOLECULE (Class69, raised by the
 refusing building's Draggable.method_7 — output counters Class578, defense buildings Class598, the
 laser reactor's gas input Class636; DialogCapture records the building and its input's marker, map
 pixels -> cell): in production / defense the game closes any reactor and the box sits over the

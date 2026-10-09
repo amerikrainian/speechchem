@@ -23,6 +23,7 @@ namespace SpeechChem.Screens.Reactor
         public string[,] Details;  // Shift+Backspace: waldo state, atom info, tooltips
         public string[,] Zones;    // region name (a zone or the reaction zone)
         public bool[,] Marked;     // the error box's markers
+        public int? Signature;     // the program when the grid first showed it (ReactorEditorScreen.Crash)
 
         /// <summary>Every cell's full contents — instructions on every layer (hidden ones too),
         /// hardware, waldos, every atom with its bonds — and the error markers (screen pixels, as

@@ -108,6 +108,7 @@ namespace SpeechChem.Patches
                 Log.Clear();
                 Generation++;
                 Blocked.Clear();
+                Screens.Reactor.ReactorEditorScreen.ClearCrashes();
             }
             catch { }
         }
@@ -704,9 +705,9 @@ namespace SpeechChem.Patches
                 {
                     var editor = __0.bool_0 ? __0.method_0() : Class53.smethod_5<Class77>();
                     snapshot = Screens.Reactor.ReactorSnapshot.Capture(editor?.reactor_0, __3, Cycle);
-                    // The grid shows it once the box is closed (ReactorEditorScreen's crash overlay).
-                    Screens.Reactor.ReactorEditorScreen.PendingCrash = snapshot;
-                    Screens.Reactor.ReactorEditorScreen.PendingCrashReactor = editor?.reactor_0;
+                    // The grid shows it once the box is closed (ReactorEditorScreen's crash overlay),
+                    // and every other reactor of the level its own.
+                    Screens.Reactor.ReactorEditorScreen.RecordCrash(editor?.reactor_0, snapshot, Cycle);
                 }
                 catch (Exception ex) { SpeechChem.Log.Error("[run] crash snapshot", ex); }
                 // Several reactors: say which one failed, as the waldo events do ("reactor 2, ...").
@@ -765,6 +766,7 @@ namespace SpeechChem.Patches
                     Log.Clear();
                     Generation++;
                     Blocked.Clear();
+                    Screens.Reactor.ReactorEditorScreen.ClearCrashes();
                 }
                 // Stopping zeroes the cycle counter first (Class258.smethod_17), so "Stopped" would
                 // file under cycle 0 — the log's TOP. It belongs at the end: the last group.

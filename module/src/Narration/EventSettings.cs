@@ -11,10 +11,17 @@ namespace SpeechChem.Narration
     /// Every narration setting as a typed accessor over <see cref="NarrationStore"/> keys, with the
     /// registry's defaults. <paramref name="draft"/> reads the dialog's draft (the settings pages),
     /// otherwise the committed values (the runtime).
-    ///   event.{kind}.log / .speak.{1-4|idle} / .scope / .red / .blue
-    ///   fmt.{layer}.{kind}.order (csv) / .{part}.on / .{part}.variant   (layer "" = the default
+    ///   event.{node}.log / .speak.{1-4|idle} / .scope / .red / .blue
+    ///   fmt.{layer}.{node}.order (csv) / .{part}.on / .{part}.variant   (layer "" = the default
     ///   format, "log", "speech"; an unset override inherits the default format)
-    ///   step.{key}.assigned / .scope / .stops.{kind} / .speaks.{kind} / .cycle / .giveup
+    ///   step.{key}.assigned / .scope / .stops.{node} / .speaks.{node} / .cycle / .giveup
+    /// INHERITANCE (the event tree, EventKinds): a leaf's value is its own stored one, else its
+    /// nearest ancestor's, else the registry default. For formats each node is asked for its layer
+    /// override, then its default format, before its parent is. WRITING a node stores it there and
+    /// clears the same setting below it (the general setting takes over the whole subtree; a node
+    /// further down can then be set apart again); nothing is stored when every leaf below would
+    /// read that value anyway, so the file stays sparse. A tag writes each member. A branch READS as
+    /// its leaves' common value, or mixed.
     /// </summary>
     internal static class EventSettings
     {
@@ -39,11 +46,80 @@ namespace SpeechChem.Narration
         /// <summary>Set in the draft; equal to the default = unset (the file stays sparse).</summary>
         public static void Set(string key, string value, string fallback) => NarrationStore.SetDraft(key, value == fallback ? null : value);
 
+        // ---- the tree ----
+
+        /// <summary>The nearest stored value on <paramref name="k"/> or an ancestor, or null.</summary>
+        public static string Inherited(EventKind k, Func<EventKind, string> key, bool draft)
+        {
+            for (var n = k; n != null; n = n.Parent)
+            {
+                string v = Raw(key(n), draft);
+                if (v != null) return v;
+            }
+            return null;
+        }
+
+        /// <summary>Write a setting on a node (see the class summary). <paramref name="effective"/>
+        /// gives a leaf's resolved value (draft) as the string that would be stored; leaves it
+        /// does not apply to return null and are ignored.</summary>
+        public static void Put(EventKind node, Func<EventKind, string> key, string value, Func<EventKind, string> effective)
+        {
+            if (node.IsTag)
+            {
+                foreach (var m in node.Members) Put(m, key, value, effective);
+                return;
+            }
+            foreach (var n in node.Subtree()) NarrationStore.SetDraft(key(n), null);
+            foreach (var leaf in node.Leaves())
+            {
+                string now = effective(leaf);
+                if (now != null && now != value) { NarrationStore.SetDraft(key(node), value); return; }
+            }
+        }
+
+        /// <summary>A node's boolean as its leaves read it: true / false, or null when they differ.</summary>
+        public static bool? Common(EventKind node, Func<EventKind, bool> leafValue, Func<EventKind, bool> applies = null)
+        {
+            bool? seen = null;
+            foreach (var leaf in node.Leaves())
+            {
+                if (applies != null && !applies(leaf)) continue;
+                bool v = leafValue(leaf);
+                if (seen == null) seen = v;
+                else if (seen.Value != v) return null;
+            }
+            return seen;
+        }
+
+        /// <summary>The same for a string setting: the common value, or null when they differ.</summary>
+        public static string CommonText(EventKind node, Func<EventKind, string> leafValue, Func<EventKind, bool> applies = null)
+        {
+            string seen = null;
+            foreach (var leaf in node.Leaves())
+            {
+                if (applies != null && !applies(leaf)) continue;
+                string v = leafValue(leaf);
+                if (seen == null) seen = v;
+                else if (seen != v) return null;
+            }
+            return seen;
+        }
+
+        private static string B(bool b) => b ? "true" : "false";
+
         // ---- per event ----
 
         public static string EventKey(EventKind k, string setting) => "event." + k.Key + "." + setting;
 
-        public static bool Log(EventKind k, bool draft = false) => Bool(EventKey(k, "log"), k.LogDefault, draft);
+        private static bool InheritedBool(EventKind k, string setting, bool fallback, bool draft)
+        {
+            bool b;
+            return bool.TryParse(Inherited(k, n => EventKey(n, setting), draft), out b) ? b : fallback;
+        }
+
+        public static bool Log(EventKind k, bool draft = false) => InheritedBool(k, "log", k.LogDefault, draft);
+        public static void SetLog(EventKind node, bool on) => Put(node, n => EventKey(n, "log"), B(on), leaf => B(Log(leaf, draft: true)));
+
         /// <summary>The moments an event can be spoken outside a step: running at each play speed
         /// (the play buttons' numbering — a defense level's are its own remapped speeds), and
         /// paused or stopped ("idle": state and speed changes).</summary>
@@ -62,17 +138,36 @@ namespace SpeechChem.Narration
         }
 
         public static string SpeakKey(EventKind k, string moment) => EventKey(k, "speak." + moment);
-        public static bool SpeaksAt(EventKind k, string moment, bool draft = false) => Bool(SpeakKey(k, moment), SpeaksAtDefault(k, moment), draft);
-        public static void SetSpeaksAt(EventKind k, string moment, bool on)
-            => Set(SpeakKey(k, moment), on ? "true" : "false", SpeaksAtDefault(k, moment) ? "true" : "false");
-        public static string Scope(EventKind k, bool draft = false) => Str(EventKey(k, "scope"), ScopeOpen, draft);
-        public static bool Source(EventKind k, int colour, bool draft = false) => Bool(EventKey(k, colour == 0 ? "red" : "blue"), true, draft);
+        public static bool SpeaksAt(EventKind k, string moment, bool draft = false) => InheritedBool(k, "speak." + moment, SpeaksAtDefault(k, moment), draft);
+        public static void SetSpeaksAt(EventKind node, string moment, bool on)
+            => Put(node, n => SpeakKey(n, moment), B(on), leaf => B(SpeaksAt(leaf, moment, draft: true)));
+
+        public static string Scope(EventKind k, bool draft = false) => Inherited(k, n => EventKey(n, "scope"), draft) ?? ScopeOpen;
+        public static void SetScope(EventKind node, string scope)
+            => Put(node, n => EventKey(n, "scope"), scope, leaf => leaf.ReactorScoped ? Scope(leaf, draft: true) : null);
+
+        public static bool Source(EventKind k, int colour, bool draft = false) => InheritedBool(k, colour == 0 ? "red" : "blue", true, draft);
+        public static void SetSource(EventKind node, int colour, bool on)
+            => Put(node, n => EventKey(n, colour == 0 ? "red" : "blue"), B(on), leaf => leaf.Waldo ? B(Source(leaf, colour, draft: true)) : null);
 
         // ---- formats ----
 
         private static string LayerName(FormatLayer layer) => layer == FormatLayer.Log ? "log" : layer == FormatLayer.Speech ? "speech" : "";
 
         public static string FormatPrefix(FormatLayer layer, EventKind k) => "fmt." + LayerName(layer) + "." + k.Key;
+
+        /// <summary>A format setting for a layer: each node from the leaf up is asked for the
+        /// layer's override, then for its default format.</summary>
+        private static string FormatValue(EventKind k, FormatLayer layer, string setting, bool draft)
+        {
+            for (var n = k; n != null; n = n.Parent)
+            {
+                string v = layer != FormatLayer.Default ? Raw(FormatPrefix(layer, n) + "." + setting, draft) : null;
+                if (v == null) v = Raw(FormatPrefix(FormatLayer.Default, n) + "." + setting, draft);
+                if (v != null) return v;
+            }
+            return null;
+        }
 
         public static string DefaultOrder(EventKind k)
         {
@@ -81,15 +176,11 @@ namespace SpeechChem.Narration
             return string.Join(",", keys.ToArray());
         }
 
-        /// <summary>The part order for a layer: its override, else the default format's, else the
-        /// registry's — with any part the stored list lacks (a newer version's) inserted after its
-        /// registry predecessor, and parts the registry no longer has dropped.</summary>
+        /// <summary>The part order for a layer (inherited as above, else the registry's) — with any
+        /// part the stored list lacks (a newer version's, or a leaf's own) inserted after its
+        /// registry predecessor, and parts the node doesn't have dropped.</summary>
         public static List<string> Order(EventKind k, FormatLayer layer, bool draft = false)
-        {
-            string stored = layer != FormatLayer.Default ? Raw(FormatPrefix(layer, k) + ".order", draft) : null;
-            if (stored == null) stored = Raw(FormatPrefix(FormatLayer.Default, k) + ".order", draft);
-            return MergeOrder(stored, k);
-        }
+            => MergeOrder(FormatValue(k, layer, "order", draft), k);
 
         internal static List<string> MergeOrder(string stored, EventKind k)
         {
@@ -113,56 +204,77 @@ namespace SpeechChem.Narration
             return order;
         }
 
-        public static void SetOrder(EventKind k, FormatLayer layer, List<string> order)
+        public static void SetOrder(EventKind node, FormatLayer layer, List<string> order)
         {
             string value = string.Join(",", order.ToArray());
-            string key = FormatPrefix(layer, k) + ".order";
-            // A layer equal to what it would inherit stores nothing; the default format equal to
-            // the registry's stores nothing.
-            string inherited = layer == FormatLayer.Default
-                ? DefaultOrder(k)
-                : string.Join(",", Order(k, FormatLayer.Default, draft: true).ToArray());
-            NarrationStore.SetDraft(key, value == inherited ? null : value);
+            Put(node, n => FormatPrefix(layer, n) + ".order", value,
+                leaf => string.Join(",", Order(leaf, layer, draft: true).ToArray()) == string.Join(",", MergeOrder(value, leaf).ToArray()) ? value : "");
         }
+
+        private static bool HasPart(EventKind k, string part) => Array.Exists(k.Parts, p => p.Key == part);
 
         public static bool PartOn(EventKind k, FormatLayer layer, string part, bool draft = false)
         {
-            if (layer != FormatLayer.Default)
-            {
-                string v = Raw(FormatPrefix(layer, k) + "." + part + ".on", draft);
-                bool b;
-                if (bool.TryParse(v, out b)) return b;
-            }
-            return Bool(FormatPrefix(FormatLayer.Default, k) + "." + part + ".on", true, draft);
+            bool b;
+            return bool.TryParse(FormatValue(k, layer, part + ".on", draft), out b) ? b : true;
         }
 
-        public static void SetPartOn(EventKind k, FormatLayer layer, string part, bool on)
-        {
-            bool inherited = layer == FormatLayer.Default ? true : PartOn(k, FormatLayer.Default, part, draft: true);
-            NarrationStore.SetDraft(FormatPrefix(layer, k) + "." + part + ".on", on == inherited ? null : (on ? "true" : "false"));
-        }
+        public static void SetPartOn(EventKind node, FormatLayer layer, string part, bool on)
+            => Put(node, n => FormatPrefix(layer, n) + "." + part + ".on", B(on), leaf => HasPart(leaf, part) ? B(PartOn(leaf, layer, part, draft: true)) : null);
 
         public static string Variant(EventKind k, FormatLayer layer, PartDef part, bool draft = false)
         {
             if (part.Variants == null) return null;
-            string v = layer != FormatLayer.Default ? Raw(FormatPrefix(layer, k) + "." + part.Key + ".variant", draft) : null;
-            if (v == null) v = Raw(FormatPrefix(FormatLayer.Default, k) + "." + part.Key + ".variant", draft);
+            string v = FormatValue(k, layer, part.Key + ".variant", draft);
             return v != null && Array.IndexOf(part.Variants, v) >= 0 ? v : part.DefaultVariant;
         }
 
-        public static void SetVariant(EventKind k, FormatLayer layer, PartDef part, string variant)
-        {
-            string inherited = layer == FormatLayer.Default ? part.DefaultVariant : Variant(k, FormatLayer.Default, part, draft: true);
-            NarrationStore.SetDraft(FormatPrefix(layer, k) + "." + part.Key + ".variant", variant == inherited ? null : variant);
-        }
+        public static void SetVariant(EventKind node, FormatLayer layer, PartDef part, string variant)
+            => Put(node, n => FormatPrefix(layer, n) + "." + part.Key + ".variant", variant,
+                leaf => HasPart(leaf, part.Key) ? Variant(leaf, layer, part, draft: true) : null);
 
-        /// <summary>Whether a layer differs from the default format (shown on its page).</summary>
+        /// <summary>Whether a node's layer differs from what it inherits (its own keys only).</summary>
         public static bool Overridden(EventKind k, FormatLayer layer, bool draft = true)
         {
             string prefix = FormatPrefix(layer, k) + ".";
             foreach (var p in k.Parts)
                 if (Raw(prefix + p.Key + ".on", draft) != null || Raw(prefix + p.Key + ".variant", draft) != null) return true;
             return Raw(prefix + "order", draft) != null;
+        }
+
+        // ---- resets: exact keys (a prefix would also catch a sibling whose key extends this one's,
+        // "waldo.grab" vs "waldo.grab.none") ----
+
+        private static readonly FormatLayer[] Layers = { FormatLayer.Default, FormatLayer.Log, FormatLayer.Speech };
+
+        /// <summary>Forget a node's event settings and formats, and everything set below it (a tag:
+        /// its members' event settings).</summary>
+        public static void Reset(EventKind node)
+        {
+            var nodes = node.IsTag ? node.Members : node.Subtree();
+            foreach (var n in nodes)
+            {
+                NarrationStore.SetDraft(EventKey(n, "log"), null);
+                foreach (var m in SpeakMoments) NarrationStore.SetDraft(SpeakKey(n, m), null);
+                foreach (var s in new[] { "scope", "red", "blue" }) NarrationStore.SetDraft(EventKey(n, s), null);
+                if (node.IsTag) continue;
+                foreach (var layer in Layers) ResetFormat(n, layer, subtree: false);
+            }
+        }
+
+        /// <summary>Forget a node's format for one layer (and below it, with <paramref name="subtree"/>).</summary>
+        public static void ResetFormat(EventKind node, FormatLayer layer, bool subtree = true)
+        {
+            foreach (var n in subtree ? node.Subtree() : new List<EventKind> { node })
+            {
+                string prefix = FormatPrefix(layer, n) + ".";
+                NarrationStore.SetDraft(prefix + "order", null);
+                foreach (var p in n.Parts)
+                {
+                    NarrationStore.SetDraft(prefix + p.Key + ".on", null);
+                    NarrationStore.SetDraft(prefix + p.Key + ".variant", null);
+                }
+            }
         }
     }
 }

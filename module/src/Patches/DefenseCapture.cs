@@ -243,11 +243,11 @@ namespace SpeechChem.Patches
 
         /// <summary>"Isambard MMD: motor destroyed, 2 of 3 motors intact".</summary>
         private static NarrationEvent PartLost(Class310 enemy)
-            => new NarrationEvent("defense.effect").Part("enemy", EnemyName, ":").Part("result", DefenseText.PartLost(enemy), ",").Part("parts", DefenseText.PartsText(enemy));
+            => new NarrationEvent("defense.effect.part").Part("enemy", EnemyName, ":").Part("result", DefenseText.PartLost(enemy), ",").Part("parts", DefenseText.PartsText(enemy));
 
         /// <summary>"Isambard MMD hit", "missed" (no enemy name: what the blast did).</summary>
         private static NarrationEvent Effect(string enemy, string resultKey)
-            => new NarrationEvent("defense.effect").Part("enemy", enemy).Part("result", Loc.T(resultKey));
+            => new NarrationEvent(enemy == null ? "defense.effect.miss" : "defense.effect.hit").Part("enemy", enemy).Part("result", Loc.T(resultKey));
 
         // ---- the enemy: damage, parts, attacks ----
 

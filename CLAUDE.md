@@ -430,24 +430,50 @@ pre-settings behaviour exactly; only changed values are stored.
   The dialog edits a DRAFT (Open on the dialog's first build); Save Changes (`Class74.method_19`
   prefix) commits, Cancel / Escape (`method_20`) discards — the game tab's semantics. An unreadable
   file is never overwritten. Typing echo (General tab) is drafted the same way, saved via HostConfig.
-- REGISTRY (`Narration/EventKinds`): 32 kinds in groups waldo / outputs / run / defense; each lists
-  its PARTS in default order (some with detail variants: molecule name/formula/both, bond atoms with
-  cells / names, reactor "not in its own" / always), Waldo (red/blue filters), ReactorScoped (scope),
-  and defaults (log, speak level, step stops/speaks). Adding a kind = one entry; pages follow.
+- REGISTRY (`Narration/EventKinds`) is an EVENT TREE (user request 2026-10-09: settings from general
+  to specific). Roots = the groups waldo / outputs / run / defense; BRANCHES group events
+  (waldo.grabdrop: grab, drop, holding, and waldo.grabdrop.fail: grab.none, drop.none; waldo.bond:
+  bond.made / changed / broken and waldo.bond.fail: bond.full ("could not bond"), bond.none,
+  unbond.none; waldo.rotate: done / none; sensor: match / miss; flipflop: branch / pass; fusion,
+  fission, swap: done / none; defense.effect: hit / miss / part — hit and miss LOG-ONLY by default,
+  never spoken, steps neither stop on nor speak them, user rule 2026-10-09); LEAVES are what the capture code
+  emits, each listing its PARTS in default order (some with detail variants: molecule
+  name/formula/both, bond atoms with cells / names, reactor "not in its own" / always), Waldo
+  (red/blue filters), ReactorScoped (scope), and defaults (log, speak level, step stops/speaks); a
+  branch's parts are its leaves' union, its flags any leaf's. A TAG (waldo.noeffect, "Failed or did
+  nothing, any instruction": every none / full / holding leaf) is a cross-cutting view with no
+  inheritance. The old waldo.nothing is gone (split per instruction); one bond instruction emits one
+  event per OUTCOME present (pairs as items), so the log grows only when outcomes mix. Only leaves
+  reach the runtime (Rules compile per leaf, step flags cached per revision): no cost per event.
+  Adding a kind = one entry in the tree; pages follow.
+- INHERITANCE (`EventSettings`): a leaf reads its own stored value, else the nearest ancestor's,
+  else its registry default; formats ask each node for the layer override, then its default
+  format, before its parent. WRITING a node (`Put`) clears that setting in its whole subtree and
+  stores it on the node — unless every leaf below already reads that value (sparse file); a leaf
+  can then be set apart again; a tag writes each member. A branch READS as its leaves' common value,
+  else "(some)" / "partly on" on toggles and a "Mixed" choice on combo boxes. Resets are EXACT keys
+  per node (a prefix would catch "waldo.grab.none" from "waldo.grab"): Reset everything here =
+  the node and its subtree (a tag: its members' event settings). No migration from the flat
+  registry (user: start over is fine; no settings file existed).
 - EVENTS (`NarrationEvent` + `Formatter`): capture patches build parts (common parts — reactor,
   waldo — plus items joined "; "); `Narrator.Emit` = source filter → log (Log format, the event as
   the tag; views re-format it) → step → speech (Speech format). Formats: a Default layer and Log /
   Speech overrides that inherit until set; parts on/off, order (stored order merged with newer
   parts), variant. A part keeps its suffix only before its registry successor, else a comma.
-- SETTINGS PER EVENT (same rows on every page, inapplicable rows omitted — user choice B): Log;
+- SETTINGS PER EVENT (verified live 2026-10-09 through the real dialog: group, branch, leaf
+  override and take-back, the tag, step key 0's Bonds branch; cancelled) (same rows on every page, inapplicable rows omitted — user choice B): Log;
   Speak at (ONE ROW of checkboxes: Speed 1-4, Paused or stopped — user rule 2026-10-04; keys
   `event.K.speak.1..4|idle`); In a reactor (its own events / all reactors) when ReactorScoped; Red /
   Blue waldo when Waldo; Format / Log format / Speech format pages (one row per part: Included,
-  Detail combo, Up, Down — Move speaks "moved between A and B"); Reset this event.
+  Detail combo, Up, Down — Move speaks "moved between A and B"); Reset this event. EVERY NODE has
+  this page: on a branch / group the rows apply to everything under it, then its children as links
+  (branches, leaves, tags), then "Reset everything here"; a tag has no format pages.
 - STEP KEYS (`Narration/StepKeys`, `Patches/StepControl.Step(id)`): ids 0, c0, 5-9 (bindings
   `screen.reactor.step.key.*`, Repeating; Ctrl+1..9 were step keys c1-c9 until 2026-10-09 and
   switch reactors now, §16a — their stored settings are simply ignored). Per key: Assigned, Events of (scope), Stops on / Speaks
-  per group (checkbox = whole group, "(some)" drawn / "partly on" spoken, Customize = per kind),
+  per group (checkbox = whole group, "(some)" drawn / "partly on" spoken, Customize = the group's
+  children, each branch again a "Whole group" row with its own Customize, down to every leaf;
+  inherited through the tree like the event settings),
   Say the cycle number, Give up after (100-10000 cycles), Reset. Ctrl+1..4 (reactor switching) are suppressed from the
   game while modeled (`GameKeySuppression`: the toolbar reads 1-4 with no modifier check).
 - WIDGETS (`Patches/OptionsInjection`): a postfix on Class74's vmethod_8 rebuilds the widget tree:
@@ -949,7 +975,9 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
 - Step (0) after the enemy's destruction (GoalTracker.bool_0 freezes the waldos for 700 cycles
   before the win) says "{enemy} destroyed, waldos stopped".
 - TABLES FILLED FOR EVERY DEFENSE LEVEL (2026-10-04, from the decompile; `DefenseText`): Events —
-  every special building's codes (tank exploded, lasers / accelerator fired — weapons, the beam
+  every special building's codes (tank exploded, lasers fired, the particle accelerator SILENT —
+  EventSpec.Silent, user 2026-10-09: the game's own sound says it fired, only its hit / miss is
+  reported — weapons, the beam
   laser "firing" as a CONTINUOUS weapon: one line and at most one "hit" per burst — canister /
   launch pad launched, missile launcher "launched a missile" (its hits arrive later as enemy
   damage), thruster left / right); Bodies — which drawn rectangle is each enemy's body (some draw

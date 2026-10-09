@@ -200,7 +200,7 @@ namespace SpeechChem.Screens.Settings
 
         // ---- labels ----
 
-        public static string KindLabel(EventKind k) => Loc.T("narr.kind." + k.Key);
+        public static string KindLabel(EventKind k) => k.Parent == null && !k.IsTag ? GroupLabel(k.Key) : Loc.T("narr.kind." + k.Key);
         public static string GroupLabel(string g) => Loc.T("narr.group." + g);
         public static string PartLabel(string part) => Loc.T("narr.part." + part);
         public static string VariantLabel(string v) => Loc.T("narr.variant." + v);
@@ -249,92 +249,102 @@ namespace SpeechChem.Screens.Settings
         private static SPage EventsPage()
         {
             var page = new SPage { Id = "events", Title = () => ModTabLabel(ModTab.Events) };
-            foreach (var g in EventKinds.Groups)
+            foreach (var root in EventKinds.Roots)
             {
-                string group = g;
-                page.Rows.Add(new SLink { Id = "events." + group, Label = () => GroupLabel(group), Open = () => GroupPage(group) });
+                var node = root;
+                page.Rows.Add(new SLink { Id = "event." + node.Key, Label = () => KindLabel(node), Open = () => NodePage(node) });
             }
             return page;
         }
 
-        private static SPage GroupPage(string group)
-        {
-            var page = new SPage { Id = "events." + group, Title = () => GroupLabel(group) };
-            foreach (var k in EventKinds.InGroup(group))
-            {
-                var kind = k;
-                page.Rows.Add(new SLink { Id = "event." + kind.Key, Label = () => KindLabel(kind), Open = () => EventPage(kind) });
-            }
-            return page;
-        }
+        private static string Mixed() => Loc.T("settings.some");
 
-        /// <summary>Every event page has these rows, in this order; the scope row only on events
-        /// that belong to a reactor, the waldo rows only on waldo events (user choice: leave out
-        /// what doesn't apply).</summary>
-        private static SPage EventPage(EventKind kind)
-        {
-            var page = new SPage { Id = "event." + kind.Key, Title = () => KindLabel(kind) };
-            string id = "event." + kind.Key + ".";
-            page.Rows.Add(new SToggle
+        /// <summary>A toggle over a node: a leaf's value; a branch's when all its leaves agree, else
+        /// unticked with "(some)" (spoken "partly on") — ticking it sets the whole subtree.</summary>
+        private static SToggle NodeToggle(string id, Func<string> label, EventKind node, Func<EventKind, bool> leafValue, Action<bool> set,
+            Func<EventKind, bool> applies = null, Func<string> spoken = null)
+            => new SToggle
             {
-                Id = id + "log", Label = () => Loc.T("settings.event.log"),
-                Get = () => EventSettings.Log(kind, draft: true),
-                Set = on => EventSettings.Set(EventSettings.EventKey(kind, "log"), on ? "true" : "false", kind.LogDefault ? "true" : "false"),
-            });
+                Id = id, Label = label, Spoken = spoken,
+                Get = () => EventSettings.Common(node, leafValue, applies) == true,
+                Set = set,
+                Note = () => EventSettings.Common(node, leafValue, applies) == null ? Loc.T("settings.key.some") : null,
+            };
+
+        /// <summary>
+        /// One page for every node of the event tree (user design 2026-10-09: general to specific).
+        /// The settings rows come first — on a branch or a group they apply to every event under it
+        /// (a "(some)" / "Mixed" value says the events under it differ; setting it makes them all
+        /// follow) — then, on a branch, its events and sub-branches as links, then the reset. A leaf
+        /// has the rows the event pages always had; the scope row only where an event belongs to a
+        /// reactor, the waldo rows only on waldo events (user choice: leave out what doesn't apply).
+        /// A tag ("Failed or no effect") writes each member; it has no formats.
+        /// </summary>
+        private static SPage NodePage(EventKind node)
+        {
+            var page = new SPage { Id = "event." + node.Key, Title = () => KindLabel(node) };
+            string id = "event." + node.Key + ".";
+            page.Rows.Add(NodeToggle(id + "log", () => Loc.T("settings.event.log"), node, k => EventSettings.Log(k, draft: true), on => EventSettings.SetLog(node, on)));
             // One line of checkboxes (user rule 2026-10-04: one row to pass, not a list per speed).
             var speak = new SCompound { Id = id + "speak", Label = () => Loc.T("settings.event.speakAt"), Inline = true };
             foreach (var m in EventSettings.SpeakMoments)
             {
                 string moment = m;
                 bool idle = moment == "idle";
-                speak.Cells.Add(new SToggle
-                {
-                    Id = id + "speak." + moment,
-                    Label = () => idle ? Loc.T("settings.speak.idle") : moment,
-                    Spoken = () => idle ? Loc.T("settings.speak.idle") : Loc.T("settings.speak.speed", new { n = moment }),
-                    Get = () => EventSettings.SpeaksAt(kind, moment, draft: true),
-                    Set = on => EventSettings.SetSpeaksAt(kind, moment, on),
-                });
+                speak.Cells.Add(NodeToggle(id + "speak." + moment,
+                    () => idle ? Loc.T("settings.speak.idle") : moment, node,
+                    k => EventSettings.SpeaksAt(k, moment, draft: true), on => EventSettings.SetSpeaksAt(node, moment, on),
+                    spoken: () => idle ? Loc.T("settings.speak.idle") : Loc.T("settings.speak.speed", new { n = moment })));
             }
             page.Rows.Add(speak);
-            if (kind.ReactorScoped)
+            if (node.ReactorScoped)
                 page.Rows.Add(new SChoice
                 {
                     Id = id + "scope", Label = () => Loc.T("settings.event.scope"),
-                    Options = () => Labels(new[] { "settings.scope.open", "settings.scope.all" }),
-                    Get = () => EventSettings.Scope(kind, draft: true) == EventSettings.ScopeAll ? 1 : 0,
-                    Set = i => EventSettings.Set(EventSettings.EventKey(kind, "scope"), i == 1 ? EventSettings.ScopeAll : EventSettings.ScopeOpen, EventSettings.ScopeOpen),
+                    Options = () => ScopeCommon(node) == null
+                        ? new[] { Loc.T("settings.scope.open"), Loc.T("settings.scope.all"), Mixed() }
+                        : Labels(new[] { "settings.scope.open", "settings.scope.all" }),
+                    Get = () =>
+                    {
+                        string common = ScopeCommon(node);
+                        return common == null ? 2 : common == EventSettings.ScopeAll ? 1 : 0;
+                    },
+                    Set = i => { if (i < 2) EventSettings.SetScope(node, i == 1 ? EventSettings.ScopeAll : EventSettings.ScopeOpen); },
                 });
-            if (kind.Waldo)
+            if (node.Waldo)
                 foreach (int colour in new[] { 0, 1 })
                 {
                     int c = colour;
-                    page.Rows.Add(new SToggle
-                    {
-                        Id = id + (c == 0 ? "red" : "blue"), Label = () => Loc.T(c == 0 ? "settings.event.red" : "settings.event.blue"),
-                        Get = () => EventSettings.Source(kind, c, draft: true),
-                        Set = on => EventSettings.Set(EventSettings.EventKey(kind, c == 0 ? "red" : "blue"), on ? "true" : "false", "true"),
-                    });
+                    page.Rows.Add(NodeToggle(id + (c == 0 ? "red" : "blue"), () => Loc.T(c == 0 ? "settings.event.red" : "settings.event.blue"), node,
+                        k => EventSettings.Source(k, c, draft: true), on => EventSettings.SetSource(node, c, on), applies: k => k.Waldo));
                 }
-            foreach (var layer in new[] { FormatLayer.Default, FormatLayer.Log, FormatLayer.Speech })
+            if (!node.IsTag)
+                foreach (var layer in new[] { FormatLayer.Default, FormatLayer.Log, FormatLayer.Speech })
+                {
+                    var l = layer;
+                    page.Rows.Add(new SLink { Id = id + "fmt." + l, Label = () => FormatTitle(l), Open = () => FormatPage(node, l) });
+                }
+            var below = node.IsTag ? node.Members : node.Children;
+            foreach (var c in below)
             {
-                var l = layer;
-                page.Rows.Add(new SLink { Id = id + "fmt." + l, Label = () => FormatTitle(l), Open = () => FormatPage(kind, l) });
+                var child = c;
+                page.Rows.Add(new SLink { Id = "event." + child.Key, Label = () => KindLabel(child), Open = () => NodePage(child) });
             }
             page.Rows.Add(new SAction
             {
-                Id = id + "reset", Label = () => Loc.T("settings.event.reset"),
+                Id = id + "reset", Label = () => Loc.T(node.IsLeaf ? "settings.event.reset" : "settings.event.resetGroup"),
                 Run = () =>
                 {
-                    NarrationStore.ResetDraft("event." + kind.Key + ".");
-                    foreach (var l in new[] { FormatLayer.Default, FormatLayer.Log, FormatLayer.Speech })
-                        NarrationStore.ResetDraft(EventSettings.FormatPrefix(l, kind) + ".");
+                    EventSettings.Reset(node);
                     Dirty = true;
                     Speech.Tts.Speak(Loc.T("settings.reset.done"), interrupt: true);
                 },
             });
             return page;
         }
+
+        private static string ScopeCommon(EventKind node)
+            => EventSettings.CommonText(node, k => EventSettings.Scope(k, draft: true), k => k.ReactorScoped);
 
         private static string FormatTitle(FormatLayer layer)
             => Loc.T(layer == FormatLayer.Log ? "settings.event.logFormat" : layer == FormatLayer.Speech ? "settings.event.speechFormat" : "settings.event.format");
@@ -350,20 +360,30 @@ namespace SpeechChem.Screens.Settings
                 if (part == null) continue;
                 string rowId = page.Id + "." + key;
                 var row = new SCompound { Id = rowId, Label = () => PartLabel(part.Key) };
-                row.Cells.Add(new SToggle
-                {
-                    Id = rowId + ".on", Label = () => PartLabel(part.Key), Spoken = () => Loc.T("settings.format.include"),
-                    Get = () => EventSettings.PartOn(kind, layer, part.Key, draft: true),
-                    Set = on => EventSettings.SetPartOn(kind, layer, part.Key, on),
-                });
+                Func<EventKind, bool> has = k => Array.Exists(k.Parts, q => q.Key == part.Key);
+                row.Cells.Add(NodeToggle(rowId + ".on", () => PartLabel(part.Key), kind,
+                    k => EventSettings.PartOn(k, layer, part.Key, draft: true), on => EventSettings.SetPartOn(kind, layer, part.Key, on),
+                    applies: has, spoken: () => Loc.T("settings.format.include")));
                 if (part.Variants != null)
+                {
+                    Func<string> common = () => EventSettings.CommonText(kind, k => EventSettings.Variant(k, layer, part, draft: true), has);
                     row.Cells.Add(new SChoice
                     {
                         Id = rowId + ".variant", Label = () => Loc.T("settings.format.detail"),
-                        Options = () => Array.ConvertAll(part.Variants, VariantLabel),
-                        Get = () => Array.IndexOf(part.Variants, EventSettings.Variant(kind, layer, part, draft: true)),
-                        Set = i => EventSettings.SetVariant(kind, layer, part, part.Variants[i]),
+                        Options = () =>
+                        {
+                            var labels = new List<string>(Array.ConvertAll(part.Variants, VariantLabel));
+                            if (common() == null) labels.Add(Mixed());
+                            return labels.ToArray();
+                        },
+                        Get = () =>
+                        {
+                            string v = common();
+                            return v == null ? part.Variants.Length : Array.IndexOf(part.Variants, v);
+                        },
+                        Set = i => { if (i < part.Variants.Length) EventSettings.SetVariant(kind, layer, part, part.Variants[i]); },
                     });
+                }
                 row.Cells.Add(new SAction { Id = rowId + ".up", Label = () => Loc.T("settings.format.up"), Run = () => Move(kind, layer, part.Key, -1, rowId) });
                 row.Cells.Add(new SAction { Id = rowId + ".down", Label = () => Loc.T("settings.format.down"), Run = () => Move(kind, layer, part.Key, 1, rowId) });
                 page.Rows.Add(row);
@@ -374,7 +394,7 @@ namespace SpeechChem.Screens.Settings
                 Label = () => Loc.T(layer == FormatLayer.Default ? "settings.format.reset" : "settings.format.inherit"),
                 Run = () =>
                 {
-                    NarrationStore.ResetDraft(EventSettings.FormatPrefix(layer, kind) + ".");
+                    EventSettings.ResetFormat(kind, layer);
                     Dirty = true;
                     Speech.Tts.Speak(Loc.T("settings.reset.done"), interrupt: true);
                 },
@@ -436,8 +456,12 @@ namespace SpeechChem.Screens.Settings
                 Set = i => StepKeys.SetScope(id, i == 1 ? EventSettings.ScopeAll : EventSettings.ScopeOpen),
             });
             foreach (var which in new[] { "stops", "speaks" })
-                foreach (var g in EventKinds.Groups)
-                    page.Rows.Add(GroupRow(id, which, g));
+                foreach (var root in EventKinds.Roots)
+                {
+                    var r = root;
+                    page.Rows.Add(NodeRow(id, which, r,
+                        () => Loc.T(which == "stops" ? "settings.key.stops" : "settings.key.speaks", new { group = GroupLabel(r.Key) })));
+                }
             page.Rows.Add(new SToggle { Id = rid + "cycle", Label = () => Loc.T("settings.key.cycle"), Get = () => StepKeys.SayCycle(id, draft: true), Set = on => StepKeys.SetSayCycle(id, on) });
             page.Rows.Add(new SChoice
             {
@@ -467,35 +491,27 @@ namespace SpeechChem.Screens.Settings
             if (which == "stops") StepKeys.SetStops(id, k, on); else StepKeys.SetSpeaks(id, k, on);
         }
 
-        /// <summary>"Stops on waldo actions" — on when every event of the group is, "(some)" when
-        /// part; ticking sets the whole group; Customize lists the group's events.</summary>
-        private static SCompound GroupRow(string id, string which, string group)
+        /// <summary>"Stops on waldo actions" — on when every event under the node is, "(some)" when
+        /// part; ticking sets the whole subtree; Customize lists the node's branches (each a row
+        /// like this one), events and tags, down to every single event.</summary>
+        private static SRow NodeRow(string id, string which, EventKind node, Func<string> label)
         {
-            string rowId = "key." + id + "." + which + "." + group;
-            var kinds = EventKinds.InGroup(group);
-            Func<string> label = () => Loc.T(which == "stops" ? "settings.key.stops" : "settings.key.speaks", new { group = GroupLabel(group) });
+            string rowId = "key." + id + "." + which + "." + node.Key;
+            var toggle = NodeToggle(node.IsLeaf ? rowId : rowId + ".all", label, node, k => Get(id, which, k), on => { Put(id, which, node, on); Dirty = true; },
+                spoken: node.IsLeaf ? null : (Func<string>)(() => Loc.T("settings.key.all")));
+            if (node.IsLeaf) return toggle;
             var row = new SCompound { Id = rowId, Label = label };
-            row.Cells.Add(new SToggle
-            {
-                Id = rowId + ".all", Label = label, Spoken = () => Loc.T("settings.key.all"),
-                Get = () => kinds.TrueForAll(k => Get(id, which, k)),
-                Set = on => { foreach (var k in kinds) Put(id, which, k, on); Dirty = true; },
-                Note = () =>
-                {
-                    int n = kinds.FindAll(k => Get(id, which, k)).Count;
-                    return n > 0 && n < kinds.Count ? Loc.T("settings.key.some") : null;
-                },
-            });
+            row.Cells.Add(toggle);
             row.Cells.Add(new SLink
             {
                 Id = rowId + ".customize", Label = () => Loc.T("settings.key.customize"),
                 Open = () =>
                 {
                     var page = new SPage { Id = rowId + ".page", Title = label };
-                    foreach (var k in kinds)
+                    foreach (var c in node.IsTag ? node.Members : node.Children)
                     {
-                        var kind = k;
-                        page.Rows.Add(new SToggle { Id = rowId + "." + kind.Key, Label = () => KindLabel(kind), Get = () => Get(id, which, kind), Set = on => Put(id, which, kind, on) });
+                        var child = c;
+                        page.Rows.Add(NodeRow(id, which, child, () => KindLabel(child)));
                     }
                     return page;
                 },

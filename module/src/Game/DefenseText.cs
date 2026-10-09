@@ -71,6 +71,8 @@ namespace SpeechChem.Game
             public bool Weapon;      // an attack on the enemy: report hit / missed
             public bool Continuous;  // raised every cycle while it lasts (a beam): logged once per
                                      // burst, "hit" once per burst, never "missed"
+            public bool Silent;      // no line of its own (the game's sound says it); its effect
+                                     // on the enemy is still measured and reported
         }
 
         private static KeyValuePair<Type, int> Code(Type t, int code) => new KeyValuePair<Type, int>(t, code);
@@ -82,7 +84,8 @@ namespace SpeechChem.Game
             { Code(typeof(Class605), Class605.int_1), new EventSpec { Key = "defense.act.exploded", Weapon = true } },
             { Code(typeof(Class599), Class599.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true } },
             { Code(typeof(Class600), Class600.int_1), new EventSpec { Key = "defense.act.firing", Weapon = true, Continuous = true } },
-            { Code(typeof(ParticleAcceleratorDraggable), ParticleAcceleratorDraggable.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true } },
+            // The particle accelerator's shot has its own descriptive sound (user 2026-10-09): only its hit / miss.
+            { Code(typeof(ParticleAcceleratorDraggable), ParticleAcceleratorDraggable.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true, Silent = true } },
             { Code(typeof(Class601), 0), new EventSpec { Key = "defense.act.launched" } },
             { Code(typeof(Class603), 0), new EventSpec { Key = "defense.act.left", Suffix = ":" } },
             { Code(typeof(Class603), 1), new EventSpec { Key = "defense.act.right", Suffix = ":" } },
@@ -388,7 +391,7 @@ namespace SpeechChem.Game
 
         /// <summary>"Oxygen Tank 2 exploded", or "Oxygen Tank 2, event 3" for a code not in the
         /// table; <paramref name="weapon"/> = the event attacks the enemy, <paramref name="continuous"/>
-        /// = raised every cycle while it lasts.</summary>
+        /// = raised every cycle while it lasts. Null for a silent event (its effect is still reported).</summary>
         public static NarrationEvent BuildingEvent(Class598 b, int code, out bool weapon, out bool continuous)
         {
             weapon = false;
@@ -400,6 +403,7 @@ namespace SpeechChem.Game
             {
                 weapon = spec.Weapon;
                 continuous = spec.Continuous;
+                if (spec.Silent) return null;
                 return e.Part("building", name, spec.Suffix).Part("action", Loc.T(spec.Key));
             }
             return e.Part("building", name, ",").Part("action", Loc.T("defense.act.code", new { code }));

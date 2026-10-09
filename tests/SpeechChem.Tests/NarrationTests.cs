@@ -32,7 +32,7 @@ namespace SpeechChem.Tests
         {
             var atoms1 = new Dictionary<string, string> { { "cells", "A at 1, 2 and B at 2, 2" }, { "names", "A and B" } };
             var atoms2 = new Dictionary<string, string> { { "cells", "C at 3, 3 and D at 4, 3" }, { "names", "C and D" } };
-            var e = new NarrationEvent("waldo.bond") { Reactor = Reactor2, Colour = 0 };
+            var e = new NarrationEvent("waldo.bond.made") { Reactor = Reactor2, Colour = 0 };
             e.CommonPart("reactor", "reactor 2", ",").CommonPart("waldo", "red", ":");
             e.NextItem().Part("action", "bonded").Part("atoms", atoms1, atoms1["cells"], ",").Part("result", "single bond");
             e.NextItem().Part("action", "unbonded").Part("atoms", atoms2, atoms2["cells"]);
@@ -155,7 +155,7 @@ namespace SpeechChem.Tests
             var crash = Bond();
             crash.Payload = new object();                  // a crash snapshot keeps its entry its own
             log.Add(100, crash);
-            var reworded = new NarrationEvent("waldo.bond") { Reactor = Reactor2 };
+            var reworded = new NarrationEvent("waldo.bond.made") { Reactor = Reactor2 };
             reworded.CommonPart("reactor", "reactor 2", ",").CommonPart("waldo", "blue", ":");
             reworded.Part("action", "bonded");
             log.Add(100, reworded);
@@ -173,6 +173,137 @@ namespace SpeechChem.Tests
             Assert.StartsWith("reactor 2, red:", Formatter.Format(Bond(), FormatLayer.Log, null)); // drafts don't apply
             NarrationStore.Commit();
             Assert.StartsWith("red:", Formatter.Format(Bond(), FormatLayer.Log, null));
+        }
+
+        // ---- the event tree (general to specific) ----
+
+        private static EventKind K(string key) => EventKinds.Get(key);
+
+        [Fact]
+        public void TheTreeLinksEveryLeafToAGroupAndOnlyLeavesAreEmitted()
+        {
+            var keys = new HashSet<string>();
+            foreach (var n in EventKinds.Nodes) Assert.True(keys.Add(n.Key), "duplicate " + n.Key);
+            foreach (var leaf in EventKinds.All)
+            {
+                Assert.True(leaf.IsLeaf);
+                var root = leaf;
+                while (root.Parent != null) root = root.Parent;
+                Assert.Contains(root.Key, EventKinds.Groups);
+                Assert.Equal(root.Key, leaf.Group);
+            }
+            Assert.DoesNotContain(K("waldo.grabdrop"), EventKinds.All);
+            // A branch's parts are its leaves' union, in order.
+            Assert.Equal("reactor,waldo,action,molecule", EventSettings.DefaultOrder(K("waldo.grabdrop")));
+            // A tag holds leaves from several branches and is nobody's parent.
+            var tag = K("waldo.noeffect");
+            Assert.Contains(K("waldo.grab.none"), tag.Members);
+            Assert.Contains(K("waldo.bond.full"), tag.Members);
+            Assert.Same(K("waldo.grabdrop.fail"), K("waldo.grab.none").Parent);
+            Assert.DoesNotContain(tag, K(EventKinds.Waldo).Subtree());
+        }
+
+        [Fact]
+        public void ABranchSettingReachesItsLeavesUntilALeafIsSetApart()
+        {
+            NarrationStore.BeginEdit();
+            EventSettings.SetLog(K("waldo.grabdrop.fail"), false);             // E: every grab / drop failure
+            NarrationStore.Commit();
+            Assert.False(EventSettings.Log(K("waldo.grab.none")));
+            Assert.False(EventSettings.Log(K("waldo.drop.none")));
+            Assert.True(EventSettings.Log(K("waldo.grab")));                     // outside the branch
+            Assert.False(EventSettings.Common(K("waldo.grabdrop.fail"), k => EventSettings.Log(k)));
+            Assert.Null(EventSettings.Common(K("waldo.grabdrop"), k => EventSettings.Log(k)));   // mixed
+
+            NarrationStore.BeginEdit();
+            EventSettings.SetLog(K("waldo.grab.none"), true);                   // C apart from D
+            NarrationStore.Commit();
+            Assert.True(EventSettings.Log(K("waldo.grab.none")));
+            Assert.False(EventSettings.Log(K("waldo.drop.none")));
+
+            NarrationStore.BeginEdit();
+            EventSettings.SetLog(K("waldo.grabdrop"), false);                   // the general setting takes the subtree back
+            NarrationStore.Commit();
+            foreach (var leaf in K("waldo.grabdrop").Leaves()) Assert.False(EventSettings.Log(leaf));
+            string text = File.ReadAllText(_file);
+            Assert.Contains("\"event.waldo.grabdrop.log\": \"false\"", text);
+            Assert.DoesNotContain("waldo.grab.none.log", text);
+            Assert.DoesNotContain("waldo.grabdrop.fail.log", text);
+        }
+
+        [Fact]
+        public void SettingABranchToWhatItsLeavesAlreadyReadStoresNothing()
+        {
+            NarrationStore.BeginEdit();
+            EventSettings.SetSpeaksAt(K("waldo.bond"), "1", true);   // every bond event speaks at speed 1 already
+            EventSettings.SetSpeaksAt(K(EventKinds.Run), "4", true);  // and every run event always
+            NarrationStore.Commit();
+            Assert.False(File.Exists(_file) && File.ReadAllText(_file).Contains("speak"));
+            // Mixed defaults below a branch: setting it stores it once, on the branch.
+            NarrationStore.BeginEdit();
+            EventSettings.SetSpeaksAt(K(EventKinds.Outputs), "1", true);
+            NarrationStore.Commit();
+            foreach (var leaf in K(EventKinds.Outputs).Leaves()) Assert.True(EventSettings.SpeaksAt(leaf, "1"));
+            Assert.Contains("\"event.outputs.speak.1\": \"true\"", File.ReadAllText(_file));
+        }
+
+        [Fact]
+        public void ATagWritesEachMemberWhereverItSits()
+        {
+            var tag = K("waldo.noeffect");
+            NarrationStore.BeginEdit();
+            EventSettings.SetSpeaksAt(tag, "1", false);
+            NarrationStore.Commit();
+            foreach (var m in tag.Members) Assert.False(EventSettings.SpeaksAt(m, "1"), m.Key);
+            Assert.True(EventSettings.SpeaksAt(K("waldo.grab"), "1"));
+            Assert.True(EventSettings.SpeaksAt(K("waldo.bond.made"), "1"));
+            Assert.False(EventSettings.Common(tag, k => EventSettings.SpeaksAt(k, "1")));
+            Assert.Null(EventSettings.Common(K("waldo.bond"), k => EventSettings.SpeaksAt(k, "1")));
+
+            NarrationStore.BeginEdit();
+            EventSettings.Reset(tag);
+            NarrationStore.Commit();
+            foreach (var m in tag.Members) Assert.True(EventSettings.SpeaksAt(m, "1"), m.Key);
+        }
+
+        [Fact]
+        public void FormatsInheritDownTheTreeAndALeafCanOverride()
+        {
+            NarrationStore.BeginEdit();
+            EventSettings.SetPartOn(K(EventKinds.Waldo), FormatLayer.Default, "reactor", false);   // every waldo event
+            NarrationStore.Commit();
+            Assert.Equal("red: bonded A at 1, 2 and B at 2, 2, single bond; unbonded C at 3, 3 and D at 4, 3",
+                Formatter.Format(Bond(), FormatLayer.Log, null));
+            NarrationStore.BeginEdit();
+            EventSettings.SetPartOn(K("waldo.bond.made"), FormatLayer.Speech, "reactor", true);     // one event's speech apart
+            NarrationStore.Commit();
+            Assert.StartsWith("reactor 2, red:", Formatter.Format(Bond(), FormatLayer.Speech, null));
+            Assert.StartsWith("red:", Formatter.Format(Bond(), FormatLayer.Log, null));
+            // A branch order reaches leaves with fewer parts (they keep the rest in place).
+            NarrationStore.BeginEdit();
+            EventSettings.SetOrder(K("waldo.grabdrop"), FormatLayer.Default, new List<string> { "molecule", "action", "reactor", "waldo" });
+            NarrationStore.Commit();
+            Assert.Equal(new[] { "action", "reactor", "waldo" }, EventSettings.Order(K("waldo.grab.none"), FormatLayer.Default).ToArray());
+        }
+
+        [Fact]
+        public void StepKeyFlagsInheritAndResetsAreExact()
+        {
+            NarrationStore.BeginEdit();
+            StepKeys.SetStops("0", K("waldo.bond.fail"), false);
+            EventSettings.SetLog(K("waldo.grab"), false);
+            EventSettings.SetLog(K("waldo.grab.none"), false);
+            NarrationStore.Commit();
+            Assert.False(StepKeys.Stops("0", K("waldo.bond.full")));
+            Assert.False(StepKeys.Stops("0", K("waldo.unbond.none")));
+            Assert.True(StepKeys.Stops("0", K("waldo.bond.made")));
+            Assert.True(StepKeys.Stops("c0", K("waldo.bond.full")));
+            // The key "waldo.grab" is a prefix of "waldo.grab.none", which is not under it.
+            NarrationStore.BeginEdit();
+            EventSettings.Reset(K("waldo.grab"));
+            NarrationStore.Commit();
+            Assert.True(EventSettings.Log(K("waldo.grab")));
+            Assert.False(EventSettings.Log(K("waldo.grab.none")));
         }
 
         [Fact]

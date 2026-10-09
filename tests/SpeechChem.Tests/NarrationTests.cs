@@ -287,6 +287,20 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void ALayerSetAboveBeatsAnEventsOwnSharedFormat()
+        {
+            // An event's own Format picks the short atoms; its group's Speech format the long ones.
+            NarrationStore.BeginEdit();
+            EventSettings.SetVariant(K("waldo.bond.made"), FormatLayer.Default, Array.Find(K("waldo.bond.made").Parts, p => p.Key == "atoms"), "names");
+            EventSettings.SetVariant(K(EventKinds.Waldo), FormatLayer.Speech, Array.Find(K(EventKinds.Waldo).Parts, p => p.Key == "atoms"), "cells");
+            NarrationStore.Commit();
+            Assert.Equal("reactor 2, red: bonded A at 1, 2 and B at 2, 2, single bond; unbonded C at 3, 3 and D at 4, 3",
+                Formatter.Format(Bond(), FormatLayer.Speech, null));                     // speech: the layer, from the group
+            Assert.Equal("reactor 2, red: bonded A and B, single bond; unbonded C and D",
+                Formatter.Format(Bond(), FormatLayer.Log, null));                        // log: no override, the event's Format
+        }
+
+        [Fact]
         public void StepKeyFlagsInheritAndResetsAreExact()
         {
             NarrationStore.BeginEdit();

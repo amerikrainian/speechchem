@@ -447,8 +447,9 @@ pre-settings behaviour exactly; only changed values are stored.
   reach the runtime (Rules compile per leaf, step flags cached per revision): no cost per event.
   Adding a kind = one entry in the tree; pages follow.
 - INHERITANCE (`EventSettings`): a leaf reads its own stored value, else the nearest ancestor's,
-  else its registry default; formats ask each node for the layer override, then its default
-  format, before its parent. WRITING a node (`Put`) clears that setting in its whole subtree and
+  else its registry default; formats go LAYER FIRST (user decision 2026-10-09): the Log / Speech
+  override on the leaf or any node above wins, only then the shared Format, leaf up again (so a
+  group's Speech format reaches every event's speech whatever an event's own Format says). WRITING a node (`Put`) clears that setting in its whole subtree and
   stores it on the node — unless every leaf below already reads that value (sparse file); a leaf
   can then be set apart again; a tag writes each member. A branch READS as its leaves' common value,
   else "(some)" / "partly on" on toggles and a "Mixed" choice on combo boxes. Resets are EXACT keys

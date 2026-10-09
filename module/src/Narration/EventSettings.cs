@@ -16,8 +16,9 @@ namespace SpeechChem.Narration
     ///   format, "log", "speech"; an unset override inherits the default format)
     ///   step.{key}.assigned / .scope / .stops.{node} / .speaks.{node} / .cycle / .giveup
     /// INHERITANCE (the event tree, EventKinds): a leaf's value is its own stored one, else its
-    /// nearest ancestor's, else the registry default. For formats each node is asked for its layer
-    /// override, then its default format, before its parent is. WRITING a node stores it there and
+    /// nearest ancestor's, else the registry default. Formats go LAYER FIRST: the Log / Speech
+    /// override anywhere from the leaf up, and only then the shared Format, leaf up again.
+    /// WRITING a node stores it there and
     /// clears the same setting below it (the general setting takes over the whole subtree; a node
     /// further down can then be set apart again); nothing is stored when every leaf below would
     /// read that value anyway, so the file stays sparse. A tag writes each member. A branch READS as
@@ -156,14 +157,21 @@ namespace SpeechChem.Narration
 
         public static string FormatPrefix(FormatLayer layer, EventKind k) => "fmt." + LayerName(layer) + "." + k.Key;
 
-        /// <summary>A format setting for a layer: each node from the leaf up is asked for the
-        /// layer's override, then for its default format.</summary>
+        /// <summary>A format setting for a layer, LAYER FIRST (user decision 2026-10-09): the
+        /// layer's override on the leaf or any node above it wins; only when none is set anywhere
+        /// up the tree is the shared Format asked, leaf up again. "Speech format" on a group thus
+        /// reaches every event's speech, whatever an event's own Format says.</summary>
         private static string FormatValue(EventKind k, FormatLayer layer, string setting, bool draft)
         {
+            if (layer != FormatLayer.Default)
+                for (var n = k; n != null; n = n.Parent)
+                {
+                    string v = Raw(FormatPrefix(layer, n) + "." + setting, draft);
+                    if (v != null) return v;
+                }
             for (var n = k; n != null; n = n.Parent)
             {
-                string v = layer != FormatLayer.Default ? Raw(FormatPrefix(layer, n) + "." + setting, draft) : null;
-                if (v == null) v = Raw(FormatPrefix(FormatLayer.Default, n) + "." + setting, draft);
+                string v = Raw(FormatPrefix(FormatLayer.Default, n) + "." + setting, draft);
                 if (v != null) return v;
             }
             return null;

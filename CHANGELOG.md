@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.1.1
+
+- We now allow you to switch to a different reactor with ctrl+tab/ctrl+shift+tab, or directly to reactor with that number with ctrl+corresponding digit.
+- In production levels, closing the error overlay is now done with the ` key or by editing a reactor/pipeline as opposed to escape (latter still works on research levels). This should hopefully give greater visibility into things like pipe occupancy and allow you to actually view the pipeline mid-run.
+- We now tell you what molecule(s) are in your pipe(s) when scrolling over them as opposed to generic counts.
+- We now have configuration for what gets spoken per-event. It's under options. ... it might also be borderline psychotic and far too granular, we'll see.
+
 ## V0.1.0
 
 - Removed instructions from categories; they had shortcut keys already.

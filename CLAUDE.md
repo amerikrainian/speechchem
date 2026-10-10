@@ -964,7 +964,9 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   (Class77.method_5); the mod swaps the same stop for four toggles "control A, F1" .. D / F4 (state
   `Class710.method_6`, Enter = `method_7`, the F key's flip + click), then THE GRAPH: one row per
   labelled range of the level's `vmethod_9` (brackets `Class377.smethod_1`, labels `smethod_2`,
-  captured; paired in build order) over the current waveform (`Class710.struct116_0`, 100
+  captured; a label takes the bracket its x lies inside, the rest take the unclaimed brackets in
+  order — NOT build order: Gorgathar builds labels S, NW, VITAL, WAIL over brackets S, VITAL, NW,
+  WAIL, and build order swapped NW / VITAL until 2026-10-10) over the current waveform (`Class710.struct116_0`, 100
   normalised samples; x = 3 + 393 i / 100), read as its peaks (prominence ≥ 0.08 — the waveform
   carries ±0.05 noise): "ELECTRIC MOTORS: 100, 94, 27 percent" after one motor is lost. The game
   refreshes it only while running (every 1.5 s, 0.3 s at ≥ 50 cycles/s). F1-F4 reach the game

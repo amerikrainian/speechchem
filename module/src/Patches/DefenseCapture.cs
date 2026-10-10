@@ -450,18 +450,42 @@ namespace SpeechChem.Patches
             }
             var marks = new List<GraphMark>();
             if (brackets.Count == 0) return marks;
-            // Brackets and labels are built in step (vmethod_9: every bracket, then every label,
-            // in the same order); when the counts differ, each label takes the nearest bracket.
+            // vmethod_9 builds every bracket, then every label, but not always in the same order
+            // (Gorgathar's labels go S, NW, VITAL, WAIL over brackets S, VITAL, NW, WAIL). A label
+            // whose x lies inside a bracket takes it; the rest take the unclaimed brackets in order
+            // (labels drawn just outside their bracket: MOTORS at 30 for 45-170, OCULAR at 357 for
+            // 208-338); past the last bracket, the nearest one. Verified against every defense level.
+            var owner = new int[labels.Count];
+            var taken = new bool[brackets.Count];
             for (int i = 0; i < labels.Count; i++)
             {
-                KeyValuePair<int, int> range;
-                if (labels.Count == brackets.Count) range = brackets[i];
-                else
-                {
-                    range = brackets[0];
-                    foreach (var b in brackets)
-                        if (Math.Abs((b.Key + b.Value) / 2 - labels[i].Value) < Math.Abs((range.Key + range.Value) / 2 - labels[i].Value)) range = b;
-                }
+                owner[i] = -1;
+                for (int b = 0; b < brackets.Count; b++)
+                    if (!taken[b] && brackets[b].Key <= labels[i].Value && labels[i].Value <= brackets[b].Value)
+                    {
+                        owner[i] = b;
+                        taken[b] = true;
+                        break;
+                    }
+            }
+            for (int i = 0; i < labels.Count; i++)
+            {
+                if (owner[i] >= 0) continue;
+                for (int b = 0; b < brackets.Count; b++)
+                    if (!taken[b])
+                    {
+                        owner[i] = b;
+                        taken[b] = true;
+                        break;
+                    }
+                if (owner[i] >= 0) continue;
+                owner[i] = 0;
+                for (int b = 0; b < brackets.Count; b++)
+                    if (Math.Abs((brackets[b].Key + brackets[b].Value) / 2 - labels[i].Value) < Math.Abs((brackets[owner[i]].Key + brackets[owner[i]].Value) / 2 - labels[i].Value)) owner[i] = b;
+            }
+            for (int i = 0; i < labels.Count; i++)
+            {
+                var range = brackets[owner[i]];
                 marks.Add(new GraphMark { Label = GameText.Speech(labels[i].Key), X0 = range.Key, X1 = range.Value });
             }
             return marks;

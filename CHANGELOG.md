@@ -4,6 +4,7 @@
 
 - Fixed a bug in one of the later defense levels with mislabeling graph signatures.
 - First attempt at cutting down on verbosity.
+- Bonders now speak priority if the option to show them is turned on.
 
 ## V0.1.1
 

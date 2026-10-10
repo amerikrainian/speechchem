@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.1.2
+
+- Fixed a bug in one of the later defense levels with mislabeling graph signatures.
+- First attempt at cutting down on verbosity.
+
 ## V0.1.1
 
 - We now allow you to switch to a different reactor with ctrl+tab/ctrl+shift+tab, or directly to reactor with that number with ctrl+corresponding digit.

@@ -535,6 +535,10 @@ discharge gas (Xe); the panel draws only the first two, so only α and β are re
   lands on after crossing it adds "crossed quantum junction" (arrows, Home/End, jumps). Carrying an
   atom across stops the run with the game's own reaction error ("Atoms may only be teleported across
   the quantum junction …", marked at the last cell before it) — verified live on QT-1 2026-09-27.
+  BONDER PRIORITY: with Settings' "Show Bonder Priority" on (Class210.bool_3) a bonder reads with
+  the number the game draws on it, "Bonder 2" (`ReactorText.BonderPriority`: 1 + the Class668s
+  before it in member order, Class668.vmethod_3's count) — everywhere FeatureLabel names it;
+  verified live 2026-10-10.
   C reads coordinates. Ctrl+arrows skip cells that read the same as the current one (UI/GridSkip:
   contents without coordinates, plus the region — a zone boundary stops a skip, user rule 2026-10-05; land on the first that differs, else the edge — user request; Up/Down
   through the cells' OnRegionJump, Left/Right = screen.reactor.skip.*, also on the pipeline map). Shift+Backspace = the cell's details (`CellDetailsOf`), most useful first:

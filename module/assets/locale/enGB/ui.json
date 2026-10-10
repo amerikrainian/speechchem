@@ -42,6 +42,7 @@
   "reactor.waldo.sync": "waiting to synchronize",
   "reactor.waldo.facing": "{waldo} {dir}",
   "reactor.hardware": "hardware",
+  "reactor.bonder.priority": "{name} {n}",
   "reactor.waldo.wall": "at the wall",
   "reactor.cat": "{name}, {n}",
   "reactor.cat.inputs": "Inputs",

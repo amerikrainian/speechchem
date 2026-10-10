@@ -105,6 +105,13 @@ namespace SpeechChem.Game
         public static string FeatureLabel(ReactorFeature f)
         {
             if (f == null) return null;
+            string label = BaseFeatureLabel(f);
+            int? priority = BonderPriority(f);
+            return priority.HasValue ? Loc.T("reactor.bonder.priority", new { name = label, n = priority.Value }) : label;
+        }
+
+        private static string BaseFeatureLabel(ReactorFeature f)
+        {
             var tip = Patches.TooltipCapture.Of(f.class713_0);
             if (tip != null && !string.IsNullOrEmpty(tip.Title)) return tip.Title;
             try
@@ -115,6 +122,26 @@ namespace SpeechChem.Game
             }
             catch { }
             return Loc.T("reactor.hardware");
+        }
+
+        /// <summary>The number the game draws on a bonder while the Settings dialog's "Show Bonder
+        /// Priority" is on (Class210.bool_3), else null: 1 + the bonders before it in the reactor's
+        /// member order (Class668.vmethod_3, which counts the bond-only / unbond-only kinds too).</summary>
+        public static int? BonderPriority(ReactorFeature f)
+        {
+            try
+            {
+                if (!(f is Class668) || f.reactor_0 == null) return null;
+                if (!Class184.smethod_3().class210_0.bool_3) return null;
+                int n = 1;
+                foreach (ReactorMember m in f.reactor_0.method_0())
+                {
+                    if (m == f) return n;
+                    if (m is Class668) n++;
+                }
+            }
+            catch { }
+            return null;
         }
 
         /// <summary>The bottom info box for an atom (Class712.method_0): name, atomic number and

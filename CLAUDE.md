@@ -1060,7 +1060,7 @@ method_10): "sensed Nickel, down" on a match — also when already heading that 
 the waldo alone can't show — else "sensed Carbon" / "sensed nothing", the atom the sensor saw;
 verified live 2026-09-27 on a `custom` test puzzle, all three cases; FLIP-FLOP (ToggleInstruction,
 on custom research palettes: vmethod_7 branches when bool_3 is set and clears it, else sets it —
-the run resets it): "flip flop, heading down" / bare "flip flop", and during a run the cell
+the run resets it): "flip down" (triggered) / "flip on" (set, heading unchanged so unsaid; user rule 2026-10-11; the grid label is "flip down" too), and during a run the cell
 reads "on" (next pass branches) / "off" (the game marks the cell while off); verified live;
 FUSION (Class662 fires every Class672: projectile atom on the laser's left cell, target on the
 right; both present and atomic numbers summing to 109 or less → projectile removed, target becomes

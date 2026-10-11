@@ -403,11 +403,13 @@ namespace SpeechChem.Patches
             {
                 // ToggleInstruction.vmethod_7 alternates: with bool_3 set it branches and clears it,
                 // otherwise it only sets it — so after the step a clear bool_3 means it branched.
+                // Said as what changed (user rule 2026-10-11): "flip on" (set; the heading is
+                // unchanged, so not said) or "flip down" (triggered: the branch; off goes unsaid).
                 redirected = true;
                 var e = WaldoEvent(w, flip.bool_3 ? "waldo.flipflop.pass" : "waldo.flipflop.branch");
                 if (e.Muted) return e;
                 if (flip.bool_3) return e.Part("action", Loc.T("run.flipflop.pass"));
-                return e.Part("action", Loc.T("run.flipflop.pass"), ",").Part("heading", HeadingText(w));
+                return e.Part("action", Loc.T("run.flipflop.branch")).Part("heading", HeadingText(w));
             }
             if (turned && i.vmethod_5() != Enum153.None)
             {

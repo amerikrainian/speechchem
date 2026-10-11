@@ -362,6 +362,9 @@ namespace SpeechChem.Screens.Pipeline
             string text = at.HasValue ? name + ", " + PipelineText.Cell(at.Value) : name;
             string meter = DefenseText.Meter(d); // a building's run meter ("Pressure 12 of 35")
             if (meter != null) text += ", " + meter;
+            // A callout on the building itself (the laser's crystal to assemble), while stopped.
+            if (d.struct116_0.bool_0 && SpeechChem.Screens.Reactor.ReactorEditorScreen.CalloutText(d.struct116_0.method_0()) != null)
+                text += ", " + SpeechChem.Screens.Reactor.ReactorEditorScreen.AnnotationText(d.struct116_0.method_0());
             if ((int)Class258.smethod_16() != 0 && d is ReactorDraggable rd && rd.class77_0?.reactor_0 != null)
             {
                 var waldos = rd.class77_0.reactor_0.dictionary_2;

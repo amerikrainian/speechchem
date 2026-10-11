@@ -99,6 +99,8 @@ namespace SpeechChem.Patches
                     prefix: new HarmonyMethod(self, nameof(BeforeBaseDamage)), postfix: new HarmonyMethod(self, nameof(AfterBaseDamage)));
                 harmony.Patch(Expr.MethodOf(() => default(Class710).method_7(default(Enum111))),
                     postfix: new HarmonyMethod(self, nameof(AfterToggle)));
+                harmony.Patch(Expr.OverrideOf(typeof(Class636), Expr.MethodOf(() => default(Draggable).vmethod_11())),
+                    prefix: new HarmonyMethod(self, nameof(BeforeLaser)), finalizer: new HarmonyMethod(self, nameof(AfterLaser)));
                 Log.Info("[patch] defense capture armed (" + buildings + " special buildings, " + enemies + " enemies)");
             }
             catch (Exception ex) { Log.Error("[patch] defense capture failed to apply", ex); }
@@ -238,6 +240,61 @@ namespace SpeechChem.Patches
                 }
             }
             catch (Exception ex) { Log.Error("[defense] building event effect", ex); }
+            return __exception;
+        }
+
+        /// <summary>The VGM laser reactor (Class636, a reactor, not a Class598 — so not a building
+        /// event): its per-cycle update takes the discharge gas once the cooldown (int_2) is over,
+        /// destroys what lies in the gain medium area and fires only when the crystal was among it
+        /// (bool_6, the beam the game draws). A shot is a weapon event: "VGM Laser Reactor 1 fired",
+        /// then its effect on the enemy ("hit" / "missed") — the spider's damage happens inside
+        /// (the level's handler, Ktrechtasach.method_13), held back like a building event's.</summary>
+        private static void BeforeLaser(Class636 __instance, out EnemySnapshot __state)
+        {
+            __state = default(EnemySnapshot);
+            try
+            {
+                if (__instance.int_2 > 0) return; // cooling down: takes nothing this cycle
+                var enemy = DefenseText.Enemy(Level);
+                __state = new EnemySnapshot
+                {
+                    Enemy = enemy,
+                    Parts = DefenseText.Intact(DefenseText.PartFlags(enemy)),
+                    Health = enemy?.float_0 ?? 0f,
+                    Weapon = true,
+                };
+                _inEvent++;
+            }
+            catch (Exception ex) { Log.Error("[defense] laser", ex); }
+        }
+
+        private static Exception AfterLaser(Class636 __instance, Exception __exception, EnemySnapshot __state)
+        {
+            try
+            {
+                if (!__state.Weapon) return __exception;
+                if (_inEvent > 0) _inEvent--;
+                if (__instance.int_2 > 0 && __instance.bool_6)
+                {
+                    Narrator.Emit(new NarrationEvent("defense.event")
+                        .Part("building", PipelineText.Name(__instance.pipeline_0, __instance))
+                        .Part("action", Loc.T("defense.act.fired")));
+                    var enemy = __state.Enemy;
+                    if (enemy != null)
+                    {
+                        if (DefenseText.Intact(DefenseText.PartFlags(enemy)) < __state.Parts) Narrator.Emit(PartLost(enemy));
+                        else if (enemy.float_0 < __state.Health) Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                        else Narrator.Emit(Effect(null, "defense.miss"));
+                        RememberParts(enemy);
+                    }
+                }
+                if (_pendingDestroyed != null && _inEvent == 0)
+                {
+                    Narrator.Emit(_pendingDestroyed);
+                    _pendingDestroyed = null;
+                }
+            }
+            catch (Exception ex) { Log.Error("[defense] laser shot", ex); }
             return __exception;
         }
 

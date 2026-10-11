@@ -343,6 +343,12 @@ namespace SpeechChem.Screens.Reactor
             }
             else
             {
+                var gain = GainMedium();
+                if (gain != null)
+                {
+                    if (index == 0) PushChild(new MoleculeViewerScreen("reactor.mol.gain.view", gain, null));
+                    return;
+                }
                 if (!rd.class485_1.ContainsKey(index)) return;
                 var a = PanelAnnotation(false, index);
                 if (OutputDisabled(index) || !AnyMolecule(a)) { Speech.Tts.Speak(OutputLine(index), interrupt: true); return; }
@@ -391,6 +397,8 @@ namespace SpeechChem.Screens.Reactor
 
         private static string OutputLine(int index)
         {
+            var gain = GainMedium();
+            if (gain != null) return index == 0 ? Loc.T("panel.gain") + ": " + MoleculeText.NameAndFormula(gain) : null;
             var rd = Editor?.reactorDraggable_0;
             if (rd == null || !rd.class485_1.ContainsKey(index)) return null;
             string zone = Loc.T(index == 0 ? "panel.psi" : "panel.omega");
@@ -438,10 +446,34 @@ namespace SpeechChem.Screens.Reactor
                     }
                     if (hints.Count > 0) names = (string.IsNullOrEmpty(names) ? "" : names + ", ") + string.Join(" ", hints.ToArray());
                 }
+                string callout = CalloutText(a);
+                if (callout != null) names = string.IsNullOrEmpty(names) ? callout : names + ", " + callout;
                 if (!string.IsNullOrEmpty(names)) return names;
             }
             return Loc.T("reactor.mol.none");
         }
+
+        /// <summary>A defense callout's own sentence (Class563, its text widgets Class707.string_0:
+        /// the laser's "An atom of Xenon gas will trigger the laser." on its discharge input, "This
+        /// crystal must be assembled inside the laser." on the laser itself), read where the game
+        /// draws it: on the pipeline, while stopped, where the level made it visible (bool_1).</summary>
+        internal static string CalloutText(Annotation a)
+        {
+            if (!(a is Class563 c) || !c.bool_1 || (int)Class258.smethod_16() != 0) return null;
+            var texts = new List<string>();
+            foreach (var t in c.linkedList_1)
+            {
+                string s = GameText.Speech(t?.string_0);
+                if (string.IsNullOrEmpty(s)) continue;
+                texts.Add(System.Text.RegularExpressions.Regex.Replace(s, " {2,}", " "));
+            }
+            return texts.Count == 0 ? null : string.Join(" ", texts.ToArray());
+        }
+
+        /// <summary>The laser reactor's gain medium (Class636.molecule_0: the crystal to assemble in
+        /// rows 5-8), which its panel draws where other reactors draw their outputs
+        /// (Class80.vmethod_8) — so Alt+P reads it and Alt+Shift+P opens it. Null elsewhere.</summary>
+        private static Molecule GainMedium() => (Editor is Class80 ? Editor.reactorDraggable_0 as Class636 : null)?.molecule_0;
 
         // ---- tutorial: the game shows the FIRST scripted step the reactor doesn't satisfy yet
         // (Class77.method_10 over Class424.smethod_2(): a step is met while the expected piece sits

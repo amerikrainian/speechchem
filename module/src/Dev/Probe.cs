@@ -36,6 +36,8 @@ namespace SpeechChem.Dev
     ///   pipemap            the open pipeline as text (0-based cells): '#' blocked, a letter per
     ///                      component body, '+' pipe, '*' crossing, '.' free; then each component's
     ///                      origin, ports, and every pipe's end and link
+    ///   prog …             read / write a pipeline reactor's whole program, move its hardware,
+    ///                      run / pause / stop the clock (Dev/ReactorProgram)
     ///   runlog [n]         the last n (default 40) cycle groups of the run log, as logged
     ///   blast &lt;x&gt;          defense level 1 (Class144): the Oxygen Tank at map column x
     ///                      (0-based: 12, 18, 24) raises its blast event (method_15) without
@@ -74,6 +76,7 @@ namespace SpeechChem.Dev
                 case "menugroups": return MenuGroups();
                 case "custom": return CustomPuzzle.Run(argument);
                 case "pipemap": return PipeMap();
+                case "prog": return ReactorProgram.Run(argument);
                 case "focus": return Focus(argument);
                 case "runlog": return RunLog(argument);
                 case "logstress": return LogStress.Run(argument);

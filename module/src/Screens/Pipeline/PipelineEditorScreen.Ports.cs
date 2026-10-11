@@ -73,10 +73,11 @@ namespace SpeechChem.Screens.Pipeline
             => ControlId.Structural("pipeline.port." + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(d)
                 + (output ? ".out." : ".in.") + index);
 
-        /// <summary>"alpha input", "input 2", "input".</summary>
+        /// <summary>"alpha input", "input 2", "input"; the laser reactor's third input (Class636,
+        /// the Xe that fires it) is its "discharge gas input".</summary>
         internal static string InputName(Draggable d, int index)
         {
-            if (d is ReactorDraggable) return Loc.T(index == 0 ? "zone.alpha" : "zone.beta");
+            if (d is ReactorDraggable) return Loc.T(index == 0 ? "zone.alpha" : index == 1 ? "zone.beta" : "zone.discharge");
             return d.class485_0.Count > 1 ? Loc.T("pipeline.input.n", new { n = index + 1 }) : Loc.T("pipeline.input");
         }
 

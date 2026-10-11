@@ -151,7 +151,9 @@ namespace SpeechChem.Screens.Reactor
         /// <summary>The region a cell lies in for crossing announcements: its zone, or "chamber" (a
         /// mod name — the game draws the middle unlabelled) outside every zone.</summary>
         internal static string RegionAt(ReactorModel reactor, int x, int y)
-            => ZoneAt(reactor, x, y) ?? Loc.T("zone.reaction");
+            => ZoneAt(reactor, x, y) ?? (reactor != null && (int)reactor.genum0_0 == 4 && y >= 4
+                ? Loc.T("zone.gain") // the laser's rows 5-8 (Class636.vmethod_11's rectangle 0, 4, 10, 4)
+                : Loc.T("zone.reaction"));
 
         /// <summary>Which zone a cell lies in: an input (0 = α, 1 = β) or an output (0 = ψ, 1 = ω) —
         /// the same indices as the side panels' ports. False outside every zone.</summary>

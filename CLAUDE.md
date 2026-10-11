@@ -186,6 +186,11 @@ open, stopped reactor for the read, then removed and forgotten),
 component's ports, pipe ends and links), `focus <stop> <id>` (focus a node by structural id, e.g.
 `focus pipeline.map pipeline.cell.15.11`; with `key` it drives the pipeline editor's cut / paste /
 menu / drawing exactly as the keys do — how a layout was rebuilt 2026-10-04),
+`prog <n>` (Dev/ReactorProgram: pipeline reactor n's whole program, one line per non-empty cell, 1-based;
+`prog <n> batch` + one line each of `set x y r|b spec` (start:DIR moves the START, arrow:DIR, in:a|b,
+out:p|w, grab, drop, gd, bond+, bond-, cw, ccw, sync, sense:DIR:Symbol, none, noarrow), `hw x y tx ty`
+(move hardware), `clear [r|b]` — one undo step, stopped only; `prog run slow|medium|fast|warp`,
+`prog pause|stop|status` drive the clock — how the mining-5 Cementite solution was written 2026-10-11),
 `crash <n>` (a real Reaction Error in pipeline reactor n during a run, §17), `runlog [n]` (the last n cycle groups of the run log as text), `logstress fill <n> [reactors] | burst <per frame> <frames> [reactors] | frames <n> | report | clear | mem | mode normal|mute|bypass` (Dev/LogStress: synthetic waldo events through the real Narrator, never spoken; frame / mod-tick times, GC counts, allocation, memory held; `clear` also empties older module generations' logs, which hot reload never frees), `blast <x>` (first defense level only,
 during a run: the Oxygen Tank at map column x — 12, 18, 24 — raises its blast event (`method_15`)
 without being filled, so the level's handler hits or misses the robot exactly as a real blast; destroying all 3 motors starts the 700-cycle win timer, so STOP
@@ -516,8 +521,14 @@ VARIANTS VERIFIED LIVE (2026-09-27): standard layout 0 (campaign research), the 
 (QT-1: tunnels, junction), the LARGE OUTPUT layout 3 (Class78, custom `has-large-output`: ψ is
 columns 7-10 on all 8 rows, no ω line, the tall output opens in the viewer). NOT verified: assembly
 (2) / disassembly (1) — production only — and the laser reactor (4) — defense only.
-LASER REACTOR (Class80, from the decompile, UNTESTED): its draggable has a third input port, the
-discharge gas (Xe); the panel draws only the first two, so only α and β are read there. The gain-medium target molecule the panel draws (Class80.vmethod_8) is not read yet.
+LASER REACTOR (Class80 editor, Class636 draggable) — verified live 2026-10-11 on the mining boss
+(Class149): α input top-left, β input TOP-RIGHT (cols 7-10, rows 1-4), no outputs; rows 5-8 read
+"gain medium area" (the rectangle Class636.vmethod_11 clears and fires from; molecules must lie WHOLLY
+inside it — a crystal at rows 4-6 is safe from a shot). The third input is the discharge gas (Xe):
+the pipeline names it "discharge gas input" (it used to say "beta input"); the panel draws only α and
+β. The panel's gain-medium target (Class80.vmethod_8, Class636.molecule_0) is Alt+P ("gain medium:
+Ruby Crystal, Al / O / Cr"), Alt+Shift+P opens it. The laser takes Xe on its own every time its
+250-cycle cooldown (int_2) ends — pipe the tank straight in and it fires on a fixed rhythm.
 - GRID: a cell reads bare "x, y" (1-based) FIRST, the region on the first readout or when crossed (a
   zone, or "chamber" — the mod's name for the unlabelled middle — so LEAVING an input / output
   is announced too; user request 2026-10-04; `UI/ZoneCrossing`, shared with the crash snapshot), then
@@ -996,7 +1007,7 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   damage), thruster left / right); Bodies — which drawn rectangle is each enemy's body (some draw
   attacks, water or a shadow too; one is drawn by its LEVEL, not itself; one is absent until it
   arrives = "off the map"); EnemyStates — visible states (an eye's opening and colour, a shield
-  down, a mouth opening / firing, walking, phasing / stunned, damage stages, lightning — each a
+  down, a mouth opening / firing (the spider's walking flag is NOT read — user rule 2026-10-11: its start / stop lines were noise, the moves say it), phasing / stunned, damage stages, lightning — each a
   LIST of components; the map / Enemy stop read them all, but the run event says ONLY WHAT
   CHANGED (Narration/StateChange, user rule 2026-10-09: "badly damaged, shield down" → "shield
   down"): the components that appeared, else "{enemy}: normal" when all cleared (user report
@@ -1020,7 +1031,16 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   their planets "Locked" until it is reopened (the level progress cache, Levels.dictionary_7, is
   refilled by the profile's worker after level select was built) — reopen it; the save is untouched.
   2026-10-04: all 7 enemy levels + the no-enemy one audited live, no errors.
-- KNOWN LIMITS: a weapon hit that does 0 damage (the accelerator below 15 voltage) reads "missed"
+- THE VGM LASER (Class636 is a reactor, not a Class598): a postfix pair on its vmethod_11 reports
+  a crystal shot (bool_6) as a weapon event, "VGM Laser Reactor 1 fired", then "Yarugolek hit" /
+  "missed" (the spider's damage, inside the level's handler, held back like a building event's).
+  Xe consumed with no crystal = nothing (the game draws no beam). The game's CALLOUT sentences
+  (Class563 / Class564 text widgets, Class707.string_0) are read where it draws them, while
+  stopped: "An atom of Xenon gas will trigger the laser." in the discharge input's table cell,
+  "This crystal must be assembled inside the laser." after the laser's own name (its
+  Draggable.struct116_0). Verified live 2026-10-11 (a hit and a deliberate miss).
+- KNOWN LIMITS: a waldo polling in a tight loop (a sensor or control wait) logs every pass — the
+  boss solution's laser waits on "sense O" and logs ~2 lines a cycle; a weapon hit that does 0 damage (the accelerator below 15 voltage) reads "missed"
   (hit = a health or part drop); projectiles and hazards (asteroids, the player's ship, missiles in
   flight, the spider's shots) are not tracked — per-level mechanics, to read when the player gets
   there; noisy lines measured live: a walking enemy's span changes at every cell edge, and one

@@ -157,7 +157,8 @@ namespace SpeechChem.Game
                     var s = (Ktrechtasach)e;
                     var parts = new List<string>();
                     if (s.method_1()) return parts;
-                    if (s.bool_0) parts.Add(Loc.T("defense.state.walking"));
+                    // No "walking" (bool_0): its starts and stops were pure noise in the run log, and
+                    // the moves themselves say it (user rule 2026-10-11).
                     parts.Add(Loc.T("defense.mouth." + Math.Max(0, Math.Min(2, s.int_3))));
                     return parts;
                 } },

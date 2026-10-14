@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.1.3
+
+- Shorten the flip-flop instruction wording.
+
 ## V0.1.2
 
 - Fixed a bug in one of the later defense levels with mislabeling graph signatures.

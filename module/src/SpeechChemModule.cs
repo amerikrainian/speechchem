@@ -45,6 +45,7 @@ namespace SpeechChem
             FrameLoop.Register("input", Input.InputManager.Tick);
             FrameLoop.Register("loc", LocalizationManager.Tick);
             FrameLoop.Register("screens", Screens.ScreenManager.Tick);
+            FrameLoop.Register("tutorial", Tutorial.Tutorial.Tick); // after the screens: steps are met by this frame's keys
             FrameLoop.Register("click", Game.SyntheticClick.Tick);
             FrameLoop.Register("step", Patches.StepControl.Tick); // the step's safety net
             FrameLoop.Register("runlevel", Patches.RunCapture.SyncLevel); // a new level starts an empty run log

@@ -25,7 +25,7 @@ namespace SpeechChem.Screens.Reactor
     /// opens their molecule, Ctrl+Shift+P / O edit the output notes (Panels.cs).
     /// Screen keys: C coordinates, Shift+R / Shift+B red / blue waldo (Ctrl+Shift also jumps
     /// the cursor there, Ctrl alone traces its path),
-    /// Ctrl+T repeats the tutorial step, L switches the active layer (the game's Tab, which is
+    /// L switches the active layer (the game's Tab, which is
     /// navigation here), Shift+Backspace details. The game keeps 1-4, ~ and Space (run controls),
     /// Ctrl+Z / Ctrl+Y and Escape (native exit / stop / deselect).
     /// </summary>
@@ -79,7 +79,6 @@ namespace SpeechChem.Screens.Reactor
             yield return new ElementAction("screen.reactor.item.prev", () => StepItem(-1));
             yield return new ElementAction("screen.reactor.item.next", () => StepItem(1));
             foreach (var a in LevelStatus.Actions()) yield return a; // Ctrl+S score, Ctrl+G progress, Ctrl+Q quota
-            yield return new ElementAction("screen.reactor.tutorial", RepeatTutorial);
             yield return new ElementAction("screen.reactor.layer", ToggleActiveLayer);
             yield return new ElementAction("screen.reactor.molecule", OpenZoneMolecules);
             yield return new ElementAction("screen.reactor.port.alpha", () => SayPort(InputLine(0)));
@@ -165,7 +164,7 @@ namespace SpeechChem.Screens.Reactor
             else BuildPalette(b, editor);
             BuildLayers(b, editor);
             ToolbarSection.Build(b, ToolsStop, "reactor.tools");
-            BuildTutorial(b, editor);
+            BuildTutorial(b);
             BuildLog(b);
         }
 
@@ -173,7 +172,7 @@ namespace SpeechChem.Screens.Reactor
 
         /// <summary>Start the trackers over when a different reactor is open. Called from both
         /// OnUpdate and Build (OnUpdate runs first in a frame), so a reset can never land between
-        /// the tutorial watch and the next frame's rebuild.</summary>
+        /// the cursor tracking and the next frame's rebuild.</summary>
         private void EnsureReactor(ReactorModel reactor)
         {
             if (!ReferenceEquals(reactor, _reactor)) ResetFor(reactor);
@@ -187,7 +186,6 @@ namespace SpeechChem.Screens.Reactor
             _cursorX = 0;
             _cursorY = 0;
             _zones.Reset();
-            _lastStep = null;
             _armedKey = -1;
             _pendingJump = null;
             _jumps.Clear();
@@ -215,7 +213,6 @@ namespace SpeechChem.Screens.Reactor
             WatchCrash(editor); // the crash overlay (Crash.cs)
             WatchInvalidMolecule(editor);
             TrackCursor();
-            WatchTutorial(editor);
             UpdateRunWatch(editor);
             ApplyPendingJump();
             SpeakLevelStart(editor);

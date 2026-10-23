@@ -27,6 +27,8 @@ namespace SpeechChem.Dev
     ///   type &lt;text&gt;        push the text as one SDL_TEXTINPUT event (the game's real typing path)
     ///   profiles           the profile set as the picker enumerates it (* = current)
     ///   rawkey &lt;scancode&gt;  push a raw SDL key press to the GAME (bypasses the mod's own input)
+    ///   tutorial [reset]   the reactor tutorial's level, active step and done steps; reset forgets
+    ///                      this level's progress for the profile and starts over
     ///   switchprofile      press the main menu's Switch Profile (opens the profile picker)
     ///   tolevelselect      leave the open level through the game's own return-to-level-select
     ///   menugroups         every instruction menu's items by the context menu's parameter row
@@ -129,6 +131,7 @@ namespace SpeechChem.Dev
                 case "blast": return Blast(argument);
                 case "invalid": return Invalid();
                 case "crash": return Crash(argument);
+                case "tutorial": return (argument ?? "").Trim() == "reset" ? Tutorial.Tutorial.Reset() : Tutorial.Tutorial.Status();
                 case "profile": return LiveAudit.Profile(argument);
                 case "openlevel": return LiveAudit.OpenLevel(argument);
                 case "fire": return LiveAudit.Fire(argument);

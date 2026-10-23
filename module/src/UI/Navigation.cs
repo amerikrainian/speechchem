@@ -23,7 +23,12 @@ namespace SpeechChem.UI
         {
             // Global, ahead of the navigator: a text field is exactly where the echo toggle is wanted.
             if (action.Key == "ui.echo") { TypingEcho.Toggle(); return true; }
-            return Active != null && Active.OnInputJustPressed(action);
+            // The tutorial's repeat key works in the reactor's children too (the molecule viewer, the
+            // path trace), which don't know it; with no step it goes on to the screen and does nothing.
+            if (action.Key == "screen.reactor.tutorial" && Tutorial.Tutorial.Repeat()) return true;
+            bool handled = Active != null && Active.OnInputJustPressed(action);
+            if (handled) Tutorial.Tutorial.OnAction(action.Key); // steps that ask for a key
+            return handled;
         }
 
         public static void AnnounceCurrent() => Active?.AnnounceCurrent();

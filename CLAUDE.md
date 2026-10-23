@@ -117,8 +117,8 @@ Everything is **x86** (host, module, tests — the module references the 32-bit 
 host must be 32-bit too). BUILD PREREQUISITE: `game/SpaceChem-deob.exe` (run `tools\prepare-game.ps1`).
 A Debug build deploys: `SpeechChem.dll`, `SpeechChem.Module.dll`, `0Harmony.dll`, `Mono.Cecil.dll`,
 `prism.dll` (x86), `SpaceChem.exe.config`, `Mono.CSharp.dll` (dev REPL), `steam_appid.txt`,
-`SpeechChem\namemap.tsv`, `SpeechChem\locale\`, `SpeechChem\manual.html` + `SpeechChem\tutorial.html` (the player's manual — quick start + key
-reference — and the step-by-step walkthrough of the first two levels, from `docs/`). The host dll is file-locked while the game runs; the
+`SpeechChem\namemap.tsv`, `SpeechChem\locale\`, `SpeechChem\manual.html` (the player's manual — quick start + key
+reference, from `docs/`; the walkthrough of the first two levels is the in-game tutorial, §16d). The host dll is file-locked while the game runs; the
 module is not (hot reload). Uninstall = restore `SpaceChem.exe.config.vanilla` over the config.
 Release zip = the same set minus Mono.CSharp. `create-release.ps1 vX.Y.Z` = gh release with the zip,
 the installer exe when built, and the tag's CHANGELOG.md section as notes.
@@ -652,7 +652,7 @@ Ruby Crystal, Al / O / Cr"), Alt+Shift+P opens it. The laser takes Xe on its own
   path trace (`Game/PathTrace`, mirrors Reactor.method_46/47: arrows turn, directed instructions branch,
   START only on its own cell, a branch ends at the wall or a repeated cell+heading) as a list; Enter
   jumps to the line's cell (deferred a frame: closing the list restores focus after the item runs).
-  Ctrl+T repeat tutorial step (bare T = the game's Sync hotkey).
+  Ctrl+T repeat tutorial step (bare T = the game's Sync hotkey; works in the reactor's children too, §16d).
 - CATEGORIES (user request): [ / ] cycle Inputs, Outputs, Hardware, Waldos — only those holding something (UI/CategoryCycle, user rule 2026-10-04; the pipeline's too) ("name,
   count"; no per-colour program
   lists — user: Waldos is enough); , / . cycle items in READING ORDER (fixed by the board, never by the
@@ -1046,6 +1046,48 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   there; noisy lines measured live: a walking enemy's span changes at every cell edge, and one
   level's laser damages the base 1 percent at a time.
 - NOT DONE: undo inside a defense level (untested).
+
+## 16d. Reactor tutorial (`Tutorial/`, `Screens/Reactor/ReactorEditorScreen.Tutorial.cs`) — verified live 2026-10-23
+THE GAME'S TUTORIAL is one static list, `Class424.list_0` of `Class288` (text, ReactorBin cell +
+layer, expected ReactorMember; `bool_0` = text-only, never met), cleared by the Class83 constructor
+and filled by the level's. `Class77.method_10` draws the FIRST step whose piece isn't in place
+(`method_9`: same type, `method_3` / `vmethod_5`): no counter, no other step kinds. Only three levels
+have one: research-example-1 (Class116, 11 steps), research-example-2 (Class120, 22),
+research-tutorial-1 (Class100, 5); the other "tutorial" ids have none.
+THE MOD'S ENGINE (user design 2026-10-23, option A: our own, the game's placement check one condition
+among several): a FrameLoop step "tutorial" after "screens" (the reactor's OnUpdate doesn't run while
+a child — molecule viewer, path trace — is open), only while the game's top is a Class77 and the
+level-start lines are out (`LevelStartSpoken`). A step is LIVE (met while its condition holds: the
+game's placements, so a delete / undo brings it back) or LATCHED (done the first time it is met while
+ACTIVE, for good — user rule: keys pressed and things looked at don't come back; a step must be
+active a frame, its text spoken, before it can latch). Active = first step not done. On a change:
+the old step's After (once per level visit — a re-placed piece doesn't repeat it) when going forward,
+then the new step's Text. Conditions see a TutorialContext: Pressed(action id) since the step became
+active (Navigation.DispatchJustPressed reports every handled action, navigator keys included), Stepped (a step ran), RunState, Focused (the mod's
+deepest screen), Placed(game step). SAVED: `%LOCALAPPDATA%\SpeechChem\tutorial.tsv` (profile, level,
+latched step id; "*" = finished — the level then has no tutorial, even if a placement is undone).
+SCRIPTS (`Tutorial/TutorialScripts.cs`, by GoalTracker.string_0): reuse the game's Class288s for the
+placements (cell, layer, piece) with the mod's text `tut.<level>.<id>` (+ `.after`) in ui.json; key
+names come from the LIVE bindings (`Tutorial.KeyOf`) and the palette letter; a list not shaped as the
+script expects falls back to the game's. Levels without a script read the game's list as live steps
+(`GameStepText`, the old behaviour). Highlighted cell = the active step's Target. Ctrl+T is
+intercepted in `Navigation.DispatchJustPressed` so it works in children.
+research-example-1 (Of Pancakes and Spaceships): welcome + Ctrl+Shift+R → (start, live) → arrow into
+alpha → M → Escape → Alt+P → the 10 placements → Ctrl+R → close it → 0 (latches once the step has
+paused) → a run (1-4) = finished. Verified live 2026-10-23 end to end through the probe's key path
+(delete + re-place, persistence across a reload, the finish), then the reactor and progress restored.
+research-tutorial-1 (Slightly Different) STOPS WHERE THE GAME'S DOES (user rule: no more, no less,
+no spoilers — the game leaves the player after the grab at 3, 6): Ctrl+Shift+B (After: starts move
+by cut / paste) → (start, live) → into beta → M → Escape → Alt+O → a Ctrl+arrow skip → the game's
+input step in three LIVE parts (any input at 3, 7 / a blue one / the blue beta one: R, then
+Alt+Right on Colour, then Alt+Down + Alt+Right or ; / ') → L (live: blue active, or the next blue
+piece placed) → arrow up, arrow right, grab; the grab's After is the game's "finish it yourself"
+plus Ctrl+B / 0 reminders. A finish reached from an earlier step (pieces placed out of order) still
+says the last step's After. GAME FACT found testing: the palette's input / output follow the active
+layer (Class715.method_4: alpha / psi while red is active, beta / omega while blue is), so with blue
+active R places a blue beta input — the placing step has a second wording for that. Verified live
+2026-10-23 in order, with a delete + re-place and an out-of-order finish; level restored.
+Probe `tutorial` = status, `tutorial reset` = forget this level's progress and start over.
 
 ## 17. Run events and the run log (`Patches/RunCapture.cs`, `UI/GroupedLog.cs`, `UI/WindowedLogView.cs`)
 Only events the game has (user rule), worded as what HAPPENED ("grabbed Oxygen", "nothing to drop"):

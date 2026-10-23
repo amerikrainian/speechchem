@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.1.4
+
+- Add a (hopefully better) in-game tutorial for the first 2 levels.
+
 ## V0.1.3
 
 - Shorten the flip-flop instruction wording.

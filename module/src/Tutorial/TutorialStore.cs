@@ -8,15 +8,13 @@ namespace SpeechChem.Tutorial
     /// <summary>
     /// The mod's tutorial progress, per profile and level (user rule 2026-10-23: a step that is not
     /// a placement stays done): %LOCALAPPDATA%\SpeechChem\tutorial.tsv, one line per done step —
-    /// profile, level id, step id; the step id "*" marks the whole tutorial finished, after which
-    /// the level has none (a later edit doesn't bring a step back). Placement steps are never
-    /// stored: they are met while the piece is in place. Every failure is swallowed: without the
+    /// profile, level id, step id. Placement steps are never stored: they are met while the piece
+    /// is in place, so removing it (a delete, the grid's Reset) brings the step back even after the
+    /// tutorial was finished. Every failure is swallowed: without the
     /// file the tutorial starts over.
     /// </summary>
     internal static class TutorialStore
     {
-        public const string Finished = "*";
-
         private static Dictionary<string, HashSet<string>> _all;
 
         private static string FilePath => Path.Combine(
@@ -63,7 +61,7 @@ namespace SpeechChem.Tutorial
             foreach (var line in File.ReadAllLines(FilePath, Encoding.UTF8))
             {
                 var f = line.Split('\t');
-                if (f.Length != 3) continue;
+                if (f.Length != 3 || f[2] == "*") continue; // "*" was a finished marker, dropped 2026-10-23
                 string key = f[0] + "\t" + f[1];
                 if (!_all.TryGetValue(key, out var set)) _all[key] = set = new HashSet<string>();
                 set.Add(f[2]);

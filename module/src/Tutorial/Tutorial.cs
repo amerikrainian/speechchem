@@ -65,14 +65,14 @@ namespace SpeechChem.Tutorial
             _pressed.Clear();
             _ctx.Stepped = false;
             if (next != null) Say(next.Text(_ctx));
-            else if (_scripted)
+            else if (forward && _scripted)
             {
                 // Finished from an earlier step (the last pieces placed out of order): the last
-                // step's After is the tutorial's closing word, so it is still said.
+                // step's After is the tutorial's closing word, so it is still said. A finished
+                // tutorial stays loaded: its placements come back when the pieces go (a delete,
+                // the grid's Reset — user rule 2026-10-23), the latched steps don't.
                 var last = _steps[_steps.Count - 1];
                 if (last.After != null && _afterSaid.Add(last.Id)) Say(last.After(_ctx));
-                TutorialStore.Add(_key, TutorialStore.Finished);
-                _steps = null;
             }
         }
 
@@ -100,7 +100,7 @@ namespace SpeechChem.Tutorial
         /// <summary>For the dev probe: level, active step, done steps.</summary>
         public static string Status()
         {
-            if (_steps == null) return "no tutorial (level " + (GoalTracker.string_0 ?? "none") + (_key != null && TutorialStore.Load(_key).Contains(TutorialStore.Finished) ? ", finished" : "") + ")\n";
+            if (_steps == null) return "no tutorial (level " + (GoalTracker.string_0 ?? "none") + ")\n";
             return "level " + GoalTracker.string_0 + (_scripted ? " (scripted)" : " (game's)") + ", active: " + (_active?.Id ?? "none")
                 + ", done: " + string.Join(" ", new List<string>(_latched).ToArray()) + "\n";
         }
@@ -134,7 +134,6 @@ namespace SpeechChem.Tutorial
                     string profile = Locals.smethod_0()?.string_0;
                     _key = (profile ?? "") + "\t" + id;
                     _latched = TutorialStore.Load(_key);
-                    if (_latched.Contains(TutorialStore.Finished)) return;
                     _steps = script(Class424.list_0);
                     _scripted = _steps != null;
                     if (_steps == null) Log.Error("[tutorial] the game's steps for " + id + " are not what the script expects; using the game's");

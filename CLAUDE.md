@@ -117,11 +117,18 @@ Everything is **x86** (host, module, tests — the module references the 32-bit 
 host must be 32-bit too). BUILD PREREQUISITE: `game/SpaceChem-deob.exe` (run `tools\prepare-game.ps1`).
 A Debug build deploys: `SpeechChem.dll`, `SpeechChem.Module.dll`, `0Harmony.dll`, `Mono.Cecil.dll`,
 `prism.dll` (x86), `SpaceChem.exe.config`, `Mono.CSharp.dll` (dev REPL), `steam_appid.txt`,
-`SpeechChem\namemap.tsv`, `SpeechChem\locale\`, `SpeechChem\manual.html` (the player's manual — quick start + key
-reference, from `docs/`; the walkthrough of the first two levels is the in-game tutorial, §16d). The host dll is file-locked while the game runs; the
+`SpeechChem\namemap.tsv`, `SpeechChem\locale\`. The host dll is file-locked while the game runs; the
 module is not (hot reload). Uninstall = restore `SpaceChem.exe.config.vanilla` over the config.
-Release zip = the same set minus Mono.CSharp. `create-release.ps1 vX.Y.Z` = gh release with the zip,
-the installer exe when built, and the tag's CHANGELOG.md section as notes.
+Release zip = the same set minus Mono.CSharp, plus the rendered manual as `SpeechChemDocs\`.
+`create-release.ps1 vX.Y.Z` = gh release with the zip, the installer exe when built, and the tag's
+CHANGELOG.md section as notes.
+PLAYER DOCS (2026-10-23, starvaders' layout): an mdbook in `docs_src` (`mdbook build docs_src`, mdbook
+0.5.2; `book/` gitignored): Introduction, Quick Start, Key Reference, Change Log (includes
+`CHANGELOG.md` from its line 2). The walkthrough of the first two levels is the in-game tutorial
+(§16d). `build_release.ps1` builds it and ships it as `SpeechChemDocs` (not deployed by Debug
+builds); `.github/workflows/build-docs.yml` (starvaders' verbatim) publishes it to GitHub Pages on a
+push to main touching `docs_src` or `CHANGELOG.md` — the repo's Pages source must be "GitHub
+Actions". Edit the docs only when asked (memory: manual-updates).
 
 **Installer** (`installer/`, Rust + wxWidgets, ported 2026-09-27 from Echopunks, itself from the
 Harkest Dungeon / Non-Visual Calculus installer, MIT — attribution headers on every file):
@@ -1065,7 +1072,10 @@ the old step's After (once per level visit — a re-placed piece doesn't repeat 
 then the new step's Text. Conditions see a TutorialContext: Pressed(action id) since the step became
 active (Navigation.DispatchJustPressed reports every handled action, navigator keys included), Stepped (a step ran), RunState, Focused (the mod's
 deepest screen), Placed(game step). SAVED: `%LOCALAPPDATA%\SpeechChem\tutorial.tsv` (profile, level,
-latched step id; "*" = finished — the level then has no tutorial, even if a placement is undone).
+latched step id). NO FINISHED STATE (user rule 2026-10-23, after a Reset left a finished tutorial
+silent): a finished tutorial stays loaded, silent while every placement is in place; removing pieces
+(a delete, the grid's Reset) brings their steps back, an undo meets them again; latched steps stay
+done. Old files' "*" lines are ignored.
 SCRIPTS (`Tutorial/TutorialScripts.cs`, by GoalTracker.string_0): reuse the game's Class288s for the
 placements (cell, layer, piece) with the mod's text `tut.<level>.<id>` (+ `.after`) in ui.json; key
 names come from the LIVE bindings (`Tutorial.KeyOf`) and the palette letter; a list not shaped as the

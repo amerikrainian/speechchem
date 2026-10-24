@@ -22,7 +22,7 @@ namespace SpeechChem.Dev
     ///   prog &lt;n&gt; clear [r|b]             remove every instruction but START (one or both colours)
     ///   prog &lt;n&gt; set &lt;x&gt; &lt;y&gt; &lt;r|b&gt; &lt;spec&gt;  place; spec: start:DIR (moves the START), arrow:DIR,
     ///                                   in:a|b, out:p|w, grab, drop, gd, bond+, bond-, cw, ccw,
-    ///                                   sync, sense:DIR:Symbol, flip:DIR, ctrl:A-D:DIR, none (empties the instruction
+    ///                                   sync, sense:DIR:Symbol, flip:DIR, fuse, ctrl:A-D:DIR, none (empties the instruction
     ///                                   slot), noarrow (empties the arrow slot)
     ///   prog &lt;n&gt; hw &lt;x&gt; &lt;y&gt; &lt;tx&gt; &lt;ty&gt;      move the hardware whose cell is x,y so its origin is tx,ty
     ///   prog &lt;n&gt; batch                   then one "set"/"hw"/"clear" line per following line
@@ -211,6 +211,7 @@ namespace SpeechChem.Dev
                     case "ccw": instr = new RotateInstruction(r, (Enum141)1); break;
                     case "sync": instr = new Class663(r); break;
                     case "flip": instr = new ToggleInstruction(r, Dir(ps[1])); break;
+                    case "fuse": instr = new Class662(r); break;
                     case "ctrl": instr = new ControlInstruction(r, (Enum111)(char.ToUpperInvariant(ps[1][0]) - 'A'), Dir(ps[2])); break;
                     case "sense":
                     {

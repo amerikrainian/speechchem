@@ -103,6 +103,20 @@ namespace SpeechChem.Dev
             return "fired " + code + " on " + n + "\n";
         }
 
+        /// <summary>"attack timer": the enemy's attack timer fires now (Class310.vmethod_2, which the
+        /// attack capture hooks) — Bha Shogth's timer 1 brings the ship in without waiting 6000
+        /// cycles. PAUSED only; stopping the run resets the enemy.</summary>
+        public static string Attack(string argument)
+        {
+            var enemy = DefenseText.Enemy(DefenseText.Level);
+            if (enemy == null) return "[no enemy]\n";
+            int timer;
+            if (!int.TryParse((argument ?? "").Trim(), out timer) || timer < 0 || timer > 1) return "[usage: attack 0|1]\n";
+            if ((int)Class258.smethod_16() != 2) return "[pause the run first]\n";
+            enemy.vmethod_2(timer);
+            return "attack " + timer + "\n";
+        }
+
         /// <summary>"feed n port": building n takes the molecule its input <c>port</c> accepts, through
         /// the game's own intake (vmethod_23, which the mod's intake capture hooks) — the Hydrogen
         /// Laser's methane turns it, its NF3 charges it. PAUSED only, like fire.</summary>

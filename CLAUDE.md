@@ -1038,7 +1038,9 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   select / delete SCAudit…` (create / delete refuse other names), `openlevel <id>` (level select →
   any level, no unlock check; refuses non-SCAudit profiles), `fire list | fire <n> <code>` (raise a
   building's event; PAUSED only), `feed <n> <port>` (building n takes the molecule its input
-  `port` accepts through its own intake, vmethod_23 — the intake capture sees it; PAUSED only). Never let a run reach a win (scores / Steam achievements): fire
+  `port` accepts through its own intake, vmethod_23 — the intake capture sees it; PAUSED only),
+  `attack 0|1` (the enemy's attack timer fires now, vmethod_2 — Bha Shogth's ship without waiting
+  6000 cycles; PAUSED only; stopping the run resets it). Never let a run reach a win (scores / Steam achievements): fire
   while paused, stop at once. After switching back to the player's profile, level select may show
   their planets "Locked" until it is reopened (the level progress cache, Levels.dictionary_7, is
   refilled by the profile's worker after level select was built) — reopen it; the save is untouched.
@@ -1056,6 +1058,9 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   keeps the rows. Events (kind defense.hazard): "Asteroid 3 appeared, row 21, bearing 29 degrees
   down" (its drawing first on the map), and from a prefix on vmethod_0 (which removes them):
   "Asteroid 2 destroyed", "Asteroid 1 hit the station" (before "Control Center 80 percent").
+  ATTACKS (DefenseText.Attacks, by enemy type + timer index of vmethod_2; default "attacks"):
+  Bha Shogth's timer 0 = "Bha Shogth launched Asteroid 3" (named at once), timer 1 (once, cycle
+  6000) = "Bha Shogth approaching" (the ship itself, off-screen right until it drifts in).
   Verified live 2026-10-24 with `feed` (run stopped after).
 - THE VGM LASER (Class636 is a reactor, not a Class598): a postfix pair on its vmethod_11 reports
   a crystal shot (bool_6) as a weapon event, "VGM Laser Reactor 1 fired", then "Yarugolek hit" /

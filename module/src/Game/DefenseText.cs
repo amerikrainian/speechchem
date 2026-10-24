@@ -199,6 +199,30 @@ namespace SpeechChem.Game
             return Loc.T(a > 0 ? "defense.angle.down" : "defense.angle.up", new { degrees = n });
         }
 
+        /// <summary>What an enemy's attack timer (Class310.vmethod_2, by timer index) does, when it is
+        /// not just "attacks": Bha Shogth's timer 0 launches an asteroid (Game/DefenseHazards, named
+        /// at once), timer 1 (once, at cycle 6000) brings the ship itself in from off-screen right.</summary>
+        private static readonly Dictionary<KeyValuePair<Type, int>, Func<Class310, string>> Attacks = new Dictionary<KeyValuePair<Type, int>, Func<Class310, string>>
+        {
+            { Code(typeof(Class314), 0), e =>
+                {
+                    var newest = DefenseHazards.Newest(e);
+                    return newest == null ? null : Loc.T("defense.act.launched.named", new { name = DefenseHazards.Name(newest.Value.Key) });
+                } },
+            { Code(typeof(Class314), 1), e => Loc.T("defense.act.approaching") },
+        };
+
+        /// <summary>"launched Asteroid 3", "approaching", else "attacks".</summary>
+        public static string AttackAction(Class310 enemy, int timer)
+        {
+            Func<Class310, string> f;
+            if (enemy != null && Attacks.TryGetValue(Code(enemy.GetType(), timer), out f))
+            {
+                try { string s = f(enemy); if (s != null) return s; } catch { }
+            }
+            return Loc.T("defense.act.attacks");
+        }
+
         /// <summary>Table coverage, for the dev audit.</summary>
         internal static bool HasParts(Type enemy) => Parts.ContainsKey(enemy);
         internal static bool HasEvent(Type building, int code) => Events.ContainsKey(Code(building, code));

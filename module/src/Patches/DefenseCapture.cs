@@ -441,9 +441,11 @@ namespace SpeechChem.Patches
             catch (Exception ex) { Log.Error("[defense] asteroids", ex); }
         }
 
-        private static void AfterAttack()
+        /// <summary>"{enemy} attacks", or what the attack does when DefenseText's Attacks table knows
+        /// the timer ("Bha Shogth launched Asteroid 3", "Bha Shogth approaching").</summary>
+        private static void AfterAttack(Class310 __instance, int __0)
         {
-            try { Narrator.Emit(new NarrationEvent("defense.attack").Part("enemy", EnemyName).Part("action", Loc.T("defense.act.attacks"))); }
+            try { Narrator.Emit(new NarrationEvent("defense.attack").Part("enemy", EnemyName).Part("action", DefenseText.AttackAction(__instance, __0))); }
             catch { }
         }
 

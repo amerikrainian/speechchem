@@ -136,6 +136,7 @@ namespace SpeechChem.Dev
                 case "openlevel": return LiveAudit.OpenLevel(argument);
                 case "fire": return LiveAudit.Fire(argument);
                 case "feed": return LiveAudit.Feed(argument);
+                case "attack": return LiveAudit.Attack(argument);
                 case "defense":
                     switch ((argument ?? "").Trim())
                     {

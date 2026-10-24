@@ -537,6 +537,8 @@
   "defense.bearing": "bearing {angle}",
   "defense.cells": "{n} cells",
   "defense.act.appeared": "appeared",
+  "defense.act.launched.named": "launched {name}",
+  "defense.act.approaching": "approaching",
   "defense.act.hitstation": "hit the station",
   "defense.angle.level": "level",
   "defense.angle.up": "{degrees} degrees up",

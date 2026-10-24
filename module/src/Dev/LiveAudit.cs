@@ -102,6 +102,25 @@ namespace SpeechChem.Dev
             buildings[n].method_15(code, null);
             return "fired " + code + " on " + n + "\n";
         }
+
+        /// <summary>"feed n port": building n takes the molecule its input <c>port</c> accepts, through
+        /// the game's own intake (vmethod_23, which the mod's intake capture hooks) — the Hydrogen
+        /// Laser's methane turns it, its NF3 charges it. PAUSED only, like fire.</summary>
+        public static string Feed(string argument)
+        {
+            var level = DefenseText.Level;
+            if (level == null) return "[no defense level open]\n";
+            var buildings = PipelineText.Components(level.pipeline_0).Select(kv => kv.Key).OfType<Class598>().ToList();
+            var parts = (argument ?? "").Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            int n, port;
+            if (parts.Length < 2 || !int.TryParse(parts[0], out n) || !int.TryParse(parts[1], out port) || n < 0 || n >= buildings.Count)
+                return "[usage: feed <n> <port> (n from fire list)]\n";
+            if ((int)Class258.smethod_16() != 2) return "[pause the run first]\n";
+            var accepted = buildings[n].list_0.FirstOrDefault(a => a.int_0 == port);
+            if (accepted == null) return "[building " + n + " has no input " + port + "]\n";
+            buildings[n].vmethod_23(accepted.molecule_0, port);
+            return "fed " + accepted.molecule_0.string_0 + " to " + n + " input " + port + ": " + (DefenseText.Meter(buildings[n]) ?? "no meter") + "\n";
+        }
     }
 }
 #endif

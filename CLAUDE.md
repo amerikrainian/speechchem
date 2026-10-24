@@ -1021,7 +1021,11 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   2026-10-06), else "lightning ended"; the eye and its colour are one component); Parts —
   only the robot. Bodies / states read the enemy's OWN level (Class310.defenseLevelEditor_0).
   Multi-bar meters read every bar ("H2 0 percent, O2 0 percent, Pu 0 percent"; formula markup
-  stripped with MoleculeText.Clean).
+  stripped with MoleculeText.Clean). EXTRAS (DefenseText.Extras, after the meter): a sprite-only
+  building state read with it — the Hydrogen Laser's turret (Class600.int_3 0-4, method_18 =
+  (int_3 - 2) x 22.5 degrees, positive = DOWN; the CH4 "clockwise" input adds one, clamped):
+  "Charge 25 percent, aim 22.5 degrees down" — in its cells and every intake line (verified live
+  2026-10-24 with the `feed` probe, clamping at 45 included).
 - AUDIT TOOLS (DEBUG; report names enemies — keep them out of anything the player hears / reads):
   `defense audit` builds every DefenseLevelEditor subclass IN MEMORY (Activator, never
   Levels.smethod_14 — no save access), saving and restoring the clock's static delegates
@@ -1033,7 +1037,8 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   level as the mod reads it. LIVE AUDIT on a throwaway profile (Dev/LiveAudit): `profile create /
   select / delete SCAudit…` (create / delete refuse other names), `openlevel <id>` (level select →
   any level, no unlock check; refuses non-SCAudit profiles), `fire list | fire <n> <code>` (raise a
-  building's event; PAUSED only). Never let a run reach a win (scores / Steam achievements): fire
+  building's event; PAUSED only), `feed <n> <port>` (building n takes the molecule its input
+  `port` accepts through its own intake, vmethod_23 — the intake capture sees it; PAUSED only). Never let a run reach a win (scores / Steam achievements): fire
   while paused, stop at once. After switching back to the player's profile, level select may show
   their planets "Locked" until it is reopened (the level progress cache, Levels.dictionary_7, is
   refilled by the profile's worker after level select was built) — reopen it; the save is untouched.

@@ -181,6 +181,24 @@ namespace SpeechChem.Game
             { typeof(Class605), d => ((Class605)d).bool_3 ? Loc.T("defense.exploded") : null },
         };
 
+        /// <summary>A building state the game draws as a sprite while its meter shows, read after the
+        /// meter: the Hydrogen Laser's turret (Class600.int_3 0-4, method_18 = (int_3 - 2) x 22.5
+        /// degrees, positive = down — "Rotates the laser clockwise" adds one).</summary>
+        private static readonly Dictionary<Type, Func<Draggable, string>> Extras = new Dictionary<Type, Func<Draggable, string>>
+        {
+            { typeof(Class600), d => Loc.T("defense.aim", new { angle = Angle((float)((Class600)d).method_18()) }) },
+        };
+
+        /// <summary>"level", "22.5 degrees up", "45 degrees down" (screen y grows down, so a
+        /// positive angle points down).</summary>
+        public static string Angle(float degrees)
+        {
+            float a = (float)Math.Round(degrees, 1);
+            if (Math.Abs(a) < 0.05f) return Loc.T("defense.angle.level");
+            string n = Math.Abs(a).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+            return Loc.T(a > 0 ? "defense.angle.down" : "defense.angle.up", new { degrees = n });
+        }
+
         /// <summary>Table coverage, for the dev audit.</summary>
         internal static bool HasParts(Type enemy) => Parts.ContainsKey(enemy);
         internal static bool HasEvent(Type building, int code) => Events.ContainsKey(Code(building, code));
@@ -397,6 +415,11 @@ namespace SpeechChem.Game
                 parts.Add(string.IsNullOrEmpty(m.Key)
                     ? Loc.T("run.percent", new { percent })
                     : Loc.T("defense.status", new { label = m.Key, percent }));
+            }
+            Func<Draggable, string> extra;
+            if (Extras.TryGetValue(d.GetType(), out extra))
+            {
+                try { string s = extra(d); if (s != null) parts.Add(s); } catch { }
             }
             return string.Join(", ", parts.ToArray());
         }

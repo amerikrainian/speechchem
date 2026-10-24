@@ -218,7 +218,10 @@ namespace SpeechChem.Narration
                     D(Leaf("defense.attack", P("enemy"), P("action"))),
                     D(Leaf("defense.move", P("enemy"), P("column"), P("row"))),
                     D(Leaf("defense.state", P("enemy"), P("state"))),
-                    D(Leaf("defense.base", P("base"), P("result")))),
+                    D(Leaf("defense.base", P("base"), P("result"))),
+                    // An enemy's asteroids (Game/DefenseHazards): appeared (row, bearing), destroyed,
+                    // hit the station.
+                    D(Leaf("defense.hazard", P("hazard"), P("action"), P("row"), P("bearing")))),
             };
             foreach (var r in roots) Link(r, null, r.Key);
             return roots;

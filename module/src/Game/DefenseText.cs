@@ -333,6 +333,28 @@ namespace SpeechChem.Game
             return false;
         }
 
+        /// <summary>One drawn rectangle covers the map cell.</summary>
+        public static bool Covers(Rectangle r, Vector2i cell)
+        {
+            if (Empty(r)) return false;
+            int x0, x1, y0, y1;
+            CellsOf(r, out x0, out x1, out y0, out y1);
+            return cell.int_0 >= x0 && cell.int_0 <= x1 && cell.int_1 >= y0 && cell.int_1 <= y1;
+        }
+
+        /// <summary>One drawn rectangle as "columns 25 to 27, rows 6 to 8" (1-based, clipped to the
+        /// map), or null when no part of it is on the map.</summary>
+        public static string SpanOf(Rectangle r)
+        {
+            if (Empty(r)) return null;
+            int x0, x1, y0, y1;
+            CellsOf(r, out x0, out x1, out y0, out y1);
+            x0 = Math.Max(0, x0); x1 = Math.Min(MapColumns - 1, x1);
+            y0 = Math.Max(0, y0); y1 = Math.Min(MapRows - 1, y1);
+            if (x0 > x1 || y0 > y1) return null;
+            return Loc.T("defense.span", new { x0 = x0 + 1, x1 = x1 + 1, y0 = y0 + 1, y1 = y1 + 1 });
+        }
+
         /// <summary>"columns 21 to 32, rows 3 to 11" (1-based, clipped to the map), "off the map",
         /// or null before the enemy's first draw.</summary>
         public static string Span(Class310 enemy)

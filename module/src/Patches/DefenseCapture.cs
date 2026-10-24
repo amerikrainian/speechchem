@@ -101,6 +101,12 @@ namespace SpeechChem.Patches
                     postfix: new HarmonyMethod(self, nameof(AfterToggle)));
                 harmony.Patch(Expr.OverrideOf(typeof(Class636), Expr.MethodOf(() => default(Draggable).vmethod_11())),
                     prefix: new HarmonyMethod(self, nameof(BeforeLaser)), finalizer: new HarmonyMethod(self, nameof(AfterLaser)));
+                // Bha Shogth's asteroids (Game/DefenseHazards): the run's reset and the per-cycle
+                // drift that removes destroyed ones and those reaching the station.
+                harmony.Patch(Expr.OverrideOf(typeof(Class314), Expr.MethodOf(() => default(Class310).vmethod_1())),
+                    postfix: new HarmonyMethod(self, nameof(AfterAsteroidReset)));
+                harmony.Patch(Expr.OverrideOf(typeof(Class314), Expr.MethodOf(() => default(Class310).vmethod_0())),
+                    prefix: new HarmonyMethod(self, nameof(BeforeAsteroidDrift)));
                 Log.Info("[patch] defense capture armed (" + buildings + " special buildings, " + enemies + " enemies)");
             }
             catch (Exception ex) { Log.Error("[patch] defense capture failed to apply", ex); }
@@ -384,8 +390,55 @@ namespace SpeechChem.Patches
                 }
                 watch.At = at;
                 watch.State = state;
+                AsteroidsAppear(__instance, !fresh && (int)Class258.smethod_16() == 1);
             }
             catch { }
+        }
+
+        // ---- an enemy's asteroids (Game/DefenseHazards) ----
+
+        private static readonly ConditionalWeakTable<Class21, object> SeenOnMap = new ConditionalWeakTable<Class21, object>();
+
+        /// <summary>"Asteroid 3 appeared, row 7, bearing 20 degrees down": the first cycle its
+        /// drawing reaches the map (they launch off-screen right). Silent outside a running cycle.</summary>
+        private static void AsteroidsAppear(Class310 enemy, bool speak)
+        {
+            foreach (var kv in DefenseHazards.Asteroids(enemy))
+            {
+                object seen;
+                if (SeenOnMap.TryGetValue(kv.Value, out seen) || !DefenseHazards.OnMap(kv.Value)) continue;
+                SeenOnMap.Add(kv.Value, true);
+                if (speak)
+                    Narrator.Emit(Hazard(kv.Key, "defense.act.appeared", ",")
+                        .Part("row", DefenseHazards.Row(kv.Value), ",")
+                        .Part("bearing", DefenseHazards.Bearing(kv.Value)));
+            }
+        }
+
+        private static NarrationEvent Hazard(int n, string actionKey, string suffix = null)
+            => new NarrationEvent("defense.hazard").Part("hazard", DefenseHazards.Name(n)).Part("action", Loc.T(actionKey), suffix);
+
+        private static void AfterAsteroidReset(Class314 __instance)
+        {
+            try { DefenseHazards.Reset(__instance); } catch { }
+        }
+
+        /// <summary>Class314.vmethod_0 moves every asteroid 0.5 px left, then removes the ones past
+        /// x 440 (the station: 20 damage after the loop) and the ones at 0 health. The prefix says
+        /// which go this cycle, before the Control Center's damage line: "Asteroid 3 destroyed",
+        /// "Asteroid 3 hit the station".</summary>
+        private static void BeforeAsteroidDrift(Class314 __instance)
+        {
+            try
+            {
+                foreach (var kv in DefenseHazards.Asteroids(__instance))
+                {
+                    var a = kv.Value;
+                    if (a.vector2f_0.float_0 - 0.5f < 440f) Narrator.Emit(Hazard(kv.Key, "defense.act.hitstation"));
+                    else if (a.int_0 == 0) Narrator.Emit(Hazard(kv.Key, "defense.state.destroyed"));
+                }
+            }
+            catch (Exception ex) { Log.Error("[defense] asteroids", ex); }
         }
 
         private static void AfterAttack()

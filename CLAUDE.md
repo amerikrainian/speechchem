@@ -1043,6 +1043,20 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   their planets "Locked" until it is reopened (the level progress cache, Levels.dictionary_7, is
   refilled by the profile's worker after level select was built) — reopen it; the save is untouched.
   2026-10-04: all 7 enemy levels + the no-enemy one audited live, no errors.
+- BHA SHOGTH'S ASTEROIDS (`Game/DefenseHazards`, Class314 of research-boss Class146 — the one
+  enemy with hazards apart from itself; user design 2026-10-24): its linkedList_0 of Class21, one
+  launched by attack timer 0 every 500 cycles off-screen right (x 1300, a fixed random height),
+  drifting 0.5 px a cycle, 100 health (int_0, the beam takes 2 a cycle), past x 440 = the station
+  hit for 20. NAMED BY LAUNCH ORDER ("Asteroid 3": one speed, so also arrival order; restart each
+  run, Class314.vmethod_1). Map cells name the asteroids drawn over them (sprite centred on
+  vector2f_0); zoom blocks too (live only); the Enemy stop adds one live row per asteroid on the
+  map: "Asteroid 2, columns 16 to 19, rows 8 to 11, bearing 13 degrees down, 4 cells" — bearing and
+  distance (pixels / 32) from the laser's turret pivot (Class600.vector2i_2, the hit test's origin),
+  a reading of the drawing, never which aim would hit (user rule: no prediction); the crash view
+  keeps the rows. Events (kind defense.hazard): "Asteroid 3 appeared, row 21, bearing 29 degrees
+  down" (its drawing first on the map), and from a prefix on vmethod_0 (which removes them):
+  "Asteroid 2 destroyed", "Asteroid 1 hit the station" (before "Control Center 80 percent").
+  Verified live 2026-10-24 with `feed` (run stopped after).
 - THE VGM LASER (Class636 is a reactor, not a Class598): a postfix pair on its vmethod_11 reports
   a crystal shot (bool_6) as a weapon event, "VGM Laser Reactor 1 fired", then "Yarugolek hit" /
   "missed" (the spider's damage, inside the level's handler, held back like a building event's).
@@ -1053,8 +1067,8 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   Draggable.struct116_0). Verified live 2026-10-11 (a hit and a deliberate miss).
 - KNOWN LIMITS: a waldo polling in a tight loop (a sensor or control wait) logs every pass — the
   boss solution's laser waits on "sense O" and logs ~2 lines a cycle; a weapon hit that does 0 damage (the accelerator below 15 voltage) reads "missed"
-  (hit = a health or part drop); projectiles and hazards (asteroids, the player's ship, missiles in
-  flight, the spider's shots) are not tracked — per-level mechanics, to read when the player gets
+  (hit = a health or part drop); projectiles and hazards (the player's ship, missiles in
+  flight, the spider's shots; asteroids are, above) are not tracked — per-level mechanics, to read when the player gets
   there; noisy lines measured live: a walking enemy's span changes at every cell edge, and one
   level's laser damages the base 1 percent at a time.
 - NOT DONE: undo inside a defense level (untested).

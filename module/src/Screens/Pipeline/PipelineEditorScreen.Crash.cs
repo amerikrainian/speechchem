@@ -27,6 +27,7 @@ namespace SpeechChem.Screens.Pipeline
         public readonly Dictionary<Draggable, string> Components = new Dictionary<Draggable, string>();
         public readonly Dictionary<string, string> Ports = new Dictionary<string, string>(); // port cell key -> text
         public string EnemyName, EnemySpan, EnemyParts, EnemyState;
+        public List<KeyValuePair<int, string>> Asteroids; // the Enemy stop's asteroid rows (Game/DefenseHazards)
         public int? Signature;      // the layout when the map first showed it
     }
 
@@ -101,6 +102,7 @@ namespace SpeechChem.Screens.Pipeline
                 s.EnemySpan = DefenseText.Span(enemy);
                 if (DefenseText.PartFlags(enemy) != null) s.EnemyParts = DefenseText.PartsText(enemy);
                 if (DefenseText.HasEnemyState(enemy.GetType())) s.EnemyState = DefenseText.EnemyState(level, enemy) ?? Loc.T("defense.state.none");
+                s.Asteroids = DefenseHazards.Rows(enemy);
             }
             return s;
         }

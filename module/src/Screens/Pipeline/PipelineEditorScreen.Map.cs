@@ -135,6 +135,8 @@ namespace SpeechChem.Screens.Pipeline
                 string state = DefenseText.Defeated(enemy) ? null : DefenseText.EnemyState(level, enemy);
                 if (state != null) parts.Add(state);
             }
+            // Its asteroids (Game/DefenseHazards), by name.
+            if (level != null) parts.AddRange(DefenseHazards.NamesAt(enemy, cell));
             return parts;
         }
 

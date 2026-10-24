@@ -41,6 +41,26 @@ namespace SpeechChem.Screens.Pipeline
                     var lvl = DefenseText.Level;
                     return DefenseText.EnemyState(lvl, DefenseText.Enemy(lvl)) ?? Loc.T("defense.state.none");
                 });
+            // Its asteroids drawn on the map, in launch order (Game/DefenseHazards): one row each,
+            // "Asteroid 2, columns 25 to 27, rows 6 to 8, bearing 20 degrees down, 14 cells".
+            var asteroids = _crashView != null ? _crashView.Asteroids : DefenseHazards.Rows(enemy);
+            if (asteroids == null) return;
+            foreach (var row in asteroids)
+            {
+                int n = row.Key;
+                LiveRow(b, "pipeline.enemy.asteroid." + n, () =>
+                {
+                    if (_crashView != null)
+                    {
+                        foreach (var r in _crashView.Asteroids ?? new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<int, string>>())
+                            if (r.Key == n) return r.Value;
+                        return DefenseHazards.Name(n);
+                    }
+                    foreach (var kv in DefenseHazards.Asteroids(DefenseText.Enemy(DefenseText.Level)))
+                        if (kv.Key == n) return DefenseHazards.Describe(n, kv.Value);
+                    return DefenseHazards.Name(n);
+                });
+            }
         }
 
         private static void LiveRow(GraphBuilder b, string id, System.Func<string> text)

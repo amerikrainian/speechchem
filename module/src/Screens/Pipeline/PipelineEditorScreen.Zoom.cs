@@ -292,6 +292,16 @@ namespace SpeechChem.Screens.Pipeline
                     for (int x = x0; x <= x1 && !covers; x++)
                         covers = crash != null ? Snap(crash.Enemy, new Vector2i(x, y)) : DefenseText.Covers(enemy, new Vector2i(x, y));
                 if (covers) parts.Add(DefenseText.EnemyName(level));
+                // Its asteroids drawn over the block (live only: the crash view has no asteroid map).
+                if (crash == null)
+                    foreach (var kv in DefenseHazards.Asteroids(enemy))
+                    {
+                        bool on = false;
+                        for (int y = y0; y <= y1 && !on; y++)
+                            for (int x = x0; x <= x1 && !on; x++)
+                                on = DefenseHazards.Covers(kv.Value, new Vector2i(x, y));
+                        if (on) parts.Add(DefenseHazards.Name(kv.Key));
+                    }
             }
 
             // Free cells: nothing at all in the block says nothing (silence is faster — user rule).

@@ -174,11 +174,43 @@ namespace SpeechChem.Patches
             public float Health;
             public bool Weapon;
             public bool Continuous;
+            public bool NewBurst;                // a continuous weapon's first cycle of a burst
+            public Dictionary<int, int> Hazards; // the enemy's asteroids' health by number (DefenseHazards)
         }
 
         // A continuous weapon (a beam raises its event every cycle while firing): one line per
-        // burst, "hit" once per burst. Burst = consecutive cycles; [last cycle, hit yet].
-        private static readonly ConditionalWeakTable<Class598, int[]> Bursts = new ConditionalWeakTable<Class598, int[]>();
+        // burst, each target's "hit" once per burst (the enemy, every asteroid), "missed" when the
+        // burst's first cycle hits nothing. Burst = consecutive cycles.
+        private sealed class Burst
+        {
+            public int Cycle = int.MinValue;
+            public bool EnemyHit;
+            public readonly HashSet<int> Hazards = new HashSet<int>();
+        }
+
+        private static readonly ConditionalWeakTable<Class598, Burst> Bursts = new ConditionalWeakTable<Class598, Burst>();
+
+        private static Dictionary<int, int> HazardHealth(Class310 enemy)
+        {
+            var asteroids = DefenseHazards.Asteroids(enemy);
+            if (asteroids.Count == 0) return null;
+            var health = new Dictionary<int, int>();
+            foreach (var kv in asteroids) health[kv.Key] = kv.Value.int_0;
+            return health;
+        }
+
+        /// <summary>The asteroids whose health dropped since the snapshot, by number.</summary>
+        private static List<int> HazardsHit(Class310 enemy, Dictionary<int, int> before)
+        {
+            var hit = new List<int>();
+            if (before == null) return hit;
+            foreach (var kv in DefenseHazards.Asteroids(enemy))
+            {
+                int was;
+                if (before.TryGetValue(kv.Key, out was) && kv.Value.int_0 < was) hit.Add(kv.Key);
+            }
+            return hit;
+        }
 
         private static int _inEvent;
         private static NarrationEvent _pendingDestroyed;
@@ -200,16 +232,19 @@ namespace SpeechChem.Patches
                     Health = enemy?.float_0 ?? 0f,
                     Weapon = weapon,
                     Continuous = continuous,
+                    Hazards = weapon ? HazardHealth(enemy) : null,
                 };
                 _inEvent++;
                 if (continuous)
                 {
-                    var burst = Bursts.GetValue(__instance, _ => new[] { int.MinValue, 0 });
+                    var burst = Bursts.GetValue(__instance, _ => new Burst());
                     int cycle = Class258.int_1;
-                    bool same = burst[0] == cycle || burst[0] == cycle - 1;
-                    burst[0] = cycle;
+                    bool same = burst.Cycle == cycle || burst.Cycle == cycle - 1;
+                    burst.Cycle = cycle;
                     if (same) return;
-                    burst[1] = 0;
+                    burst.EnemyHit = false;
+                    burst.Hazards.Clear();
+                    __state.NewBurst = true;
                 }
                 Narrator.Emit(text);
             }
@@ -225,17 +260,29 @@ namespace SpeechChem.Patches
                 if (enemy != null)
                 {
                     int parts = DefenseText.Intact(DefenseText.PartFlags(enemy));
+                    bool enemyHit = enemy.float_0 < __state.Health;
+                    var hazards = HazardsHit(enemy, __state.Hazards);
                     if (parts < __state.Parts) Narrator.Emit(PartLost(enemy));
                     else if (__state.Continuous)
                     {
-                        int[] burst;
-                        if (enemy.float_0 < __state.Health && __instance != null && Bursts.TryGetValue(__instance, out burst) && burst[1] == 0)
+                        Burst burst;
+                        if (__instance != null && Bursts.TryGetValue(__instance, out burst))
                         {
-                            burst[1] = 1;
-                            Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                            if (enemyHit && !burst.EnemyHit)
+                            {
+                                burst.EnemyHit = true;
+                                Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                            }
+                            foreach (int n in hazards)
+                                if (burst.Hazards.Add(n)) Narrator.Emit(Effect(DefenseHazards.Name(n), "defense.act.hit"));
+                            if (__state.NewBurst && __state.Weapon && !enemyHit && hazards.Count == 0) Narrator.Emit(Effect(null, "defense.miss"));
                         }
                     }
-                    else if (enemy.float_0 < __state.Health) Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                    else if (enemyHit || hazards.Count > 0)
+                    {
+                        if (enemyHit) Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                        foreach (int n in hazards) Narrator.Emit(Effect(DefenseHazards.Name(n), "defense.act.hit"));
+                    }
                     else if (__state.Weapon) Narrator.Emit(Effect(null, "defense.miss"));
                     RememberParts(enemy);
                 }

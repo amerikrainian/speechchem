@@ -1061,6 +1061,12 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   ATTACKS (DefenseText.Attacks, by enemy type + timer index of vmethod_2; default "attacks"):
   Bha Shogth's timer 0 = "Bha Shogth launched Asteroid 3" (named at once), timer 1 (once, cycle
   6000) = "Bha Shogth approaching" (the ship itself, off-screen right until it drifts in).
+  BEAM HITS: a weapon event snapshots the asteroids' health too; per continuous burst each target's
+  first hit is said once ("Asteroid 1 hit", the enemy's as before), and a burst whose FIRST cycle
+  hits nothing says "missed" (continuous weapons never said it before); a one-shot weapon reports
+  every target it hit, else "missed". Hits / misses stay log-only by default (user rule
+  2026-10-09). Verified live 2026-10-24: firing into empty space, then at Asteroid 1 (hit,
+  destroyed).
   Verified live 2026-10-24 with `feed` (run stopped after).
 - THE VGM LASER (Class636 is a reactor, not a Class598): a postfix pair on its vmethod_11 reports
   a crystal shot (bool_6) as a weapon event, "VGM Laser Reactor 1 fired", then "Yarugolek hit" /

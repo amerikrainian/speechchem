@@ -70,7 +70,8 @@ namespace SpeechChem.Game
             public string Suffix;    // after the building's name ("Thruster Controls: left")
             public bool Weapon;      // an attack on the enemy: report hit / missed
             public bool Continuous;  // raised every cycle while it lasts (a beam): logged once per
-                                     // burst, "hit" once per burst, never "missed"
+                                     // burst, each target's "hit" once per burst, "missed" when
+                                     // the burst's first cycle hits nothing
             public bool Silent;      // no line of its own (the game's sound says it); its effect
                                      // on the enemy is still measured and reported
         }

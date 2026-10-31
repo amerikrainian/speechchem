@@ -107,6 +107,12 @@ namespace SpeechChem.Patches
                     postfix: new HarmonyMethod(self, nameof(AfterAsteroidReset)));
                 harmony.Patch(Expr.OverrideOf(typeof(Class314), Expr.MethodOf(() => default(Class310).vmethod_0())),
                     prefix: new HarmonyMethod(self, nameof(BeforeAsteroidDrift)));
+                // End of the Line (Class150): the run's reset, and the level's per-cycle update that
+                // moves the ship, the missiles and the asteroids and removes the ones that hit.
+                harmony.Patch(Expr.OverrideOf(typeof(Class150), Expr.MethodOf(() => default(DefenseLevelEditor).vmethod_11())),
+                    postfix: new HarmonyMethod(self, nameof(AfterFinalReset)));
+                harmony.Patch(Expr.OverrideOf(typeof(Class150), Expr.MethodOf(() => default(DefenseLevelEditor).vmethod_12())),
+                    prefix: new HarmonyMethod(self, nameof(BeforeFinalCycle)), finalizer: new HarmonyMethod(self, nameof(AfterFinalCycle)));
                 Log.Info("[patch] defense capture armed (" + buildings + " special buildings, " + enemies + " enemies)");
             }
             catch (Exception ex) { Log.Error("[patch] defense capture failed to apply", ex); }
@@ -175,6 +181,7 @@ namespace SpeechChem.Patches
             public bool Weapon;
             public bool Continuous;
             public bool NewBurst;                // a continuous weapon's first cycle of a burst
+            public float Mark;                   // the enemy's non-damage effect mark (DefenseText.Effects)
             public Dictionary<int, int> Hazards; // the enemy's asteroids' health by number (DefenseHazards)
         }
 
@@ -233,6 +240,7 @@ namespace SpeechChem.Patches
                     Weapon = weapon,
                     Continuous = continuous,
                     Hazards = weapon ? HazardHealth(enemy) : null,
+                    Mark = DefenseText.EffectMark(Level, enemy),
                 };
                 _inEvent++;
                 if (continuous)
@@ -260,7 +268,7 @@ namespace SpeechChem.Patches
                 if (enemy != null)
                 {
                     int parts = DefenseText.Intact(DefenseText.PartFlags(enemy));
-                    bool enemyHit = enemy.float_0 < __state.Health;
+                    bool enemyHit = enemy.float_0 < __state.Health || DefenseText.EffectMark(Level, enemy) > __state.Mark;
                     var hazards = HazardsHit(enemy, __state.Hazards);
                     if (parts < __state.Parts) Narrator.Emit(PartLost(enemy));
                     else if (__state.Continuous)
@@ -315,6 +323,7 @@ namespace SpeechChem.Patches
                     Parts = DefenseText.Intact(DefenseText.PartFlags(enemy)),
                     Health = enemy?.float_0 ?? 0f,
                     Weapon = true,
+                    Mark = DefenseText.EffectMark(Level, enemy),
                 };
                 _inEvent++;
             }
@@ -336,7 +345,8 @@ namespace SpeechChem.Patches
                     if (enemy != null)
                     {
                         if (DefenseText.Intact(DefenseText.PartFlags(enemy)) < __state.Parts) Narrator.Emit(PartLost(enemy));
-                        else if (enemy.float_0 < __state.Health) Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                        // A hit: damage, or End of the Line's phase-lock (DefenseText.Effects).
+                        else if (enemy.float_0 < __state.Health || DefenseText.EffectMark(Level, enemy) > __state.Mark) Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
                         else Narrator.Emit(Effect(null, "defense.miss"));
                         RememberParts(enemy);
                     }
@@ -488,11 +498,127 @@ namespace SpeechChem.Patches
             catch (Exception ex) { Log.Error("[defense] asteroids", ex); }
         }
 
+        // ---- End of the Line (Class150): the ship, its missiles, the falling asteroids ----
+
+        private sealed class FinalCycle
+        {
+            public readonly List<Class445> Asteroids = new List<Class445>();
+            public readonly List<Class6> Missiles = new List<Class6>();
+            public readonly List<NarrationEvent> Base = new List<NarrationEvent>();
+        }
+
+        private sealed class FinalWatch
+        {
+            public int ShipColumn = -1;
+            public readonly HashSet<Class445> OnMap = new HashSet<Class445>();
+            public readonly HashSet<Class445> Gone = new HashSet<Class445>();
+        }
+
+        private static FinalCycle _finalCycle;
+        private static readonly ConditionalWeakTable<Class150, FinalWatch> FinalWatches = new ConditionalWeakTable<Class150, FinalWatch>();
+
+        private static void AfterFinalReset(Class150 __instance)
+        {
+            try
+            {
+                DefenseHazards.Reset(__instance);
+                FinalWatches.Remove(__instance);
+            }
+            catch { }
+        }
+
+        private static void BeforeFinalCycle(Class150 __instance, out FinalCycle __state)
+        {
+            __state = null;
+            try
+            {
+                var enemy = __instance.class312_0;
+                if (enemy != null) DefenseHazards.Items(enemy); // number this cycle's newcomers first
+                __state = new FinalCycle();
+                __state.Asteroids.AddRange(__instance.linkedList_0);
+                __state.Missiles.AddRange(__instance.linkedList_1);
+                _finalCycle = __state;
+                _inEvent++; // the enemy's damage and destruction wait for the missile that caused them
+            }
+            catch (Exception ex) { Log.Error("[defense] final cycle", ex); }
+        }
+
+        /// <summary>After the level's update: each missile gone ("Bha Shogth hit" when it reached the
+        /// enemy, "Missile 2 missed" when it flew off the top — phased away; one that met an
+        /// asteroid is said by the asteroid), each asteroid gone ("Asteroid 3 hit The Prometheus",
+        /// else destroyed by a missile), the ship's damage after what caused it, an asteroid coming
+        /// into sight ("Asteroid 3 appeared, columns 26 to 27") or falling off the map, and the
+        /// ship's moves ("The Prometheus 25", by the column of its left edge).</summary>
+        private static Exception AfterFinalCycle(Class150 __instance, FinalCycle __state, Exception __exception)
+        {
+            if (__state == null) return __exception;
+            _finalCycle = null;
+            if (_inEvent > 0) _inEvent--;
+            try
+            {
+                var enemy = __instance.class312_0;
+                bool speak = (int)Class258.smethod_16() == 1;
+                var missiles = new HashSet<Class6>(__instance.linkedList_1);
+                foreach (var m in __state.Missiles)
+                {
+                    if (missiles.Contains(m)) continue;
+                    var d = m.vector2f_0 - m.vector2f_1;
+                    if (d.float_0 * d.float_0 + d.float_1 * d.float_1 < 400f) Narrator.Emit(Effect(EnemyName, "defense.act.hit"));
+                    else if (m.vector2f_1.float_1 < -50f)
+                        Narrator.Emit(new NarrationEvent("defense.effect.miss")
+                            .Part("missile", DefenseHazards.Name(DefenseHazards.MissileKind, DefenseHazards.Number(__instance, m, DefenseHazards.MissileKind)))
+                            .Part("result", Loc.T("defense.miss")));
+                }
+                var asteroids = new HashSet<Class445>(__instance.linkedList_0);
+                foreach (var a in __state.Asteroids)
+                {
+                    if (asteroids.Contains(a)) continue;
+                    int n = DefenseHazards.Number(__instance, a, DefenseHazards.AsteroidKind);
+                    Narrator.Emit(DefenseHazards.TouchesShip(__instance, a)
+                        ? new NarrationEvent("defense.hazard").Part("hazard", DefenseHazards.Name(n)).Part("action", Loc.T("defense.act.hitship", new { name = DefenseHazards.ShipName }))
+                        : Hazard(n, "defense.state.destroyed"));
+                }
+                foreach (var e in __state.Base) Narrator.Emit(e);
+                if (_pendingDestroyed != null && _inEvent == 0)
+                {
+                    Narrator.Emit(_pendingDestroyed);
+                    _pendingDestroyed = null;
+                }
+
+                var watch = FinalWatches.GetValue(__instance, _ => new FinalWatch());
+                foreach (var item in DefenseHazards.Items(enemy))
+                {
+                    if (item.Kind != DefenseHazards.AsteroidKind || !(item.Thing is Class445 a) || watch.Gone.Contains(a)) continue;
+                    bool on = DefenseHazards.OnMap(item.Rect);
+                    if (on && watch.OnMap.Add(a))
+                    {
+                        if (speak) Narrator.Emit(Hazard(item.Number, "defense.act.appeared", ",").Part("column", DefenseHazards.Columns(item.Rect)));
+                    }
+                    else if (!on && watch.OnMap.Contains(a))
+                    {
+                        watch.OnMap.Remove(a);
+                        watch.Gone.Add(a);
+                        if (speak) Narrator.Emit(Hazard(item.Number, "defense.offmap"));
+                    }
+                }
+                int column = DefenseHazards.ShipColumn(__instance);
+                if (speak && watch.ShipColumn >= 0 && column != watch.ShipColumn)
+                    Narrator.Emit(new NarrationEvent("defense.ship").Part("ship", DefenseHazards.ShipName).Part("column", column.ToString()));
+                watch.ShipColumn = column;
+            }
+            catch (Exception ex) { Log.Error("[defense] final cycle", ex); }
+            return __exception;
+        }
+
         /// <summary>"{enemy} attacks", or what the attack does when DefenseText's Attacks table knows
         /// the timer ("Bha Shogth launched Asteroid 3", "Bha Shogth approaching").</summary>
         private static void AfterAttack(Class310 __instance, int __0)
         {
-            try { Narrator.Emit(new NarrationEvent("defense.attack").Part("enemy", EnemyName).Part("action", DefenseText.AttackAction(__instance, __0))); }
+            try
+            {
+                string action = DefenseText.AttackAction(__instance, __0);
+                if (action.Length > 0) Narrator.Emit(new NarrationEvent("defense.attack").Part("enemy", EnemyName).Part("action", action));
+            }
             catch { }
         }
 
@@ -674,8 +800,11 @@ namespace SpeechChem.Patches
                 int now = GoalTracker.int_1;
                 if (now >= __state) return;
                 string name = DefenseText.BaseName();
-                Narrator.Emit(new NarrationEvent("defense.base").Part("base", name)
-                    .Part("result", now <= 0 ? Loc.T("defense.state.destroyed") : Loc.T("run.percent", new { percent = now })));
+                var e = new NarrationEvent("defense.base").Part("base", name)
+                    .Part("result", now <= 0 ? Loc.T("defense.state.destroyed") : Loc.T("run.percent", new { percent = now }));
+                // Inside End of the Line's update: after what hit it (AfterFinalCycle).
+                if (_finalCycle != null) _finalCycle.Base.Add(e);
+                else Narrator.Emit(e);
             }
             catch (Exception ex) { Log.Error("[defense] base damage", ex); }
         }

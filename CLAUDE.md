@@ -1075,6 +1075,35 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   Verified live 2026-10-24 with `feed` (run stopped after).
 - THE VGM LASER (Class636 is a reactor, not a Class598): a postfix pair on its vmethod_11 reports
   a crystal shot (bool_6) as a weapon event, "VGM Laser Reactor 1 fired", then "Yarugolek hit" /
+- END OF THE LINE (warp-boss Class150, enemy Class312 — Bha Shogth again; 2026-10-31). The LEVEL
+  holds everything: the Prometheus (vector2i_2, player sprite 90 x 162, moved 1 px a cycle by the
+  thrusters, 25 px per H2, x 760-970), the enemy at vector2i_3 (x = 865 + 90 sin float_1; float_1
+  frozen while phase-locked), asteroids (linkedList_0 of Class445: timer 0 drops one every 500
+  cycles at x 790-940, falling 0.5 px a cycle; touching the ship's sprite (top cut 75 px) = 20
+  damage; touching a missile destroys both; the rest fall off the map and stay listed) and missiles
+  (linkedList_1 of Class6: from the ship, 2 px a cycle, steering to the enemy, or while it phases to
+  a point far above, so they fly off the top; within 20 px of the enemy = 10 damage). Phasing (int_5
+  > 0) rises while missiles fly and nothing locks it; the VGM laser (Class636 final variant) locks
+  it for 500 cycles (int_4) when it fires with the ship aligned (|dx| < 61) and int_5 is 0; timer 1
+  fires the red laser (int_6, 50 cycles, 1 damage per 5 cycles when aligned) unless phasing or
+  locked. DefenseHazards generalises its items (Item: asteroid / missile, numbered per kind by
+  launch order, numbers reset by Class150.vmethod_11) and adds the ship (ShipRow, ShipColumn,
+  TouchesShip = the level's own hit test). Readouts: map cells and zoom blocks name "The
+  Prometheus" (the progress panel's label), "Asteroid 3", "Missile 2"; the Enemy stop adds the ship
+  row and one row per asteroid / missile on the map. States: phasing, "phase-locked" (the training's
+  word; the key is still defense.state.stunned), "laser charging" (the glow, method_15), "laser
+  firing". Attacks: timer 0 "launched Asteroid 3"; timer 1 says nothing (the state line does).
+  Events from a prefix / finalizer on Class150.vmethod_12 (the level's update; the enemy's damage
+  and destruction wait for it, and the ship's damage lines are queued until after what caused
+  them): "Asteroid 3 hit The Prometheus", "Asteroid 3 destroyed" (by a missile), "Bha Shogth hit"
+  (a missile reached it), "Missile 2 missed" (flew off the top; defense.effect.miss gained a
+  missile part), "Asteroid 3 appeared, columns 26 to 27", "Asteroid 3 off the map", "The
+  Prometheus 25" (new kind defense.ship, "Ship moves": the column of its left edge). The launcher's
+  event names its missile ("Ω-Missile Launcher launched Missile 2", EventSpec.Action). A weapon
+  whose effect is not damage counts as a hit through DefenseText.Effects (Class312: the lock timer
+  rises), so the VGM laser says "Bha Shogth hit" when it locks, "missed" otherwise. Verified live:
+  thrusters and ship moves, a missile launched, phasing, missed, laser charging / firing, asteroid
+  launch / appearance / off the map / hitting the ship, map cells, Enemy stop rows.
   "missed" (the spider's damage, inside the level's handler, held back like a building event's).
   Xe consumed with no crystal = nothing (the game draws no beam). The game's CALLOUT sentences
   (Class563 / Class564 text widgets, Class707.string_0) are read where it draws them, while

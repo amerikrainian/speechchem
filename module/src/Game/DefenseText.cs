@@ -74,6 +74,8 @@ namespace SpeechChem.Game
                                      // the burst's first cycle hits nothing
             public bool Silent;      // no line of its own (the game's sound says it); its effect
                                      // on the enemy is still measured and reported
+            public Func<Class598, string> Action; // the action's text when it needs the moment
+                                                  // (overrides Key)
         }
 
         private static KeyValuePair<Type, int> Code(Type t, int code) => new KeyValuePair<Type, int>(t, code);
@@ -90,7 +92,8 @@ namespace SpeechChem.Game
             { Code(typeof(Class601), 0), new EventSpec { Key = "defense.act.launched" } },
             { Code(typeof(Class603), 0), new EventSpec { Key = "defense.act.left", Suffix = ":" } },
             { Code(typeof(Class603), 1), new EventSpec { Key = "defense.act.right", Suffix = ":" } },
-            { Code(typeof(Class604), 0), new EventSpec { Key = "defense.act.missile" } }, // hits later: the enemy's damage reports it
+            // Named by launch order (Game/DefenseHazards); its hit or miss is reported when it lands.
+            { Code(typeof(Class604), 0), new EventSpec { Key = "defense.act.missile", Action = b => Loc.T("defense.act.launched.named", new { name = DefenseHazards.NextName(Enemy(Level), DefenseHazards.MissileKind) }) } },
             { Code(typeof(Class607), 0), new EventSpec { Key = "defense.act.launched" } },
         };
 
@@ -149,8 +152,14 @@ namespace SpeechChem.Game
                     var w = l as Class150;
                     var parts = new List<string>();
                     if (w == null || e.method_1()) return parts;
+                    // Phasing (int_5 > 0: fading out while missiles fly, missiles then steer away),
+                    // phase-locked by the VGM laser (int_4, 500 cycles), the glow of its laser
+                    // charging (the level's method_15: the last 30% of attack timer 1, neither
+                    // phasing nor locked) and the red laser itself (int_6, 50 cycles).
                     if (w.int_5 > 0) parts.Add(Loc.T("defense.state.phasing"));
                     if (w.int_4 > 0) parts.Add(Loc.T("defense.state.stunned"));
+                    if (w.int_6 > 0) parts.Add(Loc.T("defense.state.laser"));
+                    else if (w.method_15()) parts.Add(Loc.T("defense.state.charging"));
                     return parts;
                 } },
             { typeof(Ktrechtasach), (l, e) =>
@@ -207,13 +216,36 @@ namespace SpeechChem.Game
         {
             { Code(typeof(Class314), 0), e =>
                 {
-                    var newest = DefenseHazards.Newest(e);
-                    return newest == null ? null : Loc.T("defense.act.launched.named", new { name = DefenseHazards.Name(newest.Value.Key) });
+                    var newest = DefenseHazards.Newest(e, DefenseHazards.AsteroidKind);
+                    return newest == null ? null : Loc.T("defense.act.launched.named", new { name = newest.Value.Name });
                 } },
             { Code(typeof(Class314), 1), e => Loc.T("defense.act.approaching") },
+            // End of the Line: timer 0 drops an asteroid; timer 1 fires the red laser only when
+            // neither phasing nor locked, and its state line ("laser firing") says it — no line here.
+            { Code(typeof(Class312), 0), e =>
+                {
+                    var newest = DefenseHazards.Newest(e, DefenseHazards.AsteroidKind);
+                    return newest == null ? null : Loc.T("defense.act.launched.named", new { name = newest.Value.Name });
+                } },
+            { Code(typeof(Class312), 1), e => string.Empty },
         };
 
-        /// <summary>"launched Asteroid 3", "approaching", else "attacks".</summary>
+        /// <summary>A weapon's effect that is not damage, as a number that grows when the shot
+        /// worked: End of the Line's VGM laser phase-locks the enemy (the level's int_4 is set to 500).</summary>
+        private static readonly Dictionary<Type, Func<DefenseLevelEditor, Class310, float>> Effects = new Dictionary<Type, Func<DefenseLevelEditor, Class310, float>>
+        {
+            { typeof(Class312), (l, e) => (l as Class150)?.int_4 ?? 0 },
+        };
+
+        /// <summary>The enemy's non-damage effect mark (DefenseText.Effects), 0 when it has none.</summary>
+        public static float EffectMark(DefenseLevelEditor level, Class310 enemy)
+        {
+            Func<DefenseLevelEditor, Class310, float> f;
+            if (enemy == null || !Effects.TryGetValue(enemy.GetType(), out f)) return 0f;
+            try { return f(level, enemy); } catch { return 0f; }
+        }
+
+        /// <summary>"launched Asteroid 3", "approaching", else "attacks"; empty = no line.</summary>
         public static string AttackAction(Class310 enemy, int timer)
         {
             Func<Class310, string> f;
@@ -491,7 +523,12 @@ namespace SpeechChem.Game
                 weapon = spec.Weapon;
                 continuous = spec.Continuous;
                 if (spec.Silent) return null;
-                return e.Part("building", name, spec.Suffix).Part("action", Loc.T(spec.Key));
+                string action = null;
+                if (spec.Action != null)
+                {
+                    try { action = spec.Action(b); } catch { }
+                }
+                return e.Part("building", name, spec.Suffix).Part("action", action ?? Loc.T(spec.Key));
             }
             return e.Part("building", name, ",").Part("action", Loc.T("defense.act.code", new { code }));
         }

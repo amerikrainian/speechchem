@@ -212,16 +212,18 @@ namespace SpeechChem.Narration
                     B("defense.effect",
                         // Hits and misses: logged, never spoken by default (user rule 2026-10-09).
                         Quiet(Leaf("defense.effect.hit", P("enemy"), P("result"))),
-                        Quiet(Leaf("defense.effect.miss", P("result"))),
+                        Quiet(Leaf("defense.effect.miss", P("missile"), P("result"))),
                         D(Leaf("defense.effect.part", P("enemy"), P("result"), P("parts")))),
                     D(Leaf("defense.destroyed", P("enemy"), P("result"))),
                     D(Leaf("defense.attack", P("enemy"), P("action"))),
                     D(Leaf("defense.move", P("enemy"), P("column"), P("row"))),
+                    // End of the Line's ship (Game/DefenseHazards): "The Prometheus 25".
+                    D(Leaf("defense.ship", P("ship"), P("column"))),
                     D(Leaf("defense.state", P("enemy"), P("state"))),
                     D(Leaf("defense.base", P("base"), P("result"))),
-                    // An enemy's asteroids (Game/DefenseHazards): appeared (row, bearing), destroyed,
-                    // hit the station.
-                    D(Leaf("defense.hazard", P("hazard"), P("action"), P("row"), P("bearing")))),
+                    // An enemy's asteroids (Game/DefenseHazards): appeared (column or row, bearing),
+                    // destroyed, hit the station / the ship, off the map.
+                    D(Leaf("defense.hazard", P("hazard"), P("action"), P("column"), P("row"), P("bearing")))),
             };
             foreach (var r in roots) Link(r, null, r.Key);
             return roots;

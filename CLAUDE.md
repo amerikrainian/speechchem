@@ -1003,6 +1003,11 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   Mining Robot". Shown on every entry of the level (the story screen only when unseen).
 - The tank callout "Fill with Methane to detonate." (CustomDraggableAnnotation, where the level
   made it visible, `bool_1`, while stopped) is read after the molecule in the tank's input cell.
+  Each port's callout reads only its own entries (linkedList_0 molecules, linkedList_1 sentences),
+  PAIRED: the game draws each accepted molecule in a column with its sentence under it, so the
+  Chemical Laser's input reads "Laser Dye (710nm), ΣH2ΩH3, Causes the laser to fire a red laser
+  (710nm) at the target; Laser Dye (500nm), …" (verified live 2026-10-31; it used to list the three
+  dyes, then the three sentences).
 - Step (0) after the enemy's destruction (GoalTracker.bool_0 freezes the waldos for 700 cycles
   before the win) says "{enemy} destroyed, waldos stopped".
 - TABLES FILLED FOR EVERY DEFENSE LEVEL (2026-10-04, from the decompile; `DefenseText`): Events —

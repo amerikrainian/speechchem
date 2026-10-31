@@ -436,18 +436,26 @@ namespace SpeechChem.Screens.Reactor
                 // ("Fill with Methane to detonate.") where the game draws it: beside the one
                 // building the level made it visible on (bool_1), while stopped. Only its own
                 // sentences (linkedList_1, the accepted entries of its input): the Hydrogen
-                // Laser's four inputs each draw one.
+                // Laser's four inputs each draw one. The game draws each accepted molecule in a
+                // column with its sentence under it (the Chemical Laser's three dyes), so each
+                // molecule is read with its own sentence.
                 if (a is CustomDraggableAnnotation custom && custom.bool_1 && (int)Class258.smethod_16() == 0)
                 {
-                    var hints = new List<string>();
-                    foreach (var text in custom.linkedList_1)
+                    var entries = new List<string>();
+                    var texts = custom.linkedList_1.GetEnumerator();
+                    foreach (var m in custom.linkedList_0)
                     {
-                        string hint = GameText.Speech(text?.string_0);
-                        if (string.IsNullOrEmpty(hint)) continue;
-                        hint = System.Text.RegularExpressions.Regex.Replace(hint, " {2,}", " ");
-                        if (!hints.Contains(hint)) hints.Add(hint);
+                        string entry = m == null ? null : MoleculeText.NameAndFormula(m);
+                        string hint = texts.MoveNext() ? GameText.Speech(texts.Current?.string_0) : null;
+                        if (!string.IsNullOrEmpty(hint))
+                        {
+                            hint = System.Text.RegularExpressions.Regex.Replace(hint, " {2,}", " ");
+                            entry = string.IsNullOrEmpty(entry) ? hint : entry + ", " + hint;
+                        }
+                        if (!string.IsNullOrEmpty(entry)) entries.Add(entry);
                     }
-                    if (hints.Count > 0) names = (string.IsNullOrEmpty(names) ? "" : names + ", ") + string.Join(" ", hints.ToArray());
+                    for (int i = 0; i < entries.Count - 1; i++) entries[i] = entries[i].TrimEnd('.');
+                    if (entries.Count > 0) names = string.Join("; ", entries.ToArray());
                 }
                 string callout = CalloutText(a);
                 if (callout != null) names = string.IsNullOrEmpty(names) ? callout : names + ", " + callout;

@@ -50,6 +50,7 @@ namespace SpeechChem.Screens
                 b.AddItem(ControlId.Structural(Key + ".line." + index), new NodeVtable
                 {
                     ControlType = ControlTypes.Text,
+                    SpeaksOwnPosition = true, // a card's text, not a list: no "n of m" (as the story screen)
                     Announcements = new[] { new NodeAnnouncement(() => LineAt(index), kind: AnnouncementKinds.Label) },
                 });
             }
@@ -57,6 +58,7 @@ namespace SpeechChem.Screens
             b.AddItem(cont, new NodeVtable
             {
                 ControlType = ControlTypes.Button,
+                SpeaksOwnPosition = true,
                 Announcements = new[] { new NodeAnnouncement(() => ContinueLabel, kind: AnnouncementKinds.Label) },
                 OnActivate = () =>
                 {
@@ -170,15 +172,30 @@ namespace SpeechChem.Screens
         protected override List<string> Lines(Class53 gate)
         {
             var lines = new List<string>();
-            var keys = GateTextCapture.EpilogueKeys(gate);
+            var keys = GateTextCapture.EpilogueKeys(gate) ?? FallbackKeys();
             if (keys == null) return lines;
             var sections = Class177.smethod_1();
             foreach (var key in keys)
             {
+                // The story screen's cleaning: font markup ({ } around the Controller's speech,
+                // illustration lines, page breaks) removed, one row per paragraph.
                 if (key != null && sections.TryGetValue(key, out var section))
-                    lines.Add(GameText.Speech(section.string_1));
+                    lines.AddRange(StoryInfoScreen.CleanStory(section.string_1));
             }
             return lines;
+        }
+
+        private static List<string> _fallbackKeys;
+
+        /// <summary>The section keys when this module generation did not see the card being built (a hot
+        /// reload while it is up): build a throwaway card with the game's own factory under capture. The
+        /// factory only builds Scenes; nothing is pushed.</summary>
+        private static List<string> FallbackKeys()
+        {
+            if (_fallbackKeys != null) return _fallbackKeys;
+            try { _fallbackKeys = GateTextCapture.EpilogueKeys(Class81.smethod_13()) ?? new List<string>(); }
+            catch (Exception ex) { Log.Error("[epilogue] key fallback failed", ex); _fallbackKeys = new List<string>(); }
+            return _fallbackKeys;
         }
 
         protected override void Advance(Class53 gate)

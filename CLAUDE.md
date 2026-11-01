@@ -261,8 +261,13 @@ frames later (position is irrelevant: the engine tracks the cursor from motion e
   announced; Continue skips a card; the sequence ends cleanly.
 - `EpilogueScreen` — deob `Class81` ("CLICK TO SCROLL STORY"): scrolls while the button is HELD and
   pops once scrolled past its end. Its section keys are captured around `Class81.smethod_13/12`; rows
-  are the story bodies from `Class177`. Continue sets `float_0` past the end so the card's own next
-  update pops it. All 9 sections read; finish verified.
+  are the story bodies from `Class177`, one row per paragraph, cleaned with `StoryInfoScreen.CleanStory`
+  (the `{ }` around the Controller's speech and other font markup removed — user report 2026-11-01).
+  A module generation that missed the build (hot reload) gets the keys by running the game's factory
+  `Class81.smethod_13()` once under capture (it only builds Scenes). Continue sets `float_0` past the
+  end so the card's own next update pops it. All 9 sections read; finish verified.
+  Gate rows and the Continue button speak no "n of m" (SpeaksOwnPosition, like the story screen —
+  user rule 2026-11-01). Verified live on the real end-game epilogue (Continue not pressed).
 
 ## 10. Profile flow (`module/src/Screens/ProfileScreens.cs`) — verified live 2026-09-27
 Four TitleScreenEditor overlays, all gated on `ProfileUi.Settled<T>` (see §4) and all with Escape

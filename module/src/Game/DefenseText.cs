@@ -460,13 +460,16 @@ namespace SpeechChem.Game
 
         /// <summary>A movement event, as terse as the grid readouts (user design 2026-10-04): the
         /// enemy's name, then only what changed — "Isambard MMD 21" (column), "… row 5" (row),
-        /// "… 21, 5" (both, or on coming into sight), "… off the map". Null when nothing changed.</summary>
+        /// "… 21, 5" (both). Those are logged and heard as a beep, not spoken (Audio/SoundEngine).
+        /// Coming into sight ("… 21, 5") and "… off the map" are a separate kind, still spoken: a
+        /// beep can't say that the enemy left. Null when nothing changed.</summary>
         public static NarrationEvent MoveEvent(string name, Vector2i? before, Vector2i? now)
         {
-            var e = new NarrationEvent("defense.move").Part("enemy", name);
-            if (now == null) return before == null ? null : e.Part("column", Loc.T("defense.offmap"));
+            if (now == null) return before == null ? null : new NarrationEvent("defense.sight").Part("enemy", name).Part("column", Loc.T("defense.offmap"));
             var n = now.Value;
-            if (before == null || (before.Value.int_0 != n.int_0 && before.Value.int_1 != n.int_1))
+            if (before == null) return new NarrationEvent("defense.sight").Part("enemy", name).Part("column", n.int_0.ToString(), ",").Part("row", n.int_1.ToString());
+            var e = new NarrationEvent("defense.move").Part("enemy", name);
+            if (before.Value.int_0 != n.int_0 && before.Value.int_1 != n.int_1)
                 return e.Part("column", n.int_0.ToString(), ",").Part("row", n.int_1.ToString());
             if (before.Value.int_0 != n.int_0) return e.Part("column", n.int_0.ToString());
             if (before.Value.int_1 != n.int_1) return e.Part("row", Loc.T("defense.row", new { row = n.int_1 }));

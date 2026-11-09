@@ -247,6 +247,23 @@ namespace SpeechChem.Screens
                     };
                     break;
                 }
+                case SSlider s:
+                {
+                    Func<string> percent = () => Loc.T("value.percent", new { value = s.Get() });
+                    vt = new NodeVtable
+                    {
+                        ControlType = ControlTypes.Slider,
+                        Announcements = new[]
+                        {
+                            new NodeAnnouncement(s.SpokenLabel, kind: AnnouncementKinds.Label),
+                            new NodeAnnouncement(percent, kind: AnnouncementKinds.Value),
+                        },
+                        StateText = percent,
+                        OnAdjust = (sign, large) => { if (s.Adjust(sign * (large ? s.LargeStep : s.Step))) ModSettingsUi.Dirty = true; },
+                        OnActivate = s.Preview,
+                    };
+                    break;
+                }
                 case SLink l:
                     vt = ProfileUi.Button(l.SpokenLabel, () => ModSettingsUi.Push(l.Open, l.Id));
                     break;

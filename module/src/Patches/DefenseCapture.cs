@@ -435,6 +435,8 @@ namespace SpeechChem.Patches
                 {
                     if (!Equals(at, watch.At))
                     {
+                        // Every speed, whatever the speech settings say (user rule 2026-11-09).
+                        if (at != null) Audio.SoundEngine.EnemyMoved(at.Value.int_0, at.Value.int_1);
                         var move = DefenseText.MoveEvent(EnemyName, watch.At, at);
                         if (move != null) Narrator.Emit(move);
                     }

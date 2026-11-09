@@ -179,7 +179,7 @@ Loopback server on `127.0.0.1:8773` (`SPEECHCHEM_DEV_PORT` overrides; WotR 8771,
 | `POST /reload` | hot-swap the module from disk (build the module with the game running first) |
 | `POST /probe` | `command [arg]` → the live module's typed `SpeechChem.Dev.Probe` (DEBUG only) |
 
-Probe commands: `screens` (chain + modeled screen + focused node), `push shiplost|credits|epilogue|exitprompt|reactionerror|message|performance`,
+Probe commands: `sound` (§16e: the engine's state; `sound <column> <row>` a beep at that map cell; `sound burst <n>` n very quiet beeps at once), `screens` (chain + modeled screen + focused node), `push shiplost|credits|epilogue|exitprompt|reactionerror|message|performance`,
 `pop`, `key <action id>` (dispatches e.g. `ui.down`/`ui.activate` through the navigator exactly as the
 key binding would — no window focus needed), `click` (synthetic left click), `type <text>` (one
 SDL_TEXTINPUT event — the game's real typing path; the navigator's echo sees it), `rawkey <scancode>`
@@ -496,7 +496,7 @@ pre-settings behaviour exactly; only changed values are stored.
   game while modeled (`GameKeySuppression`: the toolbar reads 1-4 with no modifier check).
 - WIDGETS (`Patches/OptionsInjection`): a postfix on Class74's vmethod_8 rebuilds the widget tree:
   Game / Mod tab buttons; Game = the game's own layout over its widgets; Mod = sub-tabs General /
-  Events / Step keys, a breadcrumb, the page's rows in visual pages of 4 (the box is fixed; game
+  Events / Step keys / Sounds (§16e), a breadcrumb, the page's rows in visual pages of 4 (the box is fixed; game
   widgets can't be subclassed — a module subclass of GClass10 fails to load), Back / Prev / n/m /
   Next / Save / Cancel. Checkboxes = Class475, choices = cycling buttons, links / actions = buttons;
   any change sets `ModSettingsUi.Dirty` and the dialog rebuilds next update (`vmethod_5`), carrying
@@ -977,7 +977,9 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   readouts: the enemy's TOP-LEFT cell — the Components table's corner for buildings, and the
   leading edge moving left or up — clamped to the map; "Isambard MMD 21" when only the column
   changed, "… row 5" when only the row did, "… 21, 5" for both or on coming into sight, "… off the
-  map"; one line per column — every ~110 cycles for the robot at full health); "Control Center
+  map"; one line per column — every ~110 cycles for the robot at full health; since 2026-11-09 a
+  move is HEARD, not spoken, §16e — logged and stopping a step as before; coming into sight and
+  leaving the map are their own spoken kind, defense.sight); "Control Center
   95 percent" / "destroyed" (GoalTracker.smethod_10). Completion logs "Level complete.". The Class144
   pump emits a methane every 10 cycles (35 to a blast); a spent tank keeps taking methane ("…,
   exploded" every 10 cycles — the noisiest line).
@@ -1122,6 +1124,28 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   there; noisy lines measured live: a walking enemy's span changes at every cell edge, and one
   level's laser damages the base 1 percent at a time.
 - NOT DONE: undo inside a defense level (untested).
+
+## 16e. Sounds (`module/src/Audio/`) — engine and enemy beeps verified live 2026-11-09
+Enemy moves are a generated beep instead of speech (user design 2026-11-09), at EVERY run speed,
+reactor open or not (DefenseCapture.AfterEnemyCycle, per cycle, from the model-based Bodies table).
+Column = pan (1 hard left, 32 hard right, constant power); row = pitch (row 1 = 660 Hz, a semitone
+per higher row number). `Beep` is pure and unit-tested: the user's beep.wav fitted to a residual of
+0.0001 (660 Hz triangle, cosine phase, peak 0.22, 80 ms, 6 ms linear fades), rendered at the
+device's rate from odd harmonics up to Nyquist (the top row would alias at 22050 Hz otherwise).
+THE SOUNDS ARE NEVER DROPPED (user rule): `SoundEngine` plays through the game's SDL2_mixer
+(`Class10`), growing the pool to 40 channels and RESERVING the first 32, so the game's channel -1
+plays keep their 8 and can't take ours; a beep with no free channel (or a refused start) waits in
+`VoiceQueue`, in order, retried every frame (FrameLoop "audio"). Verified: 100 at once = 32 playing,
+68 waiting, all 100 started; a real run on the first defense level: 8 logged moves, 8 beeps, none
+spoken. One mono chunk per pitch (Mix_LoadWAV_RW over SDL_RWFromConstMem converts it), pan and
+volume set per channel per play. Chunks are deliberately never freed (a reload may leave one
+playing; the device may be gone at teardown).
+Volumes (`SoundSettings`, Guildrun's model): master + per-cue signed offset, 0-200 percent (100 =
+beep.wav's level; the chunk is rendered at twice its peak because the mixer can only attenuate),
+stored in narration.json as `sound.*` only when not default, so Save / Cancel apply. Settings' Mod
+tab > Sounds: `SSlider` rows (Left / Right 10, PageUp / PageDown 50, Enter previews at the draft
+volume; drawn as a cycling button). NOT driven live yet: the Sounds tab itself. To hear positions
+without a run: probe `sound <column> <row>`.
 
 ## 16d. Reactor tutorial (`Tutorial/`, `Screens/Reactor/ReactorEditorScreen.Tutorial.cs`) — verified live 2026-10-23
 THE GAME'S TUTORIAL is one static list, `Class424.list_0` of `Class288` (text, ReactorBin cell +

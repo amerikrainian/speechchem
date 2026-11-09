@@ -35,6 +35,24 @@ namespace SpeechChem.Screens.Settings
         public Action<int> Set;
     }
 
+    /// <summary>A percent slider: Left / Right step it, Enter plays <see cref="Preview"/>.</summary>
+    internal sealed class SSlider : SRow
+    {
+        public Func<int> Get;
+        public Action<int> Set;
+        public int Min, Max, Step, LargeStep;
+        public Action Preview;
+
+        /// <summary>Move by a step; false at the end of the range.</summary>
+        public bool Adjust(int delta)
+        {
+            int next = Math.Max(Min, Math.Min(Max, Get() + delta));
+            if (next == Get()) return false;
+            Set(next);
+            return true;
+        }
+    }
+
     /// <summary>A button opening a sub-page.</summary>
     internal sealed class SLink : SRow
     {
@@ -74,7 +92,7 @@ namespace SpeechChem.Screens.Settings
     internal static class ModSettingsUi
     {
         public enum Tab { Game, Mod }
-        public enum ModTab { General, Events, Keys }
+        public enum ModTab { General, Events, Keys, Sounds }
 
         public const int RowsPerPage = 4;
 
@@ -216,8 +234,33 @@ namespace SpeechChem.Screens.Settings
             {
                 case ModTab.Events: return EventsPage();
                 case ModTab.Keys: return KeysPage();
+                case ModTab.Sounds: return SoundsPage();
                 default: return GeneralPage();
             }
+        }
+
+        /// <summary>The mod's volumes (Guildrun's rows): Left / Right step, PageUp / PageDown step
+        /// by more, Enter plays the sound at the draft volume.</summary>
+        private static SPage SoundsPage()
+        {
+            var page = new SPage { Id = "sounds", Title = () => ModTabLabel(ModTab.Sounds) };
+            Action preview = () => Audio.SoundEngine.Preview(Audio.SoundSettings.Volume(Audio.SoundCue.EnemyMove, draft: true));
+            page.Rows.Add(new SSlider
+            {
+                Id = "sounds.master", Label = () => Loc.T("settings.sound.master"),
+                Get = () => Audio.SoundSettings.Master(draft: true), Set = Audio.SoundSettings.SetMaster,
+                Min = 0, Max = Audio.SoundSettings.MaxVolume, Step = Audio.SoundSettings.Step, LargeStep = Audio.SoundSettings.LargeStep,
+                Preview = preview,
+            });
+            page.Rows.Add(new SSlider
+            {
+                Id = "sounds.enemyMove", Label = () => Loc.T("settings.sound.enemyMove"),
+                Get = () => Audio.SoundSettings.Volume(Audio.SoundCue.EnemyMove, draft: true),
+                Set = v => Audio.SoundSettings.SetVolume(Audio.SoundCue.EnemyMove, v),
+                Min = 0, Max = Audio.SoundSettings.MaxVolume, Step = Audio.SoundSettings.Step, LargeStep = Audio.SoundSettings.LargeStep,
+                Preview = preview,
+            });
+            return page;
         }
 
         private static SPage GeneralPage()

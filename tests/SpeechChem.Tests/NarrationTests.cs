@@ -183,7 +183,7 @@ namespace SpeechChem.Tests
             Assert.True(EventSettings.SpeaksAt(grab, "1"));
             Assert.False(EventSettings.SpeaksAt(grab, "2"));
             Assert.False(EventSettings.SpeaksAt(grab, "idle"));
-            var move = EventKinds.Get("defense.move");   // speeds 1 to 3
+            var move = EventKinds.Get("defense.sight");  // speeds 1 to 3
             Assert.True(EventSettings.SpeaksAt(move, "3"));
             Assert.False(EventSettings.SpeaksAt(move, "4"));
             var state = EventKinds.Get("run.state");     // always

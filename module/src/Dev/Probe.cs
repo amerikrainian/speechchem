@@ -56,6 +56,17 @@ namespace SpeechChem.Dev
     /// </summary>
     internal static class Probe
     {
+        /// <summary>"sound" = the engine's state; "sound column row" = the enemy-move beep at that
+        /// map cell (1-based); "sound burst n" = n very quiet beeps at once (more than the channels:
+        /// the waiting ones must all still start). Each then gives the state.</summary>
+        private static string Sound(string argument)
+        {
+            var args = (argument ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (args.Length == 2 && args[0] == "burst") for (int i = int.Parse(args[1]); i > 0; i--) Audio.SoundEngine.Preview(5);
+            else if (args.Length == 2) Audio.SoundEngine.EnemyMoved(int.Parse(args[0]), int.Parse(args[1]));
+            return Audio.SoundEngine.Status() + "\n";
+        }
+
         public static string Run(string command, string argument)
         {
             switch ((command ?? "").Trim().ToLowerInvariant())
@@ -68,6 +79,7 @@ namespace SpeechChem.Dev
                 case "type": return SdlNative.PushText(argument) ? "typed: " + argument + "\n" : "[type refused]\n";
                 case "profiles": return Profiles();
                 case "rawkey": return RawKey(argument);
+                case "sound": return Sound(argument);
                 case "tolevelselect":
                     // The game's own "return to level select" (Class53.smethod_8: pops the level with
                     // its transition — what the Story/Training screen's paths use).

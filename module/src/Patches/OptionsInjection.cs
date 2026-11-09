@@ -89,9 +89,10 @@ namespace SpeechChem.Patches
                 if (ModSettingsUi.Shown == ModSettingsUi.Tab.Game) lines.Add(GameBody(d));
                 else
                 {
-                    lines.Add(Row(Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.General), 120, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.General)),
-                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Events), 120, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Events)),
-                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Keys), 120, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Keys))));
+                    lines.Add(Row(Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.General), 92, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.General)),
+                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Events), 92, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Events)),
+                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Keys), 92, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Keys)),
+                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Sounds), 92, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Sounds))));
                     var page = ModSettingsUi.Current();
                     int pages = ModSettingsUi.PageCount(page);
                     if (ModSettingsUi.VisualPage >= pages) ModSettingsUi.VisualPage = pages - 1;
@@ -170,6 +171,15 @@ namespace SpeechChem.Patches
                         ModSettingsUi.Dirty = true;
                     });
                 }
+                case SSlider s:
+                    // The game's sliders can't be built outside their dialog: a cycling button, like
+                    // the choices; a click goes up a step, past the top back to the bottom.
+                    return Button(s.Label() + ": " + Loc.T("value.percent", new { value = s.Get() }), width, () =>
+                    {
+                        if (!s.Adjust(s.Step)) s.Set(s.Min);
+                        s.Preview?.Invoke();
+                        ModSettingsUi.Dirty = true;
+                    });
                 case SLink l: return Button(l.Label(), width, () => ModSettingsUi.Push(l.Open, l.Id));
                 case SAction a: return Button(a.Label(), width, a.Run);
                 case SCompound k when k.Inline:

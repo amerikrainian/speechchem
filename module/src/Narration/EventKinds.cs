@@ -216,7 +216,9 @@ namespace SpeechChem.Narration
                         D(Leaf("defense.effect.part", P("enemy"), P("result"), P("parts")))),
                     D(Leaf("defense.destroyed", P("enemy"), P("result"))),
                     D(Leaf("defense.attack", P("enemy"), P("action"))),
-                    D(Leaf("defense.move", P("enemy"), P("column"), P("row"))),
+                    // Heard as a beep at every speed (Audio/SoundEngine); still logged, still stops a step.
+                    Beeped(Leaf("defense.move", P("enemy"), P("column"), P("row"))),
+                    D(Leaf("defense.sight", P("enemy"), P("column"), P("row"))),
                     // End of the Line's ship (Game/DefenseHazards): "The Prometheus 25".
                     D(Leaf("defense.ship", P("ship"), P("column"))),
                     D(Leaf("defense.state", P("enemy"), P("state"))),
@@ -235,6 +237,14 @@ namespace SpeechChem.Narration
         {
             k.SpeakDefault = SpeakLevel.Off;
             k.StepStopsDefault = false;
+            k.StepSpeaksDefault = false;
+            return k;
+        }
+
+        /// <summary>A sound says it instead of speech, in a run and during a step.</summary>
+        private static EventKind Beeped(EventKind k)
+        {
+            k.SpeakDefault = SpeakLevel.Off;
             k.StepSpeaksDefault = false;
             return k;
         }

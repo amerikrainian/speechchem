@@ -200,6 +200,8 @@ namespace SpeechChem.Tests
             Assert.True(move.StepStopsDefault);
             Assert.True(move.LogDefault);
             Assert.Equal(SpeakLevel.Speed3, EventKinds.Get("defense.sight").SpeakDefault);
+            Assert.Equal(SpeakLevel.Off, EventKinds.Get("defense.ship").SpeakDefault);
+            Assert.False(EventKinds.Get("defense.ship").StepSpeaksDefault);
         }
 
         private static double Semitones(double frequency) => 12.0 * Math.Log(frequency / Beep.BaseFrequency, 2.0);
@@ -271,6 +273,7 @@ namespace SpeechChem.Tests
         [Theory]
         [InlineData((int)SoundCue.Asteroid)]
         [InlineData((int)SoundCue.LaserAim)]
+        [InlineData((int)SoundCue.ShipMove)]
         public void Each_cue_has_its_own_volume_under_the_master(int which)
         {
             NarrationStore.BeginEdit();

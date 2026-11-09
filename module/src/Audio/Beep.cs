@@ -25,6 +25,10 @@ namespace SpeechChem.Audio
         public static Tone EnemyMove(double frequency)
             => new Tone { Shape = Waveform.Triangle, Frequency = frequency, Pulses = 1, PulseSeconds = Beep.LengthSeconds };
 
+        /// <summary>Sawtooth: the enemy beeps triangle in the same level, and the aim note is not there.</summary>
+        public static Tone ShipMove(double frequency)
+            => new Tone { Shape = Waveform.Sawtooth, Frequency = frequency, Pulses = 1, PulseSeconds = Beep.LengthSeconds };
+
         public static Tone Aim(double frequency)
             => new Tone { Shape = Waveform.Sawtooth, Frequency = frequency, Pulses = 1, PulseSeconds = AimSeconds };
 

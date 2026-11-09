@@ -107,6 +107,10 @@ namespace SpeechChem.Audio
         public static void EnemyMoved(int column, int row)
             => Play(Tone.EnemyMove(Beep.FrequencyOfRow(row)), column, SoundSettings.Volume(SoundCue.EnemyMove));
 
+        /// <summary>The ship reached a column; its row sets the pitch, as for an enemy.</summary>
+        public static void ShipMoved(int column, int row)
+            => Play(Tone.ShipMove(Beep.FrequencyOfRow(row)), column, SoundSettings.Volume(SoundCue.ShipMove));
+
         /// <summary>An asteroid entered a column: the aim note, then its tick (silent lead-in), started
         /// together so their spacing is exact. A muted asteroid takes its aim note with it.</summary>
         public static void AsteroidTick(int column, double bearing, int pulses, int aimPosition)
@@ -128,6 +132,7 @@ namespace SpeechChem.Audio
             {
                 case SoundCue.Asteroid: Play(Tone.Asteroid(Beep.BaseFrequency, 1), CentreColumn, percent); break;
                 case SoundCue.LaserAim: Play(Tone.Aim(Beep.BaseFrequency), CentreColumn, percent); break;
+                case SoundCue.ShipMove: Play(Tone.ShipMove(Beep.BaseFrequency), CentreColumn, percent); break;
                 default: Play(Tone.EnemyMove(Beep.BaseFrequency), CentreColumn, percent); break;
             }
         }

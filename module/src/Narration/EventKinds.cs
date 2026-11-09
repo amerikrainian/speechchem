@@ -211,6 +211,7 @@ namespace SpeechChem.Narration
                     D(Leaf("defense.event", P("building"), P("action"))),
                     // A beam says it every burst: its own event, so it can be turned off alone.
                     D(Leaf("defense.firing", P("building"), P("action"))),
+                    D(Leaf("defense.vgmfiring", P("building"), P("action"))),
                     B("defense.effect",
                         // Hits and misses: logged, never spoken by default (user rule 2026-10-09).
                         Quiet(Leaf("defense.effect.hit", P("enemy"), P("result"))),
@@ -222,7 +223,7 @@ namespace SpeechChem.Narration
                     Beeped(Leaf("defense.move", P("enemy"), P("column"), P("row"))),
                     D(Leaf("defense.sight", P("enemy"), P("column"), P("row"))),
                     // End of the Line's ship (Game/DefenseHazards): "The Prometheus 25".
-                    D(Leaf("defense.ship", P("ship"), P("column"))),
+                    Beeped(Leaf("defense.ship", P("ship"), P("column"))),
                     D(Leaf("defense.state", P("enemy"), P("state"))),
                     D(Leaf("defense.base", P("base"), P("result"))),
                     // An enemy's asteroids (Game/DefenseHazards): appeared (column or row, bearing),

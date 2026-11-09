@@ -202,15 +202,19 @@ namespace SpeechChem.Tests
         public void TheLaserFiringLineTurnsOffWithoutTheOtherBuildingEvents()
         {
             var firing = EventKinds.Get("defense.firing");
+            var vgm = EventKinds.Get("defense.vgmfiring");
+            Assert.True(EventSettings.SpeaksAt(vgm, "3"));
             var other = EventKinds.Get("defense.event");
             Assert.True(EventSettings.SpeaksAt(firing, "3"));
             Assert.True(EventSettings.Log(firing));
 
             NarrationStore.BeginEdit();
+            EventSettings.SetSpeaksAt(vgm, "3", false);
             EventSettings.SetSpeaksAt(firing, "3", false);
             EventSettings.SetLog(firing, false);
             NarrationStore.Commit();
 
+            Assert.False(EventSettings.SpeaksAt(vgm, "3"));
             Assert.False(EventSettings.SpeaksAt(firing, "3"));
             Assert.False(EventSettings.Log(firing));
             Assert.True(EventSettings.SpeaksAt(other, "3"));

@@ -338,7 +338,7 @@ namespace SpeechChem.Patches
                 if (_inEvent > 0) _inEvent--;
                 if (__instance.int_2 > 0 && __instance.bool_6)
                 {
-                    Narrator.Emit(new NarrationEvent("defense.event")
+                    Narrator.Emit(new NarrationEvent("defense.vgmfiring")
                         .Part("building", PipelineText.Name(__instance.pipeline_0, __instance))
                         .Part("action", Loc.T("defense.act.fired")));
                     var enemy = __state.Enemy;
@@ -606,7 +606,11 @@ namespace SpeechChem.Patches
                 }
                 int column = DefenseHazards.ShipColumn(__instance);
                 if (speak && watch.ShipColumn >= 0 && column != watch.ShipColumn)
+                {
+                    // Every speed, whatever the speech settings say, like the enemy's moves.
+                    Audio.SoundEngine.ShipMoved(column, DefenseHazards.ShipRowNumber(__instance));
                     Narrator.Emit(new NarrationEvent("defense.ship").Part("ship", DefenseHazards.ShipName).Part("column", column.ToString()));
+                }
                 watch.ShipColumn = column;
             }
             catch (Exception ex) { Log.Error("[defense] final cycle", ex); }

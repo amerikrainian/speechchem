@@ -271,6 +271,13 @@ namespace SpeechChem.Game
 
         /// <summary>The ship's position for its move lines: the map column (1-based) of its
         /// left edge, as the enemy's moves give its top-left cell.</summary>
+        /// <summary>The map row of the ship's top edge (1-based, clamped).</summary>
+        public static int ShipRowNumber(Class150 w)
+        {
+            int top = w.vector2i_2.int_1 - Class150.class358_0[0].method_2().int_1 / 2;
+            return Math.Max(0, Math.Min(DefenseText.MapRows - 1, (int)Math.Floor(top / (double)DefenseText.CellHeight))) + 1;
+        }
+
         public static int ShipColumn(Class150 w)
         {
             var size = Class150.class358_0[0].method_2();

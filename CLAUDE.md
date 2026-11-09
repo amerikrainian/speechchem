@@ -1163,6 +1163,11 @@ is 400 cycles/s (`SimulatorSpeed.Fast`), about 19 ticks/s, so the queue has no b
 real run, 2468 cycles: 16 ticks = the columns asteroids 1 and 2 crossed (5 + 11), and 67 sounds =
 2 x 16 + 35 turns. An asteroid can be shot while still off-map and never tick. Probe `sound shape
 Sine|Triangle|Square|Sawtooth <semitones>` auditions a waveform; `sound` also prints ticks / turns.
+THE SHIP (End of the Line, user request 2026-11-09): "The Prometheus 27" (defense.ship) is heard
+like an enemy move, not spoken: a sawtooth 80 ms beep (the enemy beeps triangle in that level, the
+aim note isn't there), column = pan, row of its top edge = pitch, own volume. Verified on a real
+run: 2 ship + 2 enemy moves logged, 4 sounds, no ship line spoken. The VGM laser's "fired" line is
+its own event too, defense.vgmfiring ("VGM Laser firing"), so it can be turned off alone.
 
 ## 16d. Reactor tutorial (`Tutorial/`, `Screens/Reactor/ReactorEditorScreen.Tutorial.cs`) — verified live 2026-10-23
 THE GAME'S TUTORIAL is one static list, `Class424.list_0` of `Class288` (text, ReactorBin cell +

@@ -323,6 +323,7 @@
   "settings.mod.keys": "Step keys",
   "settings.mod.sounds": "Sounds",
   "settings.mod.preview": "Sound preview",
+  "settings.mod.preview.short": "Preview",
   "settings.preview.enemy": "Enemy moves",
   "settings.preview.ship": "Ship moves",
   "settings.preview.asteroid1": "Asteroid, one pulse",

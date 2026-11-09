@@ -89,11 +89,11 @@ namespace SpeechChem.Patches
                 if (ModSettingsUi.Shown == ModSettingsUi.Tab.Game) lines.Add(GameBody(d));
                 else
                 {
-                    lines.Add(Row(Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.General), 74, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.General)),
-                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Events), 66, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Events)),
-                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Keys), 92, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Keys)),
-                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Sounds), 66, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Sounds)),
-                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Preview), 128, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Preview))));
+                    lines.Add(Row(Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.General), 80, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.General)),
+                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Events), 72, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Events)),
+                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Keys), 124, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Keys)),
+                        Button(ModSettingsUi.ModTabLabel(ModSettingsUi.ModTab.Sounds), 72, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Sounds)),
+                        Button(Loc.T("settings.mod.preview.short"), 84, () => ModSettingsUi.ShowModTab(ModSettingsUi.ModTab.Preview))));
                     var page = ModSettingsUi.Current();
                     int pages = ModSettingsUi.PageCount(page);
                     if (ModSettingsUi.VisualPage >= pages) ModSettingsUi.VisualPage = pages - 1;

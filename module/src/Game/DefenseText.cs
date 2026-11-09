@@ -67,6 +67,7 @@ namespace SpeechChem.Game
         private sealed class EventSpec
         {
             public string Key;       // the action: "exploded"
+            public string Kind;      // its own event in the settings (default: defense.event)
             public string Suffix;    // after the building's name ("Thruster Controls: left")
             public bool Weapon;      // an attack on the enemy: report hit / missed
             public bool Continuous;  // raised every cycle while it lasts (a beam): logged once per
@@ -86,7 +87,7 @@ namespace SpeechChem.Game
         {
             { Code(typeof(Class605), Class605.int_1), new EventSpec { Key = "defense.act.exploded", Weapon = true } },
             { Code(typeof(Class599), Class599.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true } },
-            { Code(typeof(Class600), Class600.int_1), new EventSpec { Key = "defense.act.firing", Weapon = true, Continuous = true } },
+            { Code(typeof(Class600), Class600.int_1), new EventSpec { Key = "defense.act.firing", Kind = "defense.firing", Weapon = true, Continuous = true } },
             // The particle accelerator's shot has its own descriptive sound (user 2026-10-09): only its hit / miss.
             { Code(typeof(ParticleAcceleratorDraggable), ParticleAcceleratorDraggable.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true, Silent = true } },
             { Code(typeof(Class601), 0), new EventSpec { Key = "defense.act.launched" } },
@@ -531,7 +532,7 @@ namespace SpeechChem.Game
                 {
                     try { action = spec.Action(b); } catch { }
                 }
-                return e.Part("building", name, spec.Suffix).Part("action", action ?? Loc.T(spec.Key));
+                return (spec.Kind != null ? new NarrationEvent(spec.Kind) : e).Part("building", name, spec.Suffix).Part("action", action ?? Loc.T(spec.Key));
             }
             return e.Part("building", name, ",").Part("action", Loc.T("defense.act.code", new { code }));
         }

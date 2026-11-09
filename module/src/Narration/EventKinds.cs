@@ -209,6 +209,8 @@ namespace SpeechChem.Narration
                 B(Defense,
                     Leaf("defense.took", P("building"), P("action"), Molecule(), P("meter")),
                     D(Leaf("defense.event", P("building"), P("action"))),
+                    // A beam says it every burst: its own event, so it can be turned off alone.
+                    D(Leaf("defense.firing", P("building"), P("action"))),
                     B("defense.effect",
                         // Hits and misses: logged, never spoken by default (user rule 2026-10-09).
                         Quiet(Leaf("defense.effect.hit", P("enemy"), P("result"))),

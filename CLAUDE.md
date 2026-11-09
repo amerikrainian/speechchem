@@ -1021,7 +1021,8 @@ level (Class144: robot Class313, three Oxygen Tanks). Apply logs how many types 
   every special building's codes (tank exploded, lasers fired, the particle accelerator SILENT —
   EventSpec.Silent, user 2026-10-09: the game's own sound says it fired, only its hit / miss is
   reported — weapons, the beam
-  laser "firing" as a CONTINUOUS weapon: one line and at most one "hit" per burst — canister /
+  laser "firing" as a CONTINUOUS weapon: one line and at most one "hit" per burst, its own event
+  defense.firing ("Hydrogen Laser firing" under Events > Defense, user request 2026-11-09) — canister /
   launch pad launched, missile launcher "launched a missile" (its hits arrive later as enemy
   damage), thruster left / right); Bodies — which drawn rectangle is each enemy's body (some draw
   attacks, water or a shadow too; one is drawn by its LEVEL, not itself; one is absent until it

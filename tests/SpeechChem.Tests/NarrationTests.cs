@@ -199,6 +199,25 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void TheLaserFiringLineTurnsOffWithoutTheOtherBuildingEvents()
+        {
+            var firing = EventKinds.Get("defense.firing");
+            var other = EventKinds.Get("defense.event");
+            Assert.True(EventSettings.SpeaksAt(firing, "3"));
+            Assert.True(EventSettings.Log(firing));
+
+            NarrationStore.BeginEdit();
+            EventSettings.SetSpeaksAt(firing, "3", false);
+            EventSettings.SetLog(firing, false);
+            NarrationStore.Commit();
+
+            Assert.False(EventSettings.SpeaksAt(firing, "3"));
+            Assert.False(EventSettings.Log(firing));
+            Assert.True(EventSettings.SpeaksAt(other, "3"));
+            Assert.True(EventSettings.Log(other));
+        }
+
+        [Fact]
         public void TheLogInternsEventsByContent()
         {
             var log = new SpeechChem.UI.GroupedLog<int, NarrationEvent>(1000, EventContentComparer.Instance);

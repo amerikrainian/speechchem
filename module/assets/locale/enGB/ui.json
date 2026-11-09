@@ -444,6 +444,7 @@
   "narr.kind.defense.attack": "Enemy attack",
   "narr.kind.defense.firing": "Hydrogen Laser firing",
   "narr.kind.defense.vgmfiring": "VGM Laser firing",
+  "narr.kind.defense.chemfiring": "Chemical Laser firing",
   "narr.kind.defense.move": "Enemy moves",
   "narr.kind.defense.sight": "Enemy comes into sight or leaves the map",
   "narr.kind.defense.ship": "Ship moves",

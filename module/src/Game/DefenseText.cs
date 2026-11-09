@@ -86,7 +86,7 @@ namespace SpeechChem.Game
         private static readonly Dictionary<KeyValuePair<Type, int>, EventSpec> Events = new Dictionary<KeyValuePair<Type, int>, EventSpec>
         {
             { Code(typeof(Class605), Class605.int_1), new EventSpec { Key = "defense.act.exploded", Weapon = true } },
-            { Code(typeof(Class599), Class599.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true } },
+            { Code(typeof(Class599), Class599.int_1), new EventSpec { Key = "defense.act.fired", Kind = "defense.chemfiring", Weapon = true } },
             { Code(typeof(Class600), Class600.int_1), new EventSpec { Key = "defense.act.firing", Kind = "defense.firing", Weapon = true, Continuous = true } },
             // The particle accelerator's shot has its own descriptive sound (user 2026-10-09): only its hit / miss.
             { Code(typeof(ParticleAcceleratorDraggable), ParticleAcceleratorDraggable.int_1), new EventSpec { Key = "defense.act.fired", Weapon = true, Silent = true } },

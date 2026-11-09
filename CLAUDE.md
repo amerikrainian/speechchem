@@ -1169,7 +1169,8 @@ Sine|Triangle|Square|Sawtooth <semitones>` auditions a waveform; `sound` also pr
 THE SHIP (End of the Line, user request 2026-11-09): "The Prometheus 27" (defense.ship) is heard
 like an enemy move, not spoken: a sawtooth 80 ms beep (the enemy beeps triangle in that level, the
 aim note isn't there), own volume. The VGM laser's "fired" line is its own event too,
-defense.vgmfiring ("VGM Laser firing"), so it can be turned off alone.
+defense.vgmfiring ("VGM Laser firing"), so it can be turned off alone; likewise the Chemical
+Laser's, defense.chemfiring ("Chemical Laser firing").
 END OF THE LINE (`FinalCues`, user request 2026-11-09). Everything there lives in x 760-970 (the
 ship's range), about 7 of the map's 32 columns, so the level's ship, enemy, asteroids and missiles
 pan over THAT band (`Beep.FinalFieldPosition`), not the whole map. Row = pitch throughout; the

@@ -290,6 +290,22 @@ namespace SpeechChem.Tests
         }
 
         [Fact]
+        public void The_preview_tab_has_a_labelled_button_for_every_generated_sound()
+        {
+            var page = SpeechChem.Screens.Settings.ModSettingsUi.Top(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.Preview);
+            Assert.Equal(7, page.Rows.Count);
+            Assert.Equal(7, page.Rows.Select(r => r.Id).Distinct().Count());
+            string table = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "locale", "enGB", "ui.json"));
+            Assert.Contains("\"settings.mod.preview\"", table);
+            foreach (var row in page.Rows)
+            {
+                var action = Assert.IsType<SpeechChem.Screens.Settings.SAction>(row);
+                Assert.True(action.Silent);
+                Assert.Contains("\"settings.preview." + row.Id.Substring("preview.".Length) + "\"", table);
+            }
+        }
+
+        [Fact]
         public void A_new_asteroid_takes_the_lowest_free_pulse_count()
         {
             Assert.Equal(1, Beep.LowestFreePulses(new int[0]));

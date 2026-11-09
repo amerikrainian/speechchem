@@ -63,6 +63,8 @@ namespace SpeechChem.Screens.Settings
     internal sealed class SAction : SRow
     {
         public Action Run;
+        /// <summary>No click sound on the spoken path (the action plays its own sound).</summary>
+        public bool Silent;
     }
 
     /// <summary>Several controls on one line (a format part: on / detail / up / down).</summary>
@@ -92,7 +94,7 @@ namespace SpeechChem.Screens.Settings
     internal static class ModSettingsUi
     {
         public enum Tab { Game, Mod }
-        public enum ModTab { General, Events, Keys, Sounds }
+        public enum ModTab { General, Events, Keys, Sounds, Preview }
 
         public const int RowsPerPage = 4;
 
@@ -235,8 +237,29 @@ namespace SpeechChem.Screens.Settings
                 case ModTab.Events: return EventsPage();
                 case ModTab.Keys: return KeysPage();
                 case ModTab.Sounds: return SoundsPage();
+                case ModTab.Preview: return SoundPreviewPage();
                 default: return GeneralPage();
             }
+        }
+
+        /// <summary>One button per sound the mod generates: Enter plays it once, centred at the base
+        /// pitch, at the Sounds tab's current (unsaved) volume.</summary>
+        private static SPage SoundPreviewPage()
+        {
+            var page = new SPage { Id = "preview", Title = () => ModTabLabel(ModTab.Preview) };
+            Action<string, Audio.SoundCue, int> add = (key, cue, pulses) => page.Rows.Add(new SAction
+            {
+                Id = "preview." + key, Label = () => Loc.T("settings.preview." + key), Silent = true,
+                Run = () => Audio.SoundEngine.Preview(cue, Audio.SoundSettings.Volume(cue, draft: true), pulses),
+            });
+            add("enemy", Audio.SoundCue.EnemyMove, 1);
+            add("ship", Audio.SoundCue.ShipMove, 1);
+            add("asteroid1", Audio.SoundCue.Asteroid, 1);
+            add("asteroid2", Audio.SoundCue.Asteroid, 2);
+            add("asteroid3", Audio.SoundCue.Asteroid, 3);
+            add("aim", Audio.SoundCue.LaserAim, 1);
+            add("missile", Audio.SoundCue.Missile, 1);
+            return page;
         }
 
         /// <summary>The mod's volumes (Guildrun's rows): Left / Right step, PageUp / PageDown step

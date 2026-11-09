@@ -107,6 +107,8 @@ namespace SpeechChem.Dev
                         if (a == "events") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.Events);
                         else if (a == "keys") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.Keys);
                         else if (a == "general") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.General);
+                        else if (a == "sounds") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.Sounds);
+                        else if (a == "preview") SpeechChem.Screens.Settings.ModSettingsUi.ShowModTab(SpeechChem.Screens.Settings.ModSettingsUi.ModTab.Preview);
                     }
                     return "tab requested" + (char)10;
                 }

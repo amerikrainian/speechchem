@@ -269,6 +269,7 @@ namespace SpeechChem.Screens
                     break;
                 case SAction a:
                     vt = ProfileUi.Button(a.SpokenLabel, a.Run);
+                    if (a.Silent) vt.OnActivate = a.Run;
                     break;
                 default:
                     vt = new NodeVtable { Announcements = new[] { new NodeAnnouncement(row.SpokenLabel) } };

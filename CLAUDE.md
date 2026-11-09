@@ -496,7 +496,7 @@ pre-settings behaviour exactly; only changed values are stored.
   game while modeled (`GameKeySuppression`: the toolbar reads 1-4 with no modifier check).
 - WIDGETS (`Patches/OptionsInjection`): a postfix on Class74's vmethod_8 rebuilds the widget tree:
   Game / Mod tab buttons; Game = the game's own layout over its widgets; Mod = sub-tabs General /
-  Events / Step keys / Sounds (§16e), a breadcrumb, the page's rows in visual pages of 4 (the box is fixed; game
+  Events / Step keys / Sounds / Sound preview (§16e), a breadcrumb, the page's rows in visual pages of 4 (the box is fixed; game
   widgets can't be subclassed — a module subclass of GClass10 fails to load), Back / Prev / n/m /
   Next / Save / Cancel. Checkboxes = Class475, choices = cycling buttons, links / actions = buttons;
   any change sets `ModSettingsUi.Dirty` and the dialog rebuilds next update (`vmethod_5`), carrying
@@ -1145,7 +1145,10 @@ Volumes (`SoundSettings`, Guildrun's model): master + per-cue signed offset, 0-2
 beep.wav's level; the chunk is rendered at twice its peak because the mixer can only attenuate),
 stored in narration.json as `sound.*` only when not default, so Save / Cancel apply. Settings' Mod
 tab > Sounds: `SSlider` rows (Left / Right 10, PageUp / PageDown 50, Enter previews at the draft
-volume; drawn as a cycling button). NOT driven live yet: the Sounds tab itself. To hear positions
+volume; drawn as a cycling button), verified live 2026-11-09. Mod tab > Sound preview: one button
+per generated sound (enemy, ship, asteroid with 1 / 2 / 3 pulses, aim note, missile), Enter plays it
+once, centred at the base pitch, at the Sounds tab's unsaved volume, with no click on the spoken
+path (`SAction.Silent`); verified live, 7 presses = 7 sounds. To hear positions
 without a run: probe `sound <column> <row>`.
 ASTEROIDS AND THE AIM (`AsteroidCues`, Bha Shogth's level only, Class146 / Class314 / Class600 —
 user design 2026-11-09; End of the Line has its own, below). Each time an

@@ -146,11 +146,11 @@ namespace SpeechChem.Audio
             => Play(Tone.Aim(Beep.FrequencyOfBearing(Beep.AimDegrees(position))), Centre, SoundSettings.Volume(SoundCue.LaserAim));
 
         /// <summary>The Settings dialog's preview at a draft volume: centred, at the base pitch.</summary>
-        public static void Preview(SoundCue cue, int percent)
+        public static void Preview(SoundCue cue, int percent, int pulses = 1)
         {
             switch (cue)
             {
-                case SoundCue.Asteroid: Play(Tone.Asteroid(Beep.BaseFrequency, 1), Centre, percent); break;
+                case SoundCue.Asteroid: Play(Tone.Asteroid(Beep.BaseFrequency, pulses), Centre, percent); break;
                 case SoundCue.LaserAim: Play(Tone.Aim(Beep.BaseFrequency), Centre, percent); break;
                 case SoundCue.ShipMove: Play(Tone.ShipMove(Beep.BaseFrequency), Centre, percent); break;
                 case SoundCue.Missile: Play(Tone.Missile(Beep.BaseFrequency), Centre, percent); break;

@@ -1147,6 +1147,22 @@ stored in narration.json as `sound.*` only when not default, so Save / Cancel ap
 tab > Sounds: `SSlider` rows (Left / Right 10, PageUp / PageDown 50, Enter previews at the draft
 volume; drawn as a cycling button). NOT driven live yet: the Sounds tab itself. To hear positions
 without a run: probe `sound <column> <row>`.
+ASTEROIDS AND THE AIM (`AsteroidCues`, Bha Shogth's level only, Class146 / Class314 / Class600 —
+user design 2026-11-09; End of the Line has no aimable laser and is not covered). Each time an
+asteroid's centre enters a new map column: the aim note (sawtooth), then its tick (square), both
+panned to the column. Tick pitch = bearing from the turret, aim pitch = the laser's angle, on ONE
+scale ($f = 660 \cdot 2^{s/12}$, $s = \theta / 5.625^\circ$, down higher, rounded to quarter
+semitones), so the five aims are at -8, -4, 0, 4, 8 semitones and a level pair means they line up:
+two readings to compare, never a verdict (the no-prediction rule, §16c). The pair is exact because
+the tick's chunk starts with silence and both start together. Pulse count (1-3) tells asteroids
+apart: lowest free when one reaches the map (max 3 on the map: one per 500 cycles, 1168 cycles
+from x 1024 to 440). The aim note also plays alone, centred, when the laser turns. Three shape
+groups, one each: enemy triangle, asteroid square, aim sawtooth (sine and triangle are too close;
+the shapes are scaled to equal RMS). Spoken "appeared" / "destroyed" lines stay. Top defense speed
+is 400 cycles/s (`SimulatorSpeed.Fast`), about 19 ticks/s, so the queue has no backlog. Verified on a
+real run, 2468 cycles: 16 ticks = the columns asteroids 1 and 2 crossed (5 + 11), and 67 sounds =
+2 x 16 + 35 turns. An asteroid can be shot while still off-map and never tick. Probe `sound shape
+Sine|Triangle|Square|Sawtooth <semitones>` auditions a waveform; `sound` also prints ticks / turns.
 
 ## 16d. Reactor tutorial (`Tutorial/`, `Screens/Reactor/ReactorEditorScreen.Tutorial.cs`) — verified live 2026-10-23
 THE GAME'S TUTORIAL is one static list, `Class424.list_0` of `Class288` (text, ReactorBin cell +

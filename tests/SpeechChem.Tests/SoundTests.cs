@@ -103,12 +103,12 @@ namespace SpeechChem.Tests
             {
                 if (Refuse) return false;
                 BusyFlags[voice] = true;
-                Played.Add(request.Frequency);
+                Played.Add(request.Tone.Frequency);
                 return true;
             }
         }
 
-        private static VoiceRequest At(double frequency) => new VoiceRequest { Frequency = frequency };
+        private static VoiceRequest At(double frequency) => new VoiceRequest { Tone = Tone.EnemyMove(frequency) };
 
         [Fact]
         public void A_beep_waits_while_every_voice_is_busy_and_keeps_its_order()
@@ -200,6 +200,85 @@ namespace SpeechChem.Tests
             Assert.True(move.StepStopsDefault);
             Assert.True(move.LogDefault);
             Assert.Equal(SpeakLevel.Speed3, EventKinds.Get("defense.sight").SpeakDefault);
+        }
+
+        private static double Semitones(double frequency) => 12.0 * Math.Log(frequency / Beep.BaseFrequency, 2.0);
+
+        [Theory]
+        [InlineData(0, -8.0)]
+        [InlineData(1, -4.0)]
+        [InlineData(2, 0.0)]
+        [InlineData(3, 4.0)]
+        [InlineData(4, 8.0)]
+        public void Each_laser_aim_falls_on_its_own_whole_semitone(int position, double semitones)
+            => Assert.Equal(semitones, Semitones(Beep.FrequencyOfBearing(Beep.AimDegrees(position))), 6);
+
+        [Fact]
+        public void A_bearing_equal_to_the_aim_has_the_same_pitch()
+            => Assert.Equal(Beep.FrequencyOfBearing(Beep.AimDegrees(4)), Beep.FrequencyOfBearing(45.0), 6);
+
+        [Fact]
+        public void Bearings_round_to_quarter_semitones_and_down_is_higher()
+        {
+            Assert.Equal(7.75, Semitones(Beep.FrequencyOfBearing(43.0)), 6); // 43 / 5.625 = 7.64
+            Assert.True(Beep.FrequencyOfBearing(10.0) > Beep.FrequencyOfBearing(-10.0));
+        }
+
+        private static double Rms(short[] samples) => Math.Sqrt(samples.Average(s => s * (double)s)) / 32767.0;
+
+        [Theory]
+        [InlineData((int)Waveform.Square)]
+        [InlineData((int)Waveform.Sawtooth)]
+        [InlineData((int)Waveform.Sine)]
+        public void Every_shape_is_about_as_loud_as_the_triangle(int shape)
+        {
+            var tone = new Tone { Shape = (Waveform)shape, Frequency = 660.0, Pulses = 1, PulseSeconds = Beep.LengthSeconds };
+            double reference = Rms(Beep.Render(660.0, 22050));
+            Assert.InRange(Rms(Beep.Render(tone, 22050)), reference * 0.9, reference * 1.1);
+        }
+
+        [Fact]
+        public void An_asteroid_tick_waits_for_its_aim_note_then_pulses()
+        {
+            const int rate = 22050;
+            var samples = Beep.Render(Tone.Asteroid(660.0, 3), rate);
+            int lead = (int)Math.Round(Tone.AsteroidLeadSeconds * rate);
+            int pulse = (int)Math.Round(Tone.AsteroidPulseSeconds * rate);
+            int gap = (int)Math.Round(Tone.PulseGapSeconds * rate);
+            Assert.Equal(lead + 3 * pulse + 2 * gap, samples.Length);
+            Assert.All(samples.Take(lead), s => Assert.Equal(0, s));
+            Assert.All(samples.Skip(lead + pulse).Take(gap), s => Assert.Equal(0, s));
+            Assert.True(Rms(samples.Skip(lead).Take(pulse).ToArray()) > 0.1);
+            Assert.True(Rms(samples.Skip(lead + 2 * (pulse + gap)).Take(pulse).ToArray()) > 0.1);
+        }
+
+        [Fact]
+        public void Tones_that_differ_are_cached_apart()
+        {
+            Assert.Equal(Tone.Asteroid(660.0, 2), Tone.Asteroid(660.0, 2));
+            Assert.NotEqual(Tone.Asteroid(660.0, 2), Tone.Asteroid(660.0, 3));
+            Assert.NotEqual(Tone.Aim(660.0), Tone.EnemyMove(660.0));
+        }
+
+        [Fact]
+        public void A_new_asteroid_takes_the_lowest_free_pulse_count()
+        {
+            Assert.Equal(1, Beep.LowestFreePulses(new int[0]));
+            Assert.Equal(2, Beep.LowestFreePulses(new[] { 1, 3 }));
+            Assert.Equal(4, Beep.LowestFreePulses(new[] { 1, 2, 3 }));
+        }
+
+        [Theory]
+        [InlineData((int)SoundCue.Asteroid)]
+        [InlineData((int)SoundCue.LaserAim)]
+        public void Each_cue_has_its_own_volume_under_the_master(int which)
+        {
+            NarrationStore.BeginEdit();
+            var cue = (SoundCue)which;
+            SoundSettings.SetVolume(cue, 30);
+            NarrationStore.Commit();
+            Assert.Equal(30, SoundSettings.Volume(cue));
+            Assert.Equal(100, SoundSettings.Volume(SoundCue.EnemyMove));
         }
     }
 }

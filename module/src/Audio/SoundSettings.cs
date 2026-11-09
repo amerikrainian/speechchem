@@ -7,6 +7,8 @@ namespace SpeechChem.Audio
     internal enum SoundCue
     {
         EnemyMove,
+        Asteroid,
+        LaserAim,
     }
 
     /// <summary>

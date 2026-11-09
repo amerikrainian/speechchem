@@ -244,22 +244,25 @@ namespace SpeechChem.Screens.Settings
         private static SPage SoundsPage()
         {
             var page = new SPage { Id = "sounds", Title = () => ModTabLabel(ModTab.Sounds) };
-            Action preview = () => Audio.SoundEngine.Preview(Audio.SoundSettings.Volume(Audio.SoundCue.EnemyMove, draft: true));
             page.Rows.Add(new SSlider
             {
                 Id = "sounds.master", Label = () => Loc.T("settings.sound.master"),
                 Get = () => Audio.SoundSettings.Master(draft: true), Set = Audio.SoundSettings.SetMaster,
                 Min = 0, Max = Audio.SoundSettings.MaxVolume, Step = Audio.SoundSettings.Step, LargeStep = Audio.SoundSettings.LargeStep,
-                Preview = preview,
+                Preview = () => Audio.SoundEngine.Preview(Audio.SoundCue.EnemyMove, Audio.SoundSettings.Volume(Audio.SoundCue.EnemyMove, draft: true)),
             });
-            page.Rows.Add(new SSlider
+            foreach (Audio.SoundCue c in Enum.GetValues(typeof(Audio.SoundCue)))
             {
-                Id = "sounds.enemyMove", Label = () => Loc.T("settings.sound.enemyMove"),
-                Get = () => Audio.SoundSettings.Volume(Audio.SoundCue.EnemyMove, draft: true),
-                Set = v => Audio.SoundSettings.SetVolume(Audio.SoundCue.EnemyMove, v),
-                Min = 0, Max = Audio.SoundSettings.MaxVolume, Step = Audio.SoundSettings.Step, LargeStep = Audio.SoundSettings.LargeStep,
-                Preview = preview,
-            });
+                var cue = c;
+                page.Rows.Add(new SSlider
+                {
+                    Id = "sounds." + cue, Label = () => Loc.T("settings.sound.cue." + cue),
+                    Get = () => Audio.SoundSettings.Volume(cue, draft: true),
+                    Set = v => Audio.SoundSettings.SetVolume(cue, v),
+                    Min = 0, Max = Audio.SoundSettings.MaxVolume, Step = Audio.SoundSettings.Step, LargeStep = Audio.SoundSettings.LargeStep,
+                    Preview = () => Audio.SoundEngine.Preview(cue, Audio.SoundSettings.Volume(cue, draft: true)),
+                });
+            }
             return page;
         }
 

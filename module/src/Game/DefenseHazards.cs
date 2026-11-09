@@ -167,6 +167,14 @@ namespace SpeechChem.Game
             return Loc.T("defense.bearing", new { angle = DefenseText.Angle(degrees) });
         }
 
+        /// <summary>Its bearing from the laser's turret in degrees (positive = down), or null.</summary>
+        public static double? BearingDegrees(Class21 a)
+        {
+            Vector2f d;
+            if (!FromLaser(a, out d)) return null;
+            return Math.Atan2(d.float_1, d.float_0) * 180.0 / Math.PI;
+        }
+
         /// <summary>"14 cells" from the laser's turret (pixels / the cell width), or null.</summary>
         public static string Distance(Class21 a)
         {

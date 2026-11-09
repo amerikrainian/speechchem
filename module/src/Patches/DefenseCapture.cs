@@ -450,6 +450,7 @@ namespace SpeechChem.Patches
                 watch.At = at;
                 watch.State = state;
                 AsteroidsAppear(__instance, !fresh && (int)Class258.smethod_16() == 1);
+                Audio.AsteroidCues.Cycle(__instance, fresh, !fresh && (int)Class258.smethod_16() == 1);
             }
             catch { }
         }

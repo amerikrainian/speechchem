@@ -9,7 +9,7 @@ namespace SpeechChem.Audio
     /// The mod's sounds, played through the game's own SDL2_mixer (deob Class10). Beeps have
     /// <see cref="Voices"/> channels of their own: the pool grows by that many and they are RESERVED,
     /// so the game's "first free channel" plays (Class4) still have their 8 and can never take ours.
-    /// Each play sets the channel's pan and volume, so one mono chunk per pitch is enough; chunks are
+    /// Each play sets the channel's pan and volume, so one mono chunk per tone is enough; chunks are
     /// generated on first use at the device's rate. A beep that finds no free channel waits in
     /// <see cref="VoiceQueue"/>. Chunks are never freed: they are a few KB, a hot reload may leave
     /// one still playing, and the audio device may already be gone at domain teardown.
@@ -19,7 +19,7 @@ namespace SpeechChem.Audio
         public const int Voices = 32;
         private const int GameChannels = 8;
 
-        private static readonly Dictionary<double, IntPtr> Chunks = new Dictionary<double, IntPtr>();
+        private static readonly Dictionary<Tone, IntPtr> Chunks = new Dictionary<Tone, IntPtr>();
         private static VoiceQueue _queue;
         private static int _sampleRate;
         private static bool _startAttempted;
@@ -33,7 +33,7 @@ namespace SpeechChem.Audio
 
             public bool Start(int voice, VoiceRequest request)
             {
-                IntPtr chunk = ChunkFor(request.Frequency);
+                IntPtr chunk = ChunkFor(request.Tone);
                 if (chunk == IntPtr.Zero) return false;
                 Class10.Mix_SetPanning(voice, request.Left, request.Right);
                 Class10.Mix_Volume(voice, request.Volume);
@@ -68,10 +68,10 @@ namespace SpeechChem.Audio
             return true;
         }
 
-        private static IntPtr ChunkFor(double frequency)
+        private static IntPtr ChunkFor(Tone tone)
         {
-            if (Chunks.TryGetValue(frequency, out IntPtr chunk)) return chunk;
-            byte[] wav = Beep.Wav(Beep.Render(frequency, _sampleRate), _sampleRate);
+            if (Chunks.TryGetValue(tone, out IntPtr chunk)) return chunk;
+            byte[] wav = Beep.Wav(Beep.Render(tone, _sampleRate), _sampleRate);
             var pin = GCHandle.Alloc(wav, GCHandleType.Pinned);
             try
             {
@@ -80,7 +80,7 @@ namespace SpeechChem.Audio
             }
             finally { pin.Free(); }
             if (chunk == IntPtr.Zero) { Report("could not load a generated beep"); return chunk; }
-            Chunks[frequency] = chunk;
+            Chunks[tone] = chunk;
             return chunk;
         }
 
@@ -90,22 +90,51 @@ namespace SpeechChem.Audio
             if (Started()) _queue.Pump();
         }
 
-        private static void Play(double frequency, double column, int percent)
+        private const double CentreColumn = (DefenseText.MapColumns + 1) / 2.0;
+
+        private static void Play(Tone tone, double column, int percent)
         {
             try
             {
                 if (percent <= 0 || !Started()) return;
-                Beep.PanGains(column, Game.DefenseText.MapColumns, out byte left, out byte right);
-                _queue.Add(new VoiceRequest { Frequency = frequency, Left = left, Right = right, Volume = Beep.MixerVolume(percent) });
+                Beep.PanGains(column, DefenseText.MapColumns, out byte left, out byte right);
+                _queue.Add(new VoiceRequest { Tone = tone, Left = left, Right = right, Volume = Beep.MixerVolume(percent) });
             }
             catch (Exception ex) { Report("play failed: " + ex.Message); }
         }
 
         /// <summary>An enemy reached a map cell (1-based): the column pans, the row sets the pitch.</summary>
-        public static void EnemyMoved(int column, int row) => Play(Beep.FrequencyOfRow(row), column, SoundSettings.Volume(SoundCue.EnemyMove));
+        public static void EnemyMoved(int column, int row)
+            => Play(Tone.EnemyMove(Beep.FrequencyOfRow(row)), column, SoundSettings.Volume(SoundCue.EnemyMove));
+
+        /// <summary>An asteroid entered a column: the aim note, then its tick (silent lead-in), started
+        /// together so their spacing is exact. A muted asteroid takes its aim note with it.</summary>
+        public static void AsteroidTick(int column, double bearing, int pulses, int aimPosition)
+        {
+            int percent = SoundSettings.Volume(SoundCue.Asteroid);
+            if (percent <= 0) return;
+            Play(Tone.Aim(Beep.FrequencyOfBearing(Beep.AimDegrees(aimPosition))), column, SoundSettings.Volume(SoundCue.LaserAim));
+            Play(Tone.Asteroid(Beep.FrequencyOfBearing(bearing), pulses), column, percent);
+        }
+
+        /// <summary>The laser turned to a position: its aim note alone, centred.</summary>
+        public static void LaserTurned(int position)
+            => Play(Tone.Aim(Beep.FrequencyOfBearing(Beep.AimDegrees(position))), CentreColumn, SoundSettings.Volume(SoundCue.LaserAim));
 
         /// <summary>The Settings dialog's preview at a draft volume: centred, at the base pitch.</summary>
-        public static void Preview(int percent) => Play(Beep.BaseFrequency, (Game.DefenseText.MapColumns + 1) / 2.0, percent);
+        public static void Preview(SoundCue cue, int percent)
+        {
+            switch (cue)
+            {
+                case SoundCue.Asteroid: Play(Tone.Asteroid(Beep.BaseFrequency, 1), CentreColumn, percent); break;
+                case SoundCue.LaserAim: Play(Tone.Aim(Beep.BaseFrequency), CentreColumn, percent); break;
+                default: Play(Tone.EnemyMove(Beep.BaseFrequency), CentreColumn, percent); break;
+            }
+        }
+
+        /// <summary>Dev: one waveform at a pitch, centred, at 100 percent.</summary>
+        public static void Audition(Waveform shape, double semitones)
+            => Play(new Tone { Shape = shape, Frequency = Beep.FrequencyOfSemitones(semitones), Pulses = 1, PulseSeconds = Beep.LengthSeconds }, CentreColumn, 100);
 
         /// <summary>Dev: a line of the engine's state.</summary>
         public static string Status()
@@ -114,7 +143,7 @@ namespace SpeechChem.Audio
             int busy = 0;
             for (int i = 0; i < Voices; i++) if (Class10.Mix_Playing(i) != 0) busy++;
             return "started " + _queue.Started + ", waiting " + _queue.Waiting + ", channels busy " + busy + " of " + Voices
-                + ", rate " + _sampleRate + ", pitches cached " + Chunks.Count + ", last error " + (_lastError ?? "none");
+                + ", rate " + _sampleRate + ", tones cached " + Chunks.Count + ", last error " + (_lastError ?? "none");
         }
     }
 }

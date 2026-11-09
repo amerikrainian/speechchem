@@ -2,10 +2,10 @@ using System.Collections.Generic;
 
 namespace SpeechChem.Audio
 {
-    /// <summary>One beep to play: its pitch, stereo gains (0-255) and mixer volume (0-128).</summary>
+    /// <summary>One sound to play: the tone, stereo gains (0-255) and mixer volume (0-128).</summary>
     internal struct VoiceRequest
     {
-        public double Frequency;
+        public Tone Tone;
         public byte Left, Right;
         public int Volume;
     }

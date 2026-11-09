@@ -58,13 +58,15 @@ namespace SpeechChem.Dev
     {
         /// <summary>"sound" = the engine's state; "sound column row" = the enemy-move beep at that
         /// map cell (1-based); "sound burst n" = n very quiet beeps at once (more than the channels:
-        /// the waiting ones must all still start). Each then gives the state.</summary>
+        /// the waiting ones must all still start); "sound shape Sine|Triangle|Square|Sawtooth s" =
+        /// that waveform s semitones above the base pitch. Each then gives the state.</summary>
         private static string Sound(string argument)
         {
             var args = (argument ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (args.Length == 2 && args[0] == "burst") for (int i = int.Parse(args[1]); i > 0; i--) Audio.SoundEngine.Preview(5);
+            if (args.Length == 2 && args[0] == "burst") for (int i = int.Parse(args[1]); i > 0; i--) Audio.SoundEngine.Preview(Audio.SoundCue.EnemyMove, 5);
+            else if (args.Length == 3 && args[0] == "shape") Audio.SoundEngine.Audition((Audio.Waveform)Enum.Parse(typeof(Audio.Waveform), args[1], true), double.Parse(args[2]));
             else if (args.Length == 2) Audio.SoundEngine.EnemyMoved(int.Parse(args[0]), int.Parse(args[1]));
-            return Audio.SoundEngine.Status() + "\n";
+            return Audio.SoundEngine.Status() + "\n" + Audio.AsteroidCues.Status() + "\n";
         }
 
         public static string Run(string command, string argument)

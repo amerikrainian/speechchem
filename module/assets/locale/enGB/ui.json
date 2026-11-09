@@ -327,6 +327,7 @@
   "settings.sound.cue.Asteroid": "Asteroid volume",
   "settings.sound.cue.LaserAim": "Laser aim volume",
   "settings.sound.cue.ShipMove": "Ship movement volume",
+  "settings.sound.cue.Missile": "Missile volume",
   "settings.back": "Back",
   "settings.prev": "Prev",
   "settings.next": "Next",

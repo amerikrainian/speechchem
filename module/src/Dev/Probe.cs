@@ -66,7 +66,7 @@ namespace SpeechChem.Dev
             if (args.Length == 2 && args[0] == "burst") for (int i = int.Parse(args[1]); i > 0; i--) Audio.SoundEngine.Preview(Audio.SoundCue.EnemyMove, 5);
             else if (args.Length == 3 && args[0] == "shape") Audio.SoundEngine.Audition((Audio.Waveform)Enum.Parse(typeof(Audio.Waveform), args[1], true), double.Parse(args[2]));
             else if (args.Length == 2) Audio.SoundEngine.EnemyMoved(int.Parse(args[0]), int.Parse(args[1]));
-            return Audio.SoundEngine.Status() + "\n" + Audio.AsteroidCues.Status() + "\n";
+            return Audio.SoundEngine.Status() + "\n" + Audio.AsteroidCues.Status() + "\n" + Audio.FinalCues.Status() + "\n";
         }
 
         public static string Run(string command, string argument)

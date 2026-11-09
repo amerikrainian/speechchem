@@ -10,6 +10,7 @@ namespace SpeechChem.Audio
         Asteroid,
         LaserAim,
         ShipMove,
+        Missile,
     }
 
     /// <summary>

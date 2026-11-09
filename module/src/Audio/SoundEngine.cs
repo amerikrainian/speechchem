@@ -90,26 +90,46 @@ namespace SpeechChem.Audio
             if (Started()) _queue.Pump();
         }
 
-        private const double CentreColumn = (DefenseText.MapColumns + 1) / 2.0;
+        private const double Centre = 0.5;
 
-        private static void Play(Tone tone, double column, int percent)
+        private static void Play(Tone tone, double position, int percent)
         {
             try
             {
                 if (percent <= 0 || !Started()) return;
-                Beep.PanGains(column, DefenseText.MapColumns, out byte left, out byte right);
+                Beep.PanGains(position, out byte left, out byte right);
                 _queue.Add(new VoiceRequest { Tone = tone, Left = left, Right = right, Volume = Beep.MixerVolume(percent) });
             }
             catch (Exception ex) { Report("play failed: " + ex.Message); }
         }
 
-        /// <summary>An enemy reached a map cell (1-based): the column pans, the row sets the pitch.</summary>
-        public static void EnemyMoved(int column, int row)
-            => Play(Tone.EnemyMove(Beep.FrequencyOfRow(row)), column, SoundSettings.Volume(SoundCue.EnemyMove));
+        private static double OfColumn(int column) => Beep.ColumnPosition(column, DefenseText.MapColumns);
 
-        /// <summary>The ship reached a column; its row sets the pitch, as for an enemy.</summary>
-        public static void ShipMoved(int column, int row)
-            => Play(Tone.ShipMove(Beep.FrequencyOfRow(row)), column, SoundSettings.Volume(SoundCue.ShipMove));
+        /// <summary>An enemy reached a map cell (1-based): the column pans, the row sets the pitch.</summary>
+        public static void EnemyMoved(int column, int row) => EnemyMovedAt(OfColumn(column), row);
+
+        /// <summary>The same at a stereo position (End of the Line's zoomed field).</summary>
+        public static void EnemyMovedAt(double position, int row)
+            => Play(Tone.EnemyMove(Beep.FrequencyOfRow(row)), position, SoundSettings.Volume(SoundCue.EnemyMove));
+
+        /// <summary>The ship moved; the row it is struck at sets the pitch.</summary>
+        public static void ShipMoved(double position, int row)
+            => Play(Tone.ShipMove(Beep.FrequencyOfRow(row)), position, SoundSettings.Volume(SoundCue.ShipMove));
+
+        /// <summary>A falling asteroid reached a row: the ship's note at the ship's place and pitch,
+        /// then the asteroid's tick at its own. The same place twice means it is over the ship; the
+        /// same pitch means it has fallen to the ship's height. A muted asteroid takes the note with it.</summary>
+        public static void AsteroidFell(double position, int row, int pulses, double shipPosition, int shipRow)
+        {
+            int percent = SoundSettings.Volume(SoundCue.Asteroid);
+            if (percent <= 0) return;
+            Play(Tone.Aim(Beep.FrequencyOfRow(shipRow)), shipPosition, SoundSettings.Volume(SoundCue.ShipMove));
+            Play(Tone.Asteroid(Beep.FrequencyOfRow(row), pulses), position, percent);
+        }
+
+        /// <summary>A missile reached a row.</summary>
+        public static void MissileMoved(double position, int row)
+            => Play(Tone.Missile(Beep.FrequencyOfRow(row)), position, SoundSettings.Volume(SoundCue.Missile));
 
         /// <summary>An asteroid entered a column: the aim note, then its tick (silent lead-in), started
         /// together so their spacing is exact. A muted asteroid takes its aim note with it.</summary>
@@ -117,29 +137,30 @@ namespace SpeechChem.Audio
         {
             int percent = SoundSettings.Volume(SoundCue.Asteroid);
             if (percent <= 0) return;
-            Play(Tone.Aim(Beep.FrequencyOfBearing(Beep.AimDegrees(aimPosition))), column, SoundSettings.Volume(SoundCue.LaserAim));
-            Play(Tone.Asteroid(Beep.FrequencyOfBearing(bearing), pulses), column, percent);
+            Play(Tone.Aim(Beep.FrequencyOfBearing(Beep.AimDegrees(aimPosition))), OfColumn(column), SoundSettings.Volume(SoundCue.LaserAim));
+            Play(Tone.Asteroid(Beep.FrequencyOfBearing(bearing), pulses), OfColumn(column), percent);
         }
 
         /// <summary>The laser turned to a position: its aim note alone, centred.</summary>
         public static void LaserTurned(int position)
-            => Play(Tone.Aim(Beep.FrequencyOfBearing(Beep.AimDegrees(position))), CentreColumn, SoundSettings.Volume(SoundCue.LaserAim));
+            => Play(Tone.Aim(Beep.FrequencyOfBearing(Beep.AimDegrees(position))), Centre, SoundSettings.Volume(SoundCue.LaserAim));
 
         /// <summary>The Settings dialog's preview at a draft volume: centred, at the base pitch.</summary>
         public static void Preview(SoundCue cue, int percent)
         {
             switch (cue)
             {
-                case SoundCue.Asteroid: Play(Tone.Asteroid(Beep.BaseFrequency, 1), CentreColumn, percent); break;
-                case SoundCue.LaserAim: Play(Tone.Aim(Beep.BaseFrequency), CentreColumn, percent); break;
-                case SoundCue.ShipMove: Play(Tone.ShipMove(Beep.BaseFrequency), CentreColumn, percent); break;
-                default: Play(Tone.EnemyMove(Beep.BaseFrequency), CentreColumn, percent); break;
+                case SoundCue.Asteroid: Play(Tone.Asteroid(Beep.BaseFrequency, 1), Centre, percent); break;
+                case SoundCue.LaserAim: Play(Tone.Aim(Beep.BaseFrequency), Centre, percent); break;
+                case SoundCue.ShipMove: Play(Tone.ShipMove(Beep.BaseFrequency), Centre, percent); break;
+                case SoundCue.Missile: Play(Tone.Missile(Beep.BaseFrequency), Centre, percent); break;
+                default: Play(Tone.EnemyMove(Beep.BaseFrequency), Centre, percent); break;
             }
         }
 
         /// <summary>Dev: one waveform at a pitch, centred, at 100 percent.</summary>
         public static void Audition(Waveform shape, double semitones)
-            => Play(new Tone { Shape = shape, Frequency = Beep.FrequencyOfSemitones(semitones), Pulses = 1, PulseSeconds = Beep.LengthSeconds }, CentreColumn, 100);
+            => Play(new Tone { Shape = shape, Frequency = Beep.FrequencyOfSemitones(semitones), Pulses = 1, PulseSeconds = Beep.LengthSeconds }, Centre, 100);
 
         /// <summary>Dev: a line of the engine's state.</summary>
         public static string Status()

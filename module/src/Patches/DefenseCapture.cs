@@ -436,7 +436,12 @@ namespace SpeechChem.Patches
                     if (!Equals(at, watch.At))
                     {
                         // Every speed, whatever the speech settings say (user rule 2026-11-09).
-                        if (at != null) Audio.SoundEngine.EnemyMoved(at.Value.int_0, at.Value.int_1);
+                        if (at != null)
+                        {
+                            var final = DefenseHazards.Final(__instance);
+                            if (final != null) Audio.SoundEngine.EnemyMovedAt(Audio.Beep.FinalFieldPosition(final.vector2i_3.int_0), at.Value.int_1);
+                            else Audio.SoundEngine.EnemyMoved(at.Value.int_0, at.Value.int_1);
+                        }
                         var move = DefenseText.MoveEvent(EnemyName, watch.At, at);
                         if (move != null) Narrator.Emit(move);
                     }
@@ -526,6 +531,7 @@ namespace SpeechChem.Patches
             {
                 DefenseHazards.Reset(__instance);
                 FinalWatches.Remove(__instance);
+                Audio.FinalCues.Reset();
             }
             catch { }
         }
@@ -608,10 +614,11 @@ namespace SpeechChem.Patches
                 if (speak && watch.ShipColumn >= 0 && column != watch.ShipColumn)
                 {
                     // Every speed, whatever the speech settings say, like the enemy's moves.
-                    Audio.SoundEngine.ShipMoved(column, DefenseHazards.ShipRowNumber(__instance));
+                    Audio.SoundEngine.ShipMoved(Audio.Beep.FinalFieldPosition(__instance.vector2i_2.int_0), DefenseHazards.ShipStruckRow(__instance));
                     Narrator.Emit(new NarrationEvent("defense.ship").Part("ship", DefenseHazards.ShipName).Part("column", column.ToString()));
                 }
                 watch.ShipColumn = column;
+                Audio.FinalCues.Cycle(__instance, speak);
             }
             catch (Exception ex) { Log.Error("[defense] final cycle", ex); }
             return __exception;

@@ -17,7 +17,7 @@ namespace SpeechChem.Audio
         public double PulseSeconds;
         public double LeadSeconds;
 
-        public const double AimSeconds = 0.06, AsteroidPulseSeconds = 0.045, PulseGapSeconds = 0.03;
+        public const double AimSeconds = 0.06, AsteroidPulseSeconds = 0.045, PulseGapSeconds = 0.03, MissileSeconds = 0.03;
 
         /// <summary>Starts after the aim note it is paired with, and a short gap.</summary>
         public const double AsteroidLeadSeconds = AimSeconds + PulseGapSeconds;
@@ -29,8 +29,15 @@ namespace SpeechChem.Audio
         public static Tone ShipMove(double frequency)
             => new Tone { Shape = Waveform.Sawtooth, Frequency = frequency, Pulses = 1, PulseSeconds = Beep.LengthSeconds };
 
+        /// <summary>The short reference note of a pair: the laser's aim, or the ship before a
+        /// falling asteroid (the two are never in the same level).</summary>
         public static Tone Aim(double frequency)
             => new Tone { Shape = Waveform.Sawtooth, Frequency = frequency, Pulses = 1, PulseSeconds = AimSeconds };
+
+        /// <summary>A sine, and far shorter than the enemy's triangle: the fourth sound of End of
+        /// the Line, told apart by its brevity because only three waveform groups stay distinct.</summary>
+        public static Tone Missile(double frequency)
+            => new Tone { Shape = Waveform.Sine, Frequency = frequency, Pulses = 1, PulseSeconds = MissileSeconds };
 
         public static Tone Asteroid(double frequency, int pulses)
             => new Tone { Shape = Waveform.Square, Frequency = frequency, Pulses = pulses, PulseSeconds = AsteroidPulseSeconds, LeadSeconds = AsteroidLeadSeconds };
@@ -92,12 +99,25 @@ namespace SpeechChem.Audio
         /// <summary>Constant-power left and right gains (0-255, the mixer's panning scale) for a
         /// column: 1 is hard left, <paramref name="columns"/> is hard right.</summary>
         public static void PanGains(double column, int columns, out byte left, out byte right)
+            => PanGains(ColumnPosition(column, columns), out left, out right);
+
+        /// <summary>The same for a position across the stereo field: 0 is hard left, 1 hard right.</summary>
+        public static void PanGains(double position, out byte left, out byte right)
         {
-            double position = columns <= 1 ? 0.5 : Math.Max(0.0, Math.Min(1.0, (column - 1.0) / (columns - 1.0)));
-            double angle = position * Math.PI / 2.0;
+            double angle = Math.Max(0.0, Math.Min(1.0, position)) * Math.PI / 2.0;
             left = (byte)Math.Round(255.0 * Math.Cos(angle));
             right = (byte)Math.Round(255.0 * Math.Sin(angle));
         }
+
+        public static double ColumnPosition(double column, int columns) => columns <= 1 ? 0.5 : (column - 1.0) / (columns - 1.0);
+
+        // Everything in End of the Line happens in this band of the map: the ship's centre stays in
+        // it (Class150), the asteroids drop at x 790-940, the enemy sways over 775-955.
+        private const double FinalFieldLeft = 760.0, FinalFieldRight = 970.0;
+
+        /// <summary>A pixel x in End of the Line, spread over the whole stereo field: on the map's
+        /// 32 columns the ship would only ever move about 7 columns' worth of pan.</summary>
+        public static double FinalFieldPosition(double x) => (x - FinalFieldLeft) / (FinalFieldRight - FinalFieldLeft);
 
         /// <summary>The enemy beep at a frequency.</summary>
         public static short[] Render(double frequency, int sampleRate) => Render(Tone.EnemyMove(frequency), sampleRate);

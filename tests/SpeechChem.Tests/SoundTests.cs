@@ -262,6 +262,33 @@ namespace SpeechChem.Tests
             Assert.NotEqual(Tone.Aim(660.0), Tone.EnemyMove(660.0));
         }
 
+        [Theory]
+        [InlineData(760.0, 0.0)]
+        [InlineData(865.0, 0.5)]
+        [InlineData(970.0, 1.0)]
+        public void The_last_level_spreads_the_ships_range_over_the_stereo_field(double x, double position)
+            => Assert.Equal(position, Beep.FinalFieldPosition(x), 6);
+
+        [Theory]
+        [InlineData(-1.0, 255, 0)]
+        [InlineData(0.0, 255, 0)]
+        [InlineData(1.0, 0, 255)]
+        [InlineData(2.0, 0, 255)]
+        public void A_stereo_position_is_clamped_to_the_field(double position, int left, int right)
+        {
+            Beep.PanGains(position, out byte l, out byte r);
+            Assert.Equal(left, l);
+            Assert.Equal(right, r);
+        }
+
+        [Fact]
+        public void A_missile_is_a_much_shorter_blip_than_the_enemy_beep()
+        {
+            var missile = Beep.Render(Tone.Missile(660.0), 22050);
+            Assert.True(missile.Length * 2 < Beep.Render(660.0, 22050).Length);
+            Assert.NotEqual(Tone.Missile(660.0), Tone.EnemyMove(660.0));
+        }
+
         [Fact]
         public void A_new_asteroid_takes_the_lowest_free_pulse_count()
         {
@@ -274,6 +301,7 @@ namespace SpeechChem.Tests
         [InlineData((int)SoundCue.Asteroid)]
         [InlineData((int)SoundCue.LaserAim)]
         [InlineData((int)SoundCue.ShipMove)]
+        [InlineData((int)SoundCue.Missile)]
         public void Each_cue_has_its_own_volume_under_the_master(int which)
         {
             NarrationStore.BeginEdit();

@@ -1148,7 +1148,7 @@ tab > Sounds: `SSlider` rows (Left / Right 10, PageUp / PageDown 50, Enter previ
 volume; drawn as a cycling button). NOT driven live yet: the Sounds tab itself. To hear positions
 without a run: probe `sound <column> <row>`.
 ASTEROIDS AND THE AIM (`AsteroidCues`, Bha Shogth's level only, Class146 / Class314 / Class600 —
-user design 2026-11-09; End of the Line has no aimable laser and is not covered). Each time an
+user design 2026-11-09; End of the Line has its own, below). Each time an
 asteroid's centre enters a new map column: the aim note (sawtooth), then its tick (square), both
 panned to the column. Tick pitch = bearing from the turret, aim pitch = the laser's angle, on ONE
 scale ($f = 660 \cdot 2^{s/12}$, $s = \theta / 5.625^\circ$, down higher, rounded to quarter
@@ -1165,9 +1165,22 @@ real run, 2468 cycles: 16 ticks = the columns asteroids 1 and 2 crossed (5 + 11)
 Sine|Triangle|Square|Sawtooth <semitones>` auditions a waveform; `sound` also prints ticks / turns.
 THE SHIP (End of the Line, user request 2026-11-09): "The Prometheus 27" (defense.ship) is heard
 like an enemy move, not spoken: a sawtooth 80 ms beep (the enemy beeps triangle in that level, the
-aim note isn't there), column = pan, row of its top edge = pitch, own volume. Verified on a real
-run: 2 ship + 2 enemy moves logged, 4 sounds, no ship line spoken. The VGM laser's "fired" line is
-its own event too, defense.vgmfiring ("VGM Laser firing"), so it can be turned off alone.
+aim note isn't there), own volume. The VGM laser's "fired" line is its own event too,
+defense.vgmfiring ("VGM Laser firing"), so it can be turned off alone.
+END OF THE LINE (`FinalCues`, user request 2026-11-09). Everything there lives in x 760-970 (the
+ship's range), about 7 of the map's 32 columns, so the level's ship, enemy, asteroids and missiles
+pan over THAT band (`Beep.FinalFieldPosition`), not the whole map. Row = pitch throughout; the
+ship's pitch is the row an asteroid's centre is in when it touches it (`ShipStruckRow`, row 19 at
+y 540: the level's test cuts 75 px off the sprite). Each time an asteroid falls into a new row: the
+ship's note (sawtooth, at the ship's place and that pitch), then the asteroid's square tick (at its
+own place and row), started together via the tick's silent lead-in; the same place means over the
+ship (within +/-62.5 px, 30 percent of the stereo width), the same pitch at the ship's height. Pulse
+count 1-3 as in §16e's asteroids (max 3 on the map); off the map it loses its count (the game keeps
+misses listed forever). A missile is a 30 ms sine blip at each new row (every 14 cycles): the
+fourth sound, told apart by brevity. Spoken launched / appeared / destroyed / hit lines stay.
+Verified on a real run, 3037 cycles: 71 asteroid ticks, exactly what the launch and end cycles in
+the log give; 168 missile ticks for 10 missiles; 314 sounds = 2 x 71 + 168 + 2 ship + 2 enemy;
+asteroid 3 struck the ship in row 19.
 
 ## 16d. Reactor tutorial (`Tutorial/`, `Screens/Reactor/ReactorEditorScreen.Tutorial.cs`) — verified live 2026-10-23
 THE GAME'S TUTORIAL is one static list, `Class424.list_0` of `Class288` (text, ReactorBin cell +

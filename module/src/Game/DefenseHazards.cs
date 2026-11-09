@@ -269,15 +269,16 @@ namespace SpeechChem.Game
             return ship.method_31(a.method_0());
         }
 
-        /// <summary>The ship's position for its move lines: the map column (1-based) of its
-        /// left edge, as the enemy's moves give its top-left cell.</summary>
-        /// <summary>The map row of the ship's top edge (1-based, clamped).</summary>
-        public static int ShipRowNumber(Class150 w)
+        /// <summary>The map row (1-based, clamped) an asteroid's centre is in when it touches the
+        /// ship: the level's test cuts 75 px off the sprite's top, and the asteroid's box is 35 tall.</summary>
+        public static int ShipStruckRow(Class150 w)
         {
-            int top = w.vector2i_2.int_1 - Class150.class358_0[0].method_2().int_1 / 2;
-            return Math.Max(0, Math.Min(DefenseText.MapRows - 1, (int)Math.Floor(top / (double)DefenseText.CellHeight))) + 1;
+            double top = w.vector2i_2.int_1 - Class150.class358_0[0].method_2().int_1 / 2 + 75 - 17.5;
+            return Math.Max(0, Math.Min(DefenseText.MapRows - 1, (int)Math.Floor(top / DefenseText.CellHeight))) + 1;
         }
 
+        /// <summary>The ship's position for its move lines: the map column (1-based) of its
+        /// left edge, as the enemy's moves give its top-left cell.</summary>
         public static int ShipColumn(Class150 w)
         {
             var size = Class150.class358_0[0].method_2();

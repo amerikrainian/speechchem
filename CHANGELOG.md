@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.1.5
+
+- Added final touchups for planets 7 through 9.
+- You can now make custom research assignments, if that is what you wish.
+
 ## V0.1.4
 
 - Add a (hopefully better) in-game tutorial for the first 2 levels.

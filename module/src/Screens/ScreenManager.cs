@@ -198,6 +198,11 @@ namespace SpeechChem.Screens
             Register(new AustraliumScreen());
             Register(new CorviScreen());
             Register(new JournalScreen());
+            Register(new ResearchNet.CustomAssignmentsScreen());
+            Register(new ResearchNet.ImportAssignmentScreen());
+            Register(new ResearchNet.AssignmentEditorScreen());
+            Register(new ResearchNet.MoleculeEditorScreen());
+            Register(new ResearchNet.MoleculeDatabaseScreen());
             Register(new OptionsScreen());
             Register(new ProfilePickerScreen());
             Register(new NewProfileScreen());

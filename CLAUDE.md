@@ -399,9 +399,62 @@ output"; research = output zones, production = random + fixed inputs then output
 inputs) opening `MoleculeViewerScreen`; Shift+Backspace on the puzzle = the same as one line.
 Enter = `PublishedLevelCache.smethod_3(id)`; hover = `method_18(id)` → `class469_0` panel. `Class680`
 cards read the game's "Unavailable" text. Actions: Back (`method_12`), Create or Import an Assignment
-(`method_20` → the unmodeled ResearchNetCustomEditor), Newer / Older (`vmethod_11/12`, enabled =
+(`method_20` → Custom Assignments, §12b), Newer / Older (`vmethod_11/12`, enabled =
 `GClass15.method_7()`; then focus the new page's first issue; disabled → "unavailable", no click).
 KeepStateOnPop only while covered.
+
+## 12b. ResearchNet custom assignments (`Screens/ResearchNet/`) — verified live 2026-11-10
+Reached from the journal's "Create or Import an Assignment". The assignments are Class429 rows
+(the save's ResearchNet table; `Locals.smethod_0().smethod_0().method_41().method_0()`, oldest
+first, each a `Class429.Class431`: `string_0` level id, `customLevel_0` the definition).
+- `CustomAssignmentsScreen` over `ResearchNetCustomEditor` (name = drawn "Custom" + "Assignments").
+  The game is select-then-act (a card click sets `CustomLevelWidget.bool_2`; buttons act on
+  `method_20`, the first selected card; double click = play). ONE LIST, PAGE FOLLOWS (journal rule,
+  12 per page `int_2`): focus turns the page and SELECTS the card (bool_2 on it only, then
+  `method_34` = the buttons' enable refresh), re-synced every render (a rebuild deselects). Row =
+  "name, button, author, kind (game's Research / Production / "Sandbox"), [completed], n of m" +
+  the card's molecules as viewer cells (`JournalScreen.Previews`, now internal); Enter = play
+  (`Class431.method_7`), Backspace = menu (Edit / Play / Duplicate / Delete / Export; a Class680 card
+  only Delete), Shift+Backspace = the molecules as a line. New Research / Production / Sandbox
+  (`method_21/22/23`) and Duplicate (`method_26`) land on the new last entry (the game sets bool_5:
+  last page, last card selected). Actions stop = the game's buttons (disabled = "unavailable").
+- `ImportAssignmentScreen` over `Class57`: the parse lives in a build closure, so the mod parses
+  the clipboard itself (`Class211.smethod_0(Class448.smethod_10())`) once per widget tree
+  (`gclass8_0`; Rescan = `method_15` rebuilds) and imports with the game's `method_16(parsed)`;
+  focus then lands on the import (static flag consumed in the list's OnUpdate — a FocusNode made
+  while the dialog is focused goes to the dialog's navigator).
+- `AssignmentEditorScreen` over `Class63` Research / `Class65` Production / `Class64` Sandbox
+  Editor (Class56, bool_2: rebuild on regaining the top). Stops: Details (Assignment Name / Author
+  Name GClass16 fields; OnSelect = `Class56.method_14(field)` gives the field the game's keyboard
+  focus — verified by typing into the second field), Inputs, Outputs (research + Large Output
+  `method_32`; sandbox = printers P-1..P-8, `dictionary_3`, `method_34`), Parameters, Save (Save and
+  Play / Save and Exit / Cancel — the editor's own, with its conflict / discard message boxes). Zone
+  rows = button + box contents ("Water, H2O, 66 percent; …", the box's `(int)` truncation) + viewer
+  cells, explicit "n of m" (the cells broke the builder's count). Research parameters = combo
+  boxes over the radio choices (Bonder 0/2/4/8, Sensor, Tunnel 0/2, Fusion, Fission; commit
+  `method_24(true, Enum32, n)`); production = six reactor-type toggles (`method_28`: the game
+  silently refuses a fifth — reads "off"), Reactor Quota 0-6 and terrain (`CustomProductionLevel.list_0`,
+  planet names; mod label "Terrain") as combo boxes, Include Recycler (`method_39` + `method_52` +
+  `method_13`: the checkbox only flips itself); sandbox = the two programmed sequences, each a text
+  row ("Programmed Input (Starting Sequence): P-2 Nitrogen, N2, P-1") + add buttons P-1..P-8
+  (`method_27`, cap 18; speaks "n of 18") + the drawn "<-" as "Remove last" (`method_28`).
+- `MoleculeEditorScreen` over `ResearchNetInputEditor` (3 molecules + ratio) and
+  `ResearchNetOutputEditor` (1 molecule, 4 x 8 when `bool_4` large; title by `bool_5`). Shares
+  `Screens/Common/MoleculeGrid` with the note editor (extracted from it 2026-11-10: grid cells,
+  place / remove / copy / cut / bond menu, palette atom nodes; the host passes its after-edit
+  action — input `method_19`, output `method_16`, note `Class307.smethod_1`). Per molecule: header
+  (fields' name / formula, game's "INVALID" from `class474_x.bool_1`), Molecule Database
+  (`method_21(k+1)` / `method_18`), grid, Molecule Name / Formula fields (input editor: disabled
+  for an empty molecule → "unavailable"). Palette: 15 fixed atoms (`Class450.list_2`, rows of 8)
+  + the 4 tiles of `class286_0.ilist_0` (start as the Greek elements; Select Element's pick shifts
+  in at the end, focus follows it). A known molecule fills its fields itself (game). Ratio: the
+  shares row + one slider per handle (`ratioSliderWidget_0.moleculeCountPair_0`, twelfths; Left /
+  Right ±1, PageUp / Down ±3, each side ≥ 1 — the drag's rule).
+- `MoleculeDatabaseScreen` over `Class66`: the 28 catalog molecules, Enter = `method_16`.
+- Verified live: list, menu, page follow (13 assignments), New ×3 kinds, Edit, fields, combos,
+  toggles, sequences, input / output / fixed-input editors, database, picker, bonds, INVALID +
+  Okay's error box, Save and Exit, Cancel's discard box, Export, Import, Delete. NOT verified: Save
+  and Play (playing a custom level), the solution-conflict box. All test assignments deleted.
 
 ## 13. Challenges (`module/src/Screens/ChallengeScreens.cs`) — verified live 2026-09-27
 `ChallengesScreen` over `SpaceChem.ChallengeEditor`: the screen name is the drawn title
@@ -1452,8 +1505,8 @@ dismiss with `pop` — Continue would leave the level).
    ResearchNet journal (§12a), challenges (§13), options (§14), in-level dialogs (§15), reactor editor
    (§16) + run log (§17), periodic table (§18), Story / Training / Performance (§19).
 5. (done) the pipeline editor (§16a), saved designs, notes, copy (§16b); the first defense level
-   (§16c). Next: the enemy graph, later defense levels' enemies and weapons as they come, the
-   ResearchNet builders (they reuse the note editor's pieces: Class286 palettes, Class420.smethod_1/2 grids).
+   (§16c), the ResearchNet custom assignments (§12b). Next: the enemy graph, later defense levels'
+   enemies and weapons as they come.
 6. (done) The Rust installer (§5).
-7. (done for profiles, Save to Toolbox) Text entry over GClass16 (§16b); reuse for ResearchNet fields
-   (several fields per screen: arm on landing via Class56.method_14).
+7. (done) Text entry over GClass16 (§16b), several fields per screen in ResearchNet (§12b: arm on
+   landing via Class56.method_14).

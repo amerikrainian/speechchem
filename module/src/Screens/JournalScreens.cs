@@ -181,7 +181,7 @@ namespace SpeechChem.Screens
             b.EndRow();
         }
 
-        private struct Preview
+        internal struct Preview
         {
             public Molecule Molecule;
             public bool Output;
@@ -190,7 +190,7 @@ namespace SpeechChem.Screens
         /// <summary>The molecules a card draws, in its order (CustomLevel.vmethod_4 overrides):
         /// research = the output zones; production = the random input zones' molecules, the fixed
         /// inputs, then the output zones; sandbox = the inputs only.</summary>
-        private static List<Preview> Previews(CustomLevel level)
+        internal static List<Preview> Previews(CustomLevel level)
         {
             var list = new List<Preview>();
             void Add(Molecule m, bool output) { if (m != null) list.Add(new Preview { Molecule = m, Output = output }); }
@@ -213,7 +213,7 @@ namespace SpeechChem.Screens
         }
 
         /// <summary>"Inputs: a; b. Outputs: c" — the card's molecules as one line.</summary>
-        private static string PreviewLine(List<Preview> previews)
+        internal static string PreviewLine(List<Preview> previews)
         {
             var parts = new List<string>();
             foreach (bool output in new[] { false, true })
